@@ -3,30 +3,33 @@
  * semantic variables on :root, mapped into Tailwind's theme with `@theme inline`.
  *
  * Dark mode follows the system by default and can be forced either way with
- * `data-theme="light" | "dark"` on <html>. The `dark` variant matches both.
+ * `data-theme="light" | "dark"` (or the `.dark` class) on <html>. Every token
+ * is a `light-dark()` pair, so a subtree with its own `color-scheme` re-themes
+ * itself without JavaScript.
  */
 @import "tailwindcss";
 
-/* `dark:` matches a forced dark theme, or the system preference when nothing is forced. */
+/*
+ * `dark:` matches, in order of precedence:
+ *   - anything inside a `data-theme-scope="dark"` panel (the components gallery
+ *     renders both themes side by side);
+ *   - a forced dark theme (`data-theme="dark"` or the `.dark` class on <html>);
+ *   - the system preference, when nothing forces light.
+ * A `data-theme-scope="light"` panel opts out of the last two.
+ */
 @custom-variant dark {
-  :root[data-theme="dark"] & {
+  &:where([data-theme-scope="dark"] *) {
+    @slot;
+  }
+  :root:is([data-theme="dark"], .dark) &:not(:where([data-theme-scope="light"] *)) {
     @slot;
   }
   @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) & {
+    :root:not([data-theme="light"]) &:not(:where([data-theme-scope="light"] *)) {
       @slot;
     }
   }
 }
-
-@theme inline`.
- *
- * Dark mode follows the system by default and can be forced either way with
- * `data-theme="light" | "dark"` on <html>. The `dark` variant matches both.
- */
-@import "tailwindcss";
-
-@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *, .dark, .dark *));
 
 @theme inline {
   --font-sans: "Inter Variable", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -52,6 +55,8 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-success: var(--success);
   --color-success-foreground: var(--success-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -104,6 +109,8 @@
   --warning-foreground: light-dark(var(--color-amber-700), var(--color-amber-400));
   --success: var(--color-emerald-500);
   --success-foreground: light-dark(var(--color-emerald-700), var(--color-emerald-400));
+  --info: var(--color-sky-500);
+  --info-foreground: light-dark(var(--color-sky-700), var(--color-sky-400));
   --border: light-dark(--alpha(var(--color-black) / 8%), --alpha(var(--color-white) / 8%));
   --input: light-dark(--alpha(var(--color-black) / 10%), --alpha(var(--color-white) / 10%));
   --ring: light-dark(var(--color-neutral-400), var(--color-neutral-500));
@@ -113,7 +120,15 @@
 :root[data-theme="light"] {
   color-scheme: light;
 }
-:root[data-theme="dark"] {
+:root[data-theme="dark"],
+:root.dark {
+  color-scheme: dark;
+}
+/* Panels that pin a theme for their subtree; light-dark() follows color-scheme. */
+[data-theme-scope="light"] {
+  color-scheme: light;
+}
+[data-theme-scope="dark"] {
   color-scheme: dark;
 }
 
