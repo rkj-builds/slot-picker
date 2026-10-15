@@ -131,7 +131,7 @@ describe("customer preview and message", () => {
     const names = await screen.findAllByRole("button", { name: "Diya Patel" });
     await user.hover(names[0]!);
     const card = await screen.findByText("Paid ahead online");
-    const popup = card.closest("[data-slot=customer-preview]")!;
+    const popup = card.closest<HTMLElement>("[data-slot=customer-preview]")!;
     expect(within(popup).getByText("+91 90000 00101")).toBeInTheDocument();
     expect(popup.textContent).toContain("Bookings3");
     expect(popup.textContent).toContain("No-shows1");

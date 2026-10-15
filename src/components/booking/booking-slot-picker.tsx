@@ -86,7 +86,7 @@ export function BookingSlotPicker({
   const [spaceId, setSpaceId] = React.useState<string>(spaces[0]?.id ?? "");
   const defaultDate = defaultSlotId?.slice(0, 10);
   const [date, setDate] = React.useState<PlainDate>(
-    defaultDate && isPlainDate(defaultDate) ? defaultDate : defaultDateProp && defaultDateProp >= today ? defaultDateProp : today,
+    defaultDate && isPlainDate(defaultDate) && defaultDate >= today ? defaultDate : defaultDateProp && defaultDateProp >= today ? defaultDateProp : today,
   );
   const [durationMinutes, setDurationMinutes] = React.useState<number>(
     defaultDurationMinutes && schedule.durationsMinutes.includes(defaultDurationMinutes)

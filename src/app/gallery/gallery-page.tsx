@@ -2,6 +2,24 @@
 
 import { BellIcon, CircleCheckIcon, InfoIcon, PlusIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import * as React from "react";
+import { enIN } from "@daypicker/react/locale/en-IN";
+import { CalendarDaysIcon, CalendarIcon, ChartColumnIcon, ChevronLeftIcon, ChevronRightIcon, EyeOffIcon, ListIcon, SendIcon } from "lucide-react";
+import { LogoMark } from "@/app/app-shell";
+import { Autocomplete, AutocompleteEmpty, AutocompleteInput, AutocompleteItem, AutocompleteList, AutocompletePopup } from "@/components/ui/autocomplete";
+import { Calendar } from "@/components/ui/calendar";
+import { CheckboxGroup } from "@/components/ui/checkbox-group";
+import { Command, CommandEmpty, CommandInput, CommandItem, CommandList, CommandPanel, CommandShortcut } from "@/components/ui/command";
+import { Composer, ComposerActionGroup, ComposerActions, ComposerInput, ComposerSubmit } from "@/components/ui/composer";
+import { ContextMenu, ContextMenuItem, ContextMenuPopup, ContextMenuSeparator, ContextMenuTrigger } from "@/components/ui/context-menu";
+import { Drawer, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
+import { FieldItem } from "@/components/ui/field";
+import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
+import { Form } from "@/components/ui/form";
+import { Group, GroupSeparator } from "@/components/ui/group";
+import { OTPField, OTPFieldInput, OTPFieldSeparator } from "@/components/ui/otp-field";
+import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/ui/preview-card";
+import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarProvider } from "@/components/ui/sidebar";
+import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator } from "@/components/ui/toolbar";
 import { Anchor } from "@/app/anchor";
 import { STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { useClock } from "@/app/clock";
@@ -60,10 +78,18 @@ import type { DeskState } from "@/lib/booking";
 import { todayIn } from "@/lib/plain-date";
 import { cn } from "@/lib/utils";
 
+const GALLERY_COMMANDS = [
+  { value: "day", label: "Day", hint: "Go to" },
+  { value: "tomorrow", label: "Tomorrow, Sun, 18 Oct", hint: "Date" },
+  { value: "diya", label: "Diya Patel", hint: "+91 90000 00101" },
+];
+const GALLERY_NAMES = ["Aarav Sharma", "Diya Patel", "Kabir Singh", "Meera Nair", "Rohan Mehta"];
+
 const SECTIONS = [
   "Button", "Badge", "Field and Input", "Number field", "Checkbox, Switch, Radio", "Radio card", "Toggle and Toggle group",
   "Segmented control", "Slider", "Meter and Progress", "Select and Combobox", "Tabs", "Accordion and Collapsible", "Alert",
   "Card", "Frame, Input group, Pagination", "Table", "Avatar, Kbd, Separator", "Stepper and Breadcrumb", "Skeleton, Spinner, Empty", "Overlays", "Scroll area",
+  "Sidebar", "Command", "Group, Calendar", "Toolbar", "Autocomplete, Checkbox group", "Form, Fieldset, OTP field", "Preview card, Context menu", "Composer",
   "Booking blocks", "Slot picker",
 ] as const;
 
@@ -594,6 +620,19 @@ export function GalleryPage(): React.ReactElement {
               <SheetPanel className="text-sm">The booking panel from the desk.</SheetPanel>
             </SheetPopup>
           </Sheet>
+          <Drawer>
+            <DrawerTrigger render={<Button variant="outline" />}>Drawer</DrawerTrigger>
+            <DrawerPopup showBar>
+              <DrawerHeader>
+                <DrawerTitle>Summary</DrawerTitle>
+                <DrawerDescription>Court 2 · Sat, 17 Oct · 7:00 – 8:30 pm</DrawerDescription>
+              </DrawerHeader>
+              <DrawerPanel className="text-sm">₹600 now, ₹600 at the venue. The pay step's summary on a phone.</DrawerPanel>
+              <DrawerFooter>
+                <DrawerClose render={<Button variant="ghost" />}>Close</DrawerClose>
+              </DrawerFooter>
+            </DrawerPopup>
+          </Drawer>
           <Popover>
             <PopoverTrigger render={<Button variant="outline" />}>Popover</PopoverTrigger>
             <PopoverPopup>
@@ -644,6 +683,247 @@ export function GalleryPage(): React.ReactElement {
               ))}
             </ul>
           </ScrollArea>
+        )}
+      </Section>
+
+      <Section note="The desk's navigation (collapsible to icons there; shown here as coss's static variant)." title="Sidebar">
+        {(scope) => (
+          <SidebarProvider className="min-h-0 overflow-hidden rounded-xl border">
+            <Sidebar collapsible="none" className="h-72 w-56">
+              <SidebarHeader>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton size="lg">
+                      <LogoMark className="size-8" />
+                      <span className="flex min-w-0 flex-col text-start leading-tight">
+                        <span className="truncate font-semibold">Project 831</span>
+                        <span className="truncate text-muted-foreground text-xs">Jamshedpur · 2 courts</span>
+                      </span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarHeader>
+              <SidebarContent>
+                <nav aria-label={`Desk, ${scope}`}>
+                  <SidebarGroup>
+                    <SidebarGroupLabel>Desk</SidebarGroupLabel>
+                    <SidebarGroupContent>
+                      <SidebarMenu>
+                        {[
+                          { label: "Day", icon: CalendarDaysIcon, active: true },
+                          { label: "Bookings", icon: ListIcon, active: false },
+                          { label: "Insights", icon: ChartColumnIcon, active: false },
+                        ].map(({ label, icon: Icon, active }) => (
+                          <SidebarMenuItem key={label}>
+                            <SidebarMenuButton aria-current={active ? "page" : undefined} isActive={active} render={<Anchor href="#/components" />}>
+                              <Icon aria-hidden="true" />
+                              <span>{label}</span>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
+                      </SidebarMenu>
+                    </SidebarGroupContent>
+                  </SidebarGroup>
+                </nav>
+              </SidebarContent>
+            </Sidebar>
+          </SidebarProvider>
+        )}
+      </Section>
+
+      <Section note="As the desk's ⌘K palette, inline here instead of in its dialog." title="Command">
+        {(scope) => (
+          <div className="w-full max-w-md overflow-hidden rounded-xl border">
+            <Command items={GALLERY_COMMANDS}>
+              {/* coss's CommandInput focuses itself, for its dialog; inline on this page it must not. */}
+              {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+              <CommandInput aria-label={`Search the desk, ${scope}`} autoFocus={false} placeholder="Jump to a date, find a customer…" />
+              <CommandPanel>
+                <CommandEmpty>Nothing matches.</CommandEmpty>
+                <CommandList>
+                  {(item: { value: string; label: string; hint: string }) => (
+                    <CommandItem key={item.value} value={item}>
+                      <span className="flex-1">{item.label}</span>
+                      <CommandShortcut>{item.hint}</CommandShortcut>
+                    </CommandItem>
+                  )}
+                </CommandList>
+              </CommandPanel>
+            </Command>
+          </div>
+        )}
+      </Section>
+
+      <Section note="The desk's date control: a Group of Buttons around coss's date-picker particle (Popover + Calendar)." title="Group, Calendar">
+        {(scope) => (
+          <div className="flex w-full flex-col gap-4">
+            <Group aria-label={`Day, ${scope}`}>
+              <Button aria-label="Previous day" size="icon" variant="outline">
+                <ChevronLeftIcon aria-hidden="true" />
+              </Button>
+              <GroupSeparator />
+              <Button disabled variant="outline">
+                Today
+              </Button>
+              <GroupSeparator />
+              <Button variant="outline">
+                <CalendarIcon aria-hidden="true" />
+                Sat, 17 Oct
+              </Button>
+              <GroupSeparator />
+              <Button aria-label="Next day" size="icon" variant="outline">
+                <ChevronRightIcon aria-hidden="true" />
+              </Button>
+            </Group>
+            <Calendar
+              className="rounded-xl border p-2"
+              defaultMonth={new Date(2026, 9, 1)}
+              labels={{ labelNav: () => `Months, ${scope}` }}
+              locale={enIN}
+              mode="single"
+              selected={new Date(2026, 9, 17)}
+            />
+          </div>
+        )}
+      </Section>
+
+      <Section note="The day view's actions and the bookings filters: Toolbar with a Toggle, a ToggleGroup and Buttons." title="Toolbar">
+        {(scope) => (
+          <Toolbar aria-label={`Day actions, ${scope}`} className="flex-wrap">
+            <ToolbarGroup>
+              <ToolbarButton render={<Toggle />}>
+                <EyeOffIcon aria-hidden="true" />
+                Show cancelled
+              </ToolbarButton>
+            </ToolbarGroup>
+            <ToolbarSeparator orientation="vertical" />
+            <ToggleGroup aria-label={`Quick dates, ${scope}`} className="border-none p-0" defaultValue={["today"]}>
+              <ToolbarButton render={<ToggleGroupItem value="today" />}>Today</ToolbarButton>
+              <ToolbarButton render={<ToggleGroupItem value="next" />}>Next 7 days</ToolbarButton>
+            </ToggleGroup>
+            <ToolbarSeparator orientation="vertical" />
+            <ToolbarGroup>
+              <ToolbarButton render={<Button />}>
+                <PlusIcon aria-hidden="true" />
+                New booking
+              </ToolbarButton>
+            </ToolbarGroup>
+          </Toolbar>
+        )}
+      </Section>
+
+      <Section note="The bookings search (Autocomplete with grouped suggestions) and its status filter (CheckboxGroup in a Fieldset)." title="Autocomplete, Checkbox group">
+        {(scope) => (
+          <div className="grid w-full gap-4 sm:grid-cols-2">
+            <Field>
+              <FieldLabel>Search</FieldLabel>
+              <Autocomplete items={GALLERY_NAMES}>
+                <AutocompleteInput aria-label={`Search, ${scope}`} placeholder="Name or phone" showClear startAddon={<SearchIcon />} />
+                <AutocompletePopup>
+                  <AutocompleteEmpty>No customer by that name.</AutocompleteEmpty>
+                  <AutocompleteList>
+                    {(name: string) => (
+                      <AutocompleteItem key={name} value={name}>
+                        {name}
+                      </AutocompleteItem>
+                    )}
+                  </AutocompleteList>
+                </AutocompletePopup>
+              </Autocomplete>
+            </Field>
+            <Field render={(props) => <Fieldset {...props} />}>
+              <FieldsetLegend className="mb-2 font-medium text-sm">Show statuses</FieldsetLegend>
+              <CheckboxGroup defaultValue={["due"]}>
+                {["Paid", "Due at venue", "No-show"].map((label) => (
+                  <FieldItem key={label}>
+                    <FieldLabel className="font-normal">
+                      <Checkbox value={label === "Due at venue" ? "due" : label.toLowerCase()} />
+                      {label}
+                    </FieldLabel>
+                  </FieldItem>
+                ))}
+              </CheckboxGroup>
+            </Field>
+          </div>
+        )}
+      </Section>
+
+      <Section note="The details step: a Form with a Fieldset, Fields and the WhatsApp code in an OTP Field." title="Form, Fieldset, OTP field">
+        <Form className="flex w-full max-w-sm flex-col gap-4" onSubmit={(event) => event.preventDefault()}>
+          <Fieldset className="flex flex-col gap-4">
+            <FieldsetLegend className="font-medium text-sm">Who is booking</FieldsetLegend>
+            <Field name="name">
+              <FieldLabel>Name</FieldLabel>
+              <Input defaultValue="Kavya Menon" type="text" />
+            </Field>
+            <Field>
+              <FieldLabel>Code sent to +91 98000 00001</FieldLabel>
+              <OTPField defaultValue="123" length={6}>
+                {["a", "b", "c", "d", "e", "f"].map((k, i) => (
+                  <React.Fragment key={k}>
+                    {i === 3 && <OTPFieldSeparator />}
+                    <OTPFieldInput aria-label={i === 0 ? undefined : `Character ${i + 1} of 6`} />
+                  </React.Fragment>
+                ))}
+              </OTPField>
+              <FieldDescription>Demo code: 123456.</FieldDescription>
+            </Field>
+          </Fieldset>
+          <Button type="submit">Verify and hold</Button>
+        </Form>
+      </Section>
+
+      <Section note="Hover the name (desk bookings list); right-click the block (desk day grid)." title="Preview card, Context menu">
+        <>
+          <div className="flex w-full flex-wrap items-start gap-4">
+            <PreviewCard>
+              <PreviewCardTrigger render={<Button variant="link" />}>Diya Patel</PreviewCardTrigger>
+              <PreviewCardPopup className="w-64">
+                <div className="flex w-full flex-col gap-2 text-sm">
+                  <span className="font-medium">Diya Patel</span>
+                  <span className="text-muted-foreground text-xs">10 bookings · 4 paid ahead · 0 no-shows</span>
+                </div>
+              </PreviewCardPopup>
+            </PreviewCard>
+            <ContextMenu>
+              <ContextMenuTrigger className={cn("flex w-56 flex-col gap-0.5 rounded-lg border px-2 py-1.5 text-xs", STATE_META["part-paid"].block)}>
+                <span className="font-medium">Kabir Singh</span>
+                <span className="text-muted-foreground">Right-click for actions</span>
+              </ContextMenuTrigger>
+              <ContextMenuPopup>
+                <ContextMenuItem closeOnClick>Record cash</ContextMenuItem>
+                <ContextMenuItem closeOnClick>Mark no-show</ContextMenuItem>
+                <ContextMenuSeparator />
+                <ContextMenuItem closeOnClick variant="destructive">
+                  Cancel booking
+                </ContextMenuItem>
+              </ContextMenuPopup>
+            </ContextMenu>
+          </div>
+        </>
+      </Section>
+
+      <Section note="The booking panel's WhatsApp box, with a plain-text textarea input." title="Composer">
+        {(scope) => (
+          <Composer className="w-full max-w-md" onSubmit={() => toastManager.add({ title: "Message queued (demo)", type: "success" })}>
+            <ComposerInput render={<textarea aria-label={`Message to Kabir Singh, ${scope}`} placeholder="Write to Kabir…" />} />
+            <ComposerActions>
+              <ComposerActionGroup>
+                <Button size="xs" variant="ghost">
+                  Payment link
+                </Button>
+              </ComposerActionGroup>
+              <ComposerActionGroup align="end">
+                <ComposerSubmit
+                  render={
+                    <Button aria-label={`Send on WhatsApp, ${scope}`} size="icon-sm">
+                      <SendIcon aria-hidden="true" />
+                    </Button>
+                  }
+                />
+              </ComposerActionGroup>
+            </ComposerActions>
+          </Composer>
         )}
       </Section>
 
@@ -708,8 +988,8 @@ function SlotPickerSection(): React.ReactElement {
   );
 }
 
-/** The coss ui files under src/components/ui that this product imports. */
-const COSS_COUNT = 41;
+/** The coss ui files under src/components/ui that this product imports: all of them. */
+const COSS_COUNT = 55;
 
 function slug(title: string): string {
   return title.toLowerCase().replaceAll(/[^a-z]+/g, "-");
