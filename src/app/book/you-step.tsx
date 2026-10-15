@@ -204,7 +204,8 @@ export function YouStep(): React.ReactElement {
                 length={CODE_LENGTH}
                 onValueChange={(value) => {
                   setCode(value);
-                  if (codeError) setCodeError(null);
+                  // A new digit clears the last error; the reset to "" after a wrong code does not.
+                  if (codeError && value !== "") setCodeError(null);
                 }}
                 onValueComplete={checkCode}
                 ref={codeRef}
@@ -218,8 +219,8 @@ export function YouStep(): React.ReactElement {
                   </React.Fragment>
                 ))}
               </OTPField>
-              {/* Shown for a wrong code, and when Base UI's own check finds the code incomplete on submit. */}
-              <FieldError>{codeError ?? `Enter the ${CODE_LENGTH}-digit code.`}</FieldError>
+              {/* A wrong code is our error (forced on with `match`); an incomplete one is Base UI's own check on submit. */}
+              {codeError ? <FieldError match>{codeError}</FieldError> : <FieldError>Enter the {CODE_LENGTH}-digit code.</FieldError>}
               <FieldDescription className="flex flex-wrap items-center gap-1" id="code-help">
                 <MessageCircleIcon aria-hidden="true" className="size-3.5" />
                 Check WhatsApp for a {CODE_LENGTH}-digit code.

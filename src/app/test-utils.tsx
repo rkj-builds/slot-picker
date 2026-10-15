@@ -56,9 +56,13 @@ export async function axeViolations({ popupOpen = false }: { popupOpen?: boolean
   return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
 }
 
-/** Type the demo's WhatsApp code into the OTP field that "Hold this court" reveals. */
+/**
+ * Paste the demo's WhatsApp code into the OTP field that "Hold this court" reveals, as people
+ * do from WhatsApp. (Typing works too, but Base UI moves focus between boxes asynchronously,
+ * which makes key-by-key typing timing-dependent under a loaded test run.)
+ */
 export async function enterDemoCode(user: UserEvent, code = "123456"): Promise<void> {
   const first = await screen.findByRole("textbox", { name: /^Code sent to/ });
   await user.click(first);
-  await user.keyboard(code);
+  await user.paste(code);
 }
