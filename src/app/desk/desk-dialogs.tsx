@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "@/components/ui/dialog";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { RadioGroup } from "@/components/ui/radio-group";
@@ -51,22 +52,21 @@ export function RecordCashDialog({ booking, onClose }: { booking: Booking | unde
   return (
     <Dialog onOpenChange={(open) => !open && !busy && onClose()} open={Boolean(booking)}>
       <DialogPopup>
-        <form
-          className="flex min-h-0 flex-col"
-          // The amount is validated here, not by the browser: a ₹100 step would otherwise refuse a ₹350 balance.
-          noValidate
+        <DialogHeader>
+          <DialogTitle>Record cash</DialogTitle>
+          <DialogDescription>
+            {booking ? `${bookingTitle(booking, state.customers)} · ${courtName(booking.courtId)}, ${whenOf(booking)}` : ""}
+          </DialogDescription>
+        </DialogHeader>
+        <Form
+          className="contents"
           onSubmit={(event) => {
             event.preventDefault();
             void save();
           }}
         >
-          <DialogHeader>
-            <DialogTitle>Record cash</DialogTitle>
-            <DialogDescription>
-              {booking ? `${bookingTitle(booking, state.customers)} · ${courtName(booking.courtId)}, ${whenOf(booking)}` : ""}
-            </DialogDescription>
-          </DialogHeader>
           <DialogPanel>
+            {/* No Field around it: the amount is checked here, not by step validity, which would refuse a ₹350 balance with ₹100 steps. */}
             <NumberField
               format={{ style: "currency", currency: "INR", maximumFractionDigits: 0 }}
               id="cash-amount"
@@ -91,7 +91,7 @@ export function RecordCashDialog({ booking, onClose }: { booking: Booking | unde
               Record {valid ? formatInr(Math.round(rupees * 100)) : "cash"}
             </Button>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogPopup>
     </Dialog>
   );

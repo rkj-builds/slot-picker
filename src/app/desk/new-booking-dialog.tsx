@@ -1,17 +1,19 @@
 "use client";
 
-import { UserPlusIcon, UsersIcon } from "lucide-react";
+import { CalendarX2Icon, UserPlusIcon, UsersIcon } from "lucide-react";
 import * as React from "react";
 import { useClock } from "@/app/clock";
 import { useDeskActions } from "@/app/desk/desk-actions";
 import type { NewBookingPrefill } from "@/app/desk/desk-ui";
 import { durationOf, longDayOf, minuteLabel, timeRangeOf } from "@/app/format";
 import { useStore } from "@/app/store";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Combobox, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup } from "@/components/ui/combobox";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
@@ -105,29 +107,45 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
   };
 
   return (
-    <form
-      className="flex min-h-0 flex-col"
-      noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        void save();
-      }}
-    >
+    <>
       <DialogHeader>
         <DialogTitle>New booking</DialogTitle>
         <DialogDescription>{longDayOf(prefill.date)}</DialogDescription>
       </DialogHeader>
+      <Form
+        className="contents"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void save();
+        }}
+      >
       <DialogPanel className="flex flex-col gap-4">
         {adding ? (
           <div className="grid gap-3 sm:grid-cols-2">
             <Field invalid={Boolean(errors.name)}>
               <FieldLabel>Name</FieldLabel>
-              <Input autoComplete="off" onChange={(e) => setName(e.target.value)} value={name} />
+              <Input
+                autoComplete="off"
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setErrors((prev) => ({ ...prev, name: undefined }));
+                }}
+                type="text"
+                value={name}
+              />
               {errors.name && <FieldError match>{errors.name}</FieldError>}
             </Field>
             <Field invalid={Boolean(errors.phone)}>
               <FieldLabel>Mobile (+91)</FieldLabel>
-              <Input inputMode="tel" onChange={(e) => setPhone(e.target.value)} type="tel" value={phone} />
+              <Input
+                inputMode="tel"
+                onChange={(e) => {
+                  setPhone(e.target.value);
+                  setErrors((prev) => ({ ...prev, phone: undefined }));
+                }}
+                type="tel"
+                value={phone}
+              />
               {errors.phone && <FieldError match>{errors.phone}</FieldError>}
             </Field>
             <Button className="justify-self-start" onClick={() => setAdding(false)} size="sm" variant="link">
@@ -179,10 +197,10 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
         )}
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <div className="flex flex-col gap-1.5">
-            <Label id="nb-court">Court</Label>
+          <Field>
+            <FieldLabel>Court</FieldLabel>
             <Select<CourtId> items={COURTS.map((c) => ({ label: c.name, value: c.id }))} onValueChange={(v) => v && setCourtId(v)} value={courtId}>
-              <SelectTrigger aria-labelledby="nb-court" className="min-w-0">
+              <SelectTrigger className="w-full min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
@@ -193,11 +211,11 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
                 ))}
               </SelectPopup>
             </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label id="nb-start">Start</Label>
+          </Field>
+          <Field>
+            <FieldLabel>Start</FieldLabel>
             <Select<number> items={starts.map((m) => ({ label: minuteLabel(m, prefill.date), value: m }))} onValueChange={(v) => v !== null && setStartMinute(v)} value={startMinute}>
-              <SelectTrigger aria-labelledby="nb-start" className="min-w-0">
+              <SelectTrigger className="w-full min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
@@ -208,11 +226,11 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
                 ))}
               </SelectPopup>
             </Select>
-          </div>
-          <div className="flex flex-col gap-1.5">
-            <Label id="nb-duration">Duration</Label>
+          </Field>
+          <Field>
+            <FieldLabel>Duration</FieldLabel>
             <Select<number> items={DURATIONS_MINUTES.map((d) => ({ label: durationOf(d), value: d }))} onValueChange={(v) => v !== null && setDuration(v)} value={duration}>
-              <SelectTrigger aria-labelledby="nb-duration" className="min-w-0">
+              <SelectTrigger className="w-full min-w-0">
                 <SelectValue />
               </SelectTrigger>
               <SelectPopup>
@@ -223,12 +241,13 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
                 ))}
               </SelectPopup>
             </Select>
-          </div>
+          </Field>
         </div>
         {slotError && (
-          <p className="text-destructive-foreground text-sm" role="alert">
-            {slotError}
-          </p>
+          <Alert role="alert" variant="error">
+            <CalendarX2Icon aria-hidden="true" />
+            <AlertDescription>{slotError}</AlertDescription>
+          </Alert>
         )}
 
         <div className="flex flex-col gap-1.5">
@@ -247,6 +266,7 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
           Add booking
         </Button>
       </DialogFooter>
-    </form>
+      </Form>
+    </>
   );
 }

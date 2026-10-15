@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { axeViolations, renderApp } from "@/app/test-utils";
+import { axeViolations, renderApp, enterDemoCode } from "@/app/test-utils";
 import { seedCustomers } from "@/lib/seed";
 import { STATE_VERSION } from "@/lib/store";
 import { instantAt } from "@/lib/time-zone";
@@ -32,11 +32,15 @@ describe("#/book accessibility", () => {
     await user.type(screen.getByRole("textbox", { name: "Name" }), "Kavya Menon");
     await user.type(screen.getByRole("textbox", { name: "Mobile number" }), "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    // The WhatsApp code step, before the code is typed.
+    await screen.findByRole("textbox", { name: /^Code sent to/ });
+    expect(await axeViolations()).toEqual([]);
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
     expect(await axeViolations()).toEqual([]);
 
     await user.click(screen.getByRole("button", { name: "Pay ₹400" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: "Checkout" });
     expect(await axeViolations()).toEqual([]);
     await user.click(within(dialog).getByRole("button", { name: "Pay ₹400" }));
 

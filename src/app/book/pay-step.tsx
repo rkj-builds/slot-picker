@@ -1,6 +1,6 @@
 "use client";
 
-import { HourglassIcon } from "lucide-react";
+import { HourglassIcon, ReceiptIcon } from "lucide-react";
 import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { CheckoutDialog } from "@/app/book/checkout-dialog";
@@ -11,12 +11,14 @@ import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Drawer, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Meter, MeterIndicator, MeterLabel, MeterTrack } from "@/components/ui/meter";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { RadioCard } from "@/components/compositions/radio-card";
 import { Separator } from "@/components/ui/separator";
 import { toastManager } from "@/components/ui/toast";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { Booking, PayMode } from "@/lib/booking";
 import { type Alternative, type PayResult, policyCustomerFor } from "@/lib/checkout";
 import { describeCountdown, formatCountdown, holdRemainingMs } from "@/lib/holds";
@@ -177,7 +179,8 @@ function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number
   const announcement = passed.length > 0 ? `Hold: ${describeCountdown(Math.min(...passed))}` : "";
 
   return (
-    <div className="rounded-2xl border bg-card p-4 shadow-xs/5">
+    <Card>
+      <CardPanel className="p-4">
       <Meter
         aria-valuetext={describeCountdown(remaining)}
         max={Math.ceil(total / 1000)}
@@ -200,7 +203,8 @@ function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number
       <span aria-live="polite" className="sr-only">
         {announcement}
       </span>
-    </div>
+      </CardPanel>
+    </Card>
   );
 }
 
@@ -224,10 +228,12 @@ function PayOptions({
   if (decision.modes.length === 1) {
     const only = decision.modes[0] ?? "full";
     return (
-      <div className="rounded-xl border bg-card p-4" data-slot="pay-option-single">
-        <p className="font-medium text-sm">{MODE_COPY[only].title}</p>
-        <p className="text-muted-foreground text-sm">{MODE_COPY[only].line(decision, booking.pricePaise)}</p>
-      </div>
+      <Card className="rounded-xl before:rounded-[calc(var(--radius-xl)-1px)]" data-slot="pay-option-single">
+        <CardPanel className="p-4">
+          <p className="font-medium text-sm">{MODE_COPY[only].title}</p>
+          <p className="text-muted-foreground text-sm">{MODE_COPY[only].line(decision, booking.pricePaise)}</p>
+        </CardPanel>
+      </Card>
     );
   }
   return (
@@ -245,37 +251,78 @@ function PayOptions({
   );
 }
 
+/**
+ * What is being bought. A coss Card beside the options on a laptop; on a
+ * phone, a one-line total that opens the full summary in a coss Drawer, so
+ * the pay button stays in reach.
+ */
 function OrderSummary({ booking, players, amountNow }: { booking: Booking; players: number; amountNow: number }): React.ReactElement {
+  const phone = useMediaQuery("max-md");
   const rows: [string, string][] = [
     ["Court", courtName(booking.courtId)],
     ["When", whenOf(booking)],
     ["Duration", durationOf(booking.durationMinutes)],
     ["Players", String(players)],
   ];
+  const details = (
+    <>
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        {rows.map(([term, value]) => (
+          <React.Fragment key={term}>
+            <dt className="text-muted-foreground">{term}</dt>
+            <dd className="text-end tabular-nums">{value}</dd>
+          </React.Fragment>
+        ))}
+      </dl>
+      <Separator className="my-3" />
+      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+        <dt className="text-muted-foreground">Price</dt>
+        <dd className="text-end tabular-nums">{formatInr(booking.pricePaise)}</dd>
+        <dt className="font-medium">Pay now</dt>
+        <dd className="text-end font-semibold tabular-nums">{formatInr(amountNow)}</dd>
+        <dt className="text-muted-foreground">At the venue</dt>
+        <dd className="text-end tabular-nums">{formatInr(booking.pricePaise - amountNow)}</dd>
+      </dl>
+    </>
+  );
+
+  if (phone) {
+    return (
+      <Drawer>
+        <Card className="flex-row items-center justify-between gap-3 rounded-xl px-4 py-3 before:rounded-[calc(var(--radius-xl)-1px)]" data-slot="order-summary-bar">
+          <span className="flex min-w-0 flex-col">
+            <span className="font-semibold tabular-nums">{formatInr(amountNow)} now</span>
+            <span className="truncate text-muted-foreground text-xs">
+              {courtName(booking.courtId)} · {whenOf(booking)}
+            </span>
+          </span>
+          <DrawerTrigger render={<Button size="sm" variant="outline" />}>
+            <ReceiptIcon aria-hidden="true" />
+            Summary
+          </DrawerTrigger>
+        </Card>
+        <DrawerPopup showBar>
+          <DrawerHeader>
+            <DrawerTitle>Summary</DrawerTitle>
+            <DrawerDescription>
+              {courtName(booking.courtId)} · {whenOf(booking)}
+            </DrawerDescription>
+          </DrawerHeader>
+          <DrawerPanel>{details}</DrawerPanel>
+          <DrawerFooter>
+            <DrawerClose render={<Button variant="ghost" />}>Close</DrawerClose>
+          </DrawerFooter>
+        </DrawerPopup>
+      </Drawer>
+    );
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Summary</CardTitle>
       </CardHeader>
-      <CardPanel>
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-          {rows.map(([term, value]) => (
-            <React.Fragment key={term}>
-              <dt className="text-muted-foreground">{term}</dt>
-              <dd className="text-end tabular-nums">{value}</dd>
-            </React.Fragment>
-          ))}
-        </dl>
-        <Separator className="my-3" />
-        <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-          <dt className="text-muted-foreground">Price</dt>
-          <dd className="text-end tabular-nums">{formatInr(booking.pricePaise)}</dd>
-          <dt className="font-medium">Pay now</dt>
-          <dd className="text-end font-semibold tabular-nums">{formatInr(amountNow)}</dd>
-          <dt className="text-muted-foreground">At the venue</dt>
-          <dd className="text-end tabular-nums">{formatInr(booking.pricePaise - amountNow)}</dd>
-        </dl>
-      </CardPanel>
+      <CardPanel>{details}</CardPanel>
     </Card>
   );
 }

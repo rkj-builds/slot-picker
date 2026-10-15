@@ -1,12 +1,14 @@
 "use client";
 
-import { CalendarPlusIcon, CircleCheckIcon, CircleSlashIcon, MessageCircleIcon, RotateCcwIcon } from "lucide-react";
+import { CalendarPlusIcon, CircleCheckIcon, CircleSlashIcon, MessageCircleIcon, RotateCcwIcon, WalletIcon } from "lucide-react";
 import * as React from "react";
 import { EMPTY_DRAFT, useFlow } from "@/app/book/flow";
 import { durationOf, whenOf } from "@/app/format";
 import { useClock } from "@/app/clock";
 import { useStore } from "@/app/store";
+import { Anchor } from "@/app/anchor";
 import { Accordion, AccordionItem, AccordionPanel, AccordionTrigger } from "@/components/ui/accordion";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   AlertDialog,
   AlertDialogClose,
@@ -17,7 +19,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Button, buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { RadioCard } from "@/components/compositions/radio-card";
@@ -29,7 +31,6 @@ import { buildIcs } from "@/lib/ics";
 import { formatInr } from "@/lib/money";
 import type { CancelResolution } from "@/lib/store";
 import { courtName, VENUE } from "@/lib/venue";
-import { cn } from "@/lib/utils";
 
 export function DoneStep(): React.ReactElement | null {
   const { booking, update, goTo, draft } = useFlow();
@@ -42,21 +43,17 @@ export function DoneStep(): React.ReactElement | null {
   const where = `${courtName(booking.courtId)} · ${whenOf(booking)}`;
 
   const bookAnother = (): void => {
-    update({ ...EMPTY_DRAFT, name: draft.name, phone: draft.phone, players: draft.players });
+    update({ ...EMPTY_DRAFT, name: draft.name, phone: draft.phone, players: draft.players, verifiedPhone: draft.verifiedPhone });
     goTo("court");
   };
 
   return (
     <section className="flex flex-col gap-5">
       <div className="flex flex-col items-start gap-3">
-        <span
-          className={cn(
-            "flex size-11 items-center justify-center rounded-full [&_svg]:size-6",
-            cancelled ? "bg-muted text-muted-foreground" : "bg-success/12 text-success-foreground",
-          )}
-        >
+        <Badge size="lg" variant={cancelled ? "secondary" : "success"}>
           {cancelled ? <CircleSlashIcon aria-hidden="true" /> : <CircleCheckIcon aria-hidden="true" />}
-        </span>
+          {cancelled ? "Cancelled" : "Confirmed"}
+        </Badge>
         <div className="flex flex-col gap-1">
           <h1 className="font-semibold text-2xl tracking-tight outline-none" tabIndex={-1}>
             {cancelled ? "Booking cancelled" : "You are booked"}
@@ -66,13 +63,16 @@ export function DoneStep(): React.ReactElement | null {
       </div>
 
       {cancelled && (
-        <p className="rounded-xl border bg-muted/40 px-4 py-3 text-sm" role="status">
-          {credit
-            ? `${formatInr(credit.amountPaise)} is now credit on your number. It comes off your next booking.`
-            : refund
-              ? `${formatInr(refund.amountPaise)} is on its way back to your original payment method. It usually lands in 5–7 working days.`
-              : "Nothing was paid, so there is nothing to refund."}
-        </p>
+        <Alert role="status" variant={credit || refund ? "info" : "default"}>
+          <WalletIcon aria-hidden="true" />
+          <AlertDescription>
+            {credit
+              ? `${formatInr(credit.amountPaise)} is now credit on your number. It comes off your next booking.`
+              : refund
+                ? `${formatInr(refund.amountPaise)} is on its way back to your original payment method. It usually lands in 5–7 working days.`
+                : "Nothing was paid, so there is nothing to refund."}
+          </AlertDescription>
+        </Alert>
       )}
 
       <Card>
@@ -108,10 +108,10 @@ export function DoneStep(): React.ReactElement | null {
         {!cancelled && (
           <CardFooter>
             <CalendarButton booking={booking} />
-            <a className={buttonVariants({ variant: "outline" })} href={whatsAppHref(booking)} rel="noreferrer" target="_blank">
+            <Button render={<Anchor href={whatsAppHref(booking)} rel="noreferrer" target="_blank" />} variant="outline">
               <MessageCircleIcon aria-hidden="true" />
               Share on WhatsApp
-            </a>
+            </Button>
           </CardFooter>
         )}
       </Card>

@@ -1,6 +1,6 @@
 "use client";
 
-import { HandCoinsIcon, SmileIcon } from "lucide-react";
+import { HandCoinsIcon, MessageCircleIcon, ShieldCheckIcon, SmileIcon } from "lucide-react";
 import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { useFlow } from "@/app/book/flow";
@@ -8,10 +8,16 @@ import { SlotTakenNotice } from "@/app/book/slot-taken-notice";
 import { whenOf } from "@/app/format";
 import { useStore } from "@/app/store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
+import { Form } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
+import { OTPField, OTPFieldInput, OTPFieldSeparator } from "@/components/ui/otp-field";
 import { Textarea } from "@/components/ui/textarea";
+import { toastManager } from "@/components/ui/toast";
 import type { Alternative } from "@/lib/checkout";
 import { formatInr } from "@/lib/money";
 import { checkIndianPhone, describePhoneProblem, formatPhone } from "@/lib/phone";
@@ -21,14 +27,25 @@ import { courtName } from "@/lib/venue";
 /** The demo's pay-first customer, used by the "Flagged customer" scenario. */
 const FLAGGED = { name: "Rohan Mehta", phone: "+919000000106" };
 
+/** The demo's one-time code. The real 831 sends a fresh one on WhatsApp. */
+export const DEMO_CODE = "123456";
+const CODE_LENGTH = DEMO_CODE.length;
+const CODE_SLOTS = Array.from({ length: CODE_LENGTH }, (_, i) => `code-slot-${i}`);
+
+/**
+ * Name, number, a one-time code for the number, notes. A coss Form: each
+ * Field validates itself on submit and the form focuses the first problem;
+ * the number is confirmed once per visit with a coss OTP Field.
+ */
 export function YouStep(): React.ReactElement {
   const { draft, update, goTo } = useFlow();
   const store = useStore();
-  const [errors, setErrors] = React.useState<{ name?: string; phone?: string }>({});
   const [busy, setBusy] = React.useState(false);
   const [taken, setTaken] = React.useState<Alternative[] | null>(null);
-  const nameRef = React.useRef<HTMLInputElement>(null);
-  const phoneRef = React.useRef<HTMLInputElement>(null);
+  const [codeSentTo, setCodeSentTo] = React.useState<string | null>(null);
+  const [code, setCode] = React.useState("");
+  const [codeError, setCodeError] = React.useState<string | null>(null);
+  const codeRef = React.useRef<HTMLDivElement>(null);
 
   // The flagged scenario fills the form with a customer the venue asks to pay first.
   const { flagged } = store.scenarios;
@@ -40,18 +57,15 @@ export function YouStep(): React.ReactElement {
 
   const phone = checkIndianPhone(draft.phone).phone;
   const returning = phone ? customerByPhone(store.state, phone) : undefined;
+  const verified = phone !== null && draft.verifiedPhone === phone;
+  const awaitingCode = !verified && codeSentTo !== null && codeSentTo === phone;
 
   if (draft.date === null || draft.startMinute === null) return <></>;
   const span = { date: draft.date, startMinute: draft.startMinute, durationMinutes: draft.durationMinutes };
 
   const hold = async (slot = span, courtId = draft.courtId): Promise<void> => {
-    const nameError = draft.name.trim() ? undefined : "Tell us who is booking.";
-    const phoneCheck = checkIndianPhone(draft.phone);
-    const phoneError = phoneCheck.problem ? describePhoneProblem(phoneCheck.problem) : undefined;
-    setErrors({ name: nameError, phone: phoneError });
-    if (nameError) return nameRef.current?.focus();
-    if (phoneError || !phoneCheck.phone) return phoneRef.current?.focus();
-
+    const checked = checkIndianPhone(draft.phone).phone;
+    if (!checked) return;
     setBusy(true);
     const result = await store.holdSlot({
       courtId: courtId === "any" ? null : courtId,
@@ -60,7 +74,7 @@ export function YouStep(): React.ReactElement {
       durationMinutes: slot.durationMinutes,
       players: draft.players,
       name: draft.name,
-      phone: phoneCheck.phone,
+      phone: checked,
       notes: draft.notes,
     });
     setBusy(false);
@@ -72,15 +86,51 @@ export function YouStep(): React.ReactElement {
     }
   };
 
+  const sendCode = (to: string): void => {
+    setCodeSentTo(to);
+    setCode("");
+    setCodeError(null);
+    toastManager.add({
+      id: "demo-code",
+      title: `Demo code: ${DEMO_CODE}`,
+      description: `The real 831 sends this to ${formatPhone(to)} on WhatsApp.`,
+      type: "info",
+    });
+    // Focus the first box once it renders.
+    window.setTimeout(() => codeRef.current?.querySelector("input")?.focus(), 0);
+  };
+
+  const checkCode = (value: string): void => {
+    if (!phone) return;
+    if (value === DEMO_CODE) {
+      setCodeError(null);
+      update({ verifiedPhone: phone });
+      void hold();
+    } else {
+      setCodeError("That code is not right. Check the latest message and try again.");
+      setCode("");
+      codeRef.current?.querySelector("input")?.focus();
+    }
+  };
+
+  // Runs only when every Field is valid; the Form focuses the first invalid one otherwise.
+  const submit = (): void => {
+    if (!phone) return;
+    if (verified) return void hold();
+    if (!awaitingCode) return sendCode(phone);
+    if (code.length === CODE_LENGTH) return checkCode(code);
+    setCodeError(`Enter the ${CODE_LENGTH}-digit code.`);
+    codeRef.current?.querySelector("input")?.focus();
+  };
+
   return (
     <section>
       <StepHeading description={`${courtName(draft.courtId === "any" ? "Any court" : draft.courtId)} · ${whenOf(span)}`} title="Your details" />
-      <form
+      <Form
         className="flex flex-col gap-5"
-        noValidate
         onSubmit={(event) => {
           event.preventDefault();
-          void hold();
+          submit();
         }}
       >
         {taken && (
@@ -100,48 +150,86 @@ export function YouStep(): React.ReactElement {
           />
         )}
 
-        <Field className="w-full" invalid={Boolean(errors.name)} name="name">
-          <FieldLabel>Name</FieldLabel>
-          <Input
-            autoComplete="name"
-            onChange={(event) => update({ name: event.target.value })}
-            placeholder="Who is booking"
-            ref={nameRef}
-            size="lg"
-            value={draft.name}
-          />
-          {errors.name && <FieldError match>{errors.name}</FieldError>}
-        </Field>
+        <Fieldset className="flex flex-col gap-5">
+          <FieldsetLegend className="sr-only">Who is booking</FieldsetLegend>
+          <Field className="w-full" name="name" validate={() => (draft.name.trim() ? null : "Tell us who is booking.")}>
+            <FieldLabel>Name</FieldLabel>
+            <Input autoComplete="name" onChange={(event) => update({ name: event.target.value })} placeholder="Who is booking" size="lg" type="text" value={draft.name} />
+            <FieldError />
+          </Field>
 
-        <Field className="w-full" invalid={Boolean(errors.phone)} name="phone">
-          <FieldLabel>Mobile number</FieldLabel>
-          <div className="relative w-full">
-            <span aria-hidden="true" className="pointer-events-none absolute inset-y-0 start-3 flex items-center text-muted-foreground text-sm">
-              +91
-            </span>
-            <Input
-              autoComplete="tel-national"
-              className="ps-11"
-              inputMode="tel"
-              onBlur={() => {
-                if (!draft.phone) return;
-                const check = checkIndianPhone(draft.phone);
-                setErrors((prev) => ({ ...prev, phone: check.problem ? describePhoneProblem(check.problem) : undefined }));
-                if (check.phone) update({ phone: formatPhone(check.phone).replace(/^\+91 /, "") });
-              }}
-              onChange={(event) => {
-                update({ phone: event.target.value });
-                if (errors.phone) setErrors((prev) => ({ ...prev, phone: undefined }));
-              }}
-              placeholder="98765 43210"
-              ref={phoneRef}
-              size="lg"
-              type="tel"
-              value={draft.phone.replace(/^\+91 /, "")}
-            />
-          </div>
-          {errors.phone ? <FieldError match>{errors.phone}</FieldError> : <FieldDescription>For the confirmation and nothing else.</FieldDescription>}
-        </Field>
+          <Field
+            className="w-full"
+            name="phone"
+            validate={() => {
+              const problem = checkIndianPhone(draft.phone).problem;
+              return problem ? describePhoneProblem(problem) : null;
+            }}
+          >
+            <FieldLabel>Mobile number</FieldLabel>
+            <InputGroup>
+              <InputGroupInput
+                autoComplete="tel-national"
+                inputMode="tel"
+                onBlur={() => {
+                  const check = checkIndianPhone(draft.phone);
+                  if (check.phone) update({ phone: formatPhone(check.phone).replace(/^\+91 /, "") });
+                }}
+                onChange={(event) => update({ phone: event.target.value })}
+                placeholder="98765 43210"
+                size="lg"
+                type="tel"
+                value={draft.phone.replace(/^\+91 /, "")}
+              />
+              <InputGroupAddon>
+                <InputGroupText>+91</InputGroupText>
+              </InputGroupAddon>
+              {verified && (
+                <InputGroupAddon align="inline-end">
+                  <Badge variant="success">
+                    <ShieldCheckIcon aria-hidden="true" />
+                    Verified
+                  </Badge>
+                </InputGroupAddon>
+              )}
+            </InputGroup>
+            <FieldError />
+            <FieldDescription>For the confirmation and nothing else. We check it once with a code on WhatsApp.</FieldDescription>
+          </Field>
+
+          {awaitingCode && (
+            <Field className="w-full" invalid={Boolean(codeError)}>
+              <FieldLabel>Code sent to {formatPhone(codeSentTo)}</FieldLabel>
+              <OTPField
+                aria-describedby="code-help"
+                length={CODE_LENGTH}
+                onValueChange={(value) => {
+                  setCode(value);
+                  if (codeError) setCodeError(null);
+                }}
+                onValueComplete={checkCode}
+                ref={codeRef}
+                size="lg"
+                value={code}
+              >
+                {CODE_SLOTS.map((key, i) => (
+                  <React.Fragment key={key}>
+                    {i === CODE_LENGTH / 2 && <OTPFieldSeparator />}
+                    <OTPFieldInput aria-label={i === 0 ? undefined : `Character ${i + 1} of ${CODE_LENGTH}`} />
+                  </React.Fragment>
+                ))}
+              </OTPField>
+              {codeError && <FieldError match>{codeError}</FieldError>}
+              <FieldDescription className="flex flex-wrap items-center gap-1" id="code-help">
+                <MessageCircleIcon aria-hidden="true" className="size-3.5" />
+                Check WhatsApp for a {CODE_LENGTH}-digit code.
+                <Button className="h-auto px-0 py-0 text-xs sm:h-auto" onClick={() => sendCode(codeSentTo)} size="xs" variant="link">
+                  Send it again
+                </Button>
+              </FieldDescription>
+            </Field>
+          )}
+        </Fieldset>
 
         <div aria-live="polite" className="empty:hidden">
           {returning && !returning.payFirst && (
@@ -179,11 +267,11 @@ export function YouStep(): React.ReactElement {
             Back
           </Button>
           <Button loading={busy} size="lg" type="submit">
-            Hold this court
+            {awaitingCode ? "Verify and hold" : "Hold this court"}
           </Button>
         </div>
         <p className="text-end text-muted-foreground text-xs">We hold the court for {store.scenarios.shortHold ? "30 seconds" : `${store.state.settings.holdMinutes} minutes`} while you pay.</p>
-      </form>
+      </Form>
     </section>
   );
 }

@@ -1,7 +1,7 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { axeViolations, goToHash, renderApp } from "@/app/test-utils";
+import { axeViolations, goToHash, renderApp, enterDemoCode } from "@/app/test-utils";
 import { seedCustomers } from "@/lib/seed";
 import { STATE_VERSION } from "@/lib/store";
 import { DEFAULT_SETTINGS } from "@/lib/venue";
@@ -34,6 +34,7 @@ describe("#/desk/settings", () => {
     await user.type(await screen.findByRole("textbox", { name: "Name" }), "Kavya Menon");
     await user.type(screen.getByRole("textbox", { name: "Mobile number" }), "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
     expect(screen.getByRole("radio", { name: /Pay a deposit/ }).closest("label")).toHaveTextContent("₹240 now, ₹560 at the venue.");
     expect(screen.getByText(/held with a 30% deposit/)).toBeInTheDocument();

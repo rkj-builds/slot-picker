@@ -11,6 +11,7 @@ import { PreviewCard, PreviewCardPopup, PreviewCardTrigger } from "@/components/
 import { Separator } from "@/components/ui/separator";
 import { customerHistory } from "@/app/desk/desk-model";
 import type { Customer } from "@/lib/booking";
+import type { PlainDate } from "@/lib/plain-date";
 import { formatInr } from "@/lib/money";
 import { formatPhone } from "@/lib/phone";
 
@@ -21,15 +22,18 @@ import { formatPhone } from "@/lib/phone";
  */
 export function CustomerPreview({
   customer,
+  today,
   onClick,
   children,
 }: {
   customer: Customer;
+  /** The venue's today, which splits "last time" from "next time". */
+  today: PlainDate;
   onClick: () => void;
   children: React.ReactNode;
 }): React.ReactElement {
   const { state } = useStore();
-  const h = customerHistory(customer, state.bookings);
+  const h = customerHistory(customer, state.bookings, today);
   const rows: [string, string][] = [
     ["Bookings", String(h.bookings)],
     ["Paid ahead online", String(h.paidAhead)],
@@ -76,7 +80,9 @@ export function CustomerPreview({
               </div>
             ))}
           </dl>
-          <p className="text-muted-foreground text-xs">{h.last ? `Last on court ${dayOf(h.last.date)}.` : "No bookings yet."}</p>
+          <p className="text-muted-foreground text-xs">
+            {[h.last ? `Last played ${dayOf(h.last.date)}` : "First time here", h.next ? `next booked ${dayOf(h.next.date)}` : null].filter(Boolean).join(", ")}.
+          </p>
         </div>
       </PreviewCardPopup>
     </PreviewCard>

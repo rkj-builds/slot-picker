@@ -3,6 +3,7 @@ import { bookingTitle, stateLabel } from "@/app/desk/booking-visuals";
 import { type Booking, type Customer, deskState, type DeskState, duePaise, paidPaise } from "@/lib/booking";
 import { formatCountdown, holdRemainingMs } from "@/lib/holds";
 import { formatInr, sumPaise } from "@/lib/money";
+import type { PlainDate } from "@/lib/plain-date";
 
 export interface DayStats {
   minutesBooked: number;
@@ -37,10 +38,11 @@ export interface CustomerHistory {
   noShows: number;
   cancelled: number;
   last: Booking | undefined;
+  next: Booking | undefined;
 }
 
 /** A customer's record at this venue: what the desk wants to know before taking their next booking. */
-export function customerHistory(customer: Customer, bookings: readonly Booking[]): CustomerHistory {
+export function customerHistory(customer: Customer, bookings: readonly Booking[], today: PlainDate): CustomerHistory {
   const theirs = bookings.filter((b) => b.kind === "booking" && b.customerId === customer.id && b.status !== "held" && b.status !== "expired");
   const kept = theirs.filter((b) => b.status !== "cancelled");
   return {
@@ -49,6 +51,7 @@ export function customerHistory(customer: Customer, bookings: readonly Booking[]
     unpaid: theirs.filter((b) => paidPaise(b) <= 0).length,
     noShows: theirs.filter((b) => b.status === "no-show").length,
     cancelled: theirs.filter((b) => b.status === "cancelled").length,
-    last: [...kept].sort((a, b) => (a.date < b.date ? 1 : -1))[0],
+    last: kept.filter((b) => b.date < today).sort((a, b) => (a.date < b.date ? 1 : -1))[0],
+    next: kept.filter((b) => b.date >= today).sort((a, b) => (a.date < b.date ? -1 : 1))[0],
   };
 }

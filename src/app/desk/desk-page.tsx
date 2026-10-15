@@ -126,7 +126,7 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
                 </Button>
               </div>
               <div className="flex flex-col">
-                <h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
+                <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
                 <p className="text-muted-foreground text-sm">{line}</p>
               </div>
             </header>

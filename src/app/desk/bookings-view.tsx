@@ -255,7 +255,7 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
             </TableHeader>
             <TableBody>
               {visible.map((b) => (
-                <Row booking={b} key={b.id} now={now} />
+                <Row booking={b} key={b.id} now={now} today={today} />
               ))}
             </TableBody>
           </Table>
@@ -338,7 +338,7 @@ function SearchField({ customers, value, onChange }: { customers: readonly Custo
   );
 }
 
-function Row({ booking: b, now }: { booking: Booking; now: number }): React.ReactElement {
+function Row({ booking: b, now, today }: { booking: Booking; now: number; today: PlainDate }): React.ReactElement {
   const { state } = useStore();
   const ui = useDeskUi();
   const actions = useBookingActions(b, now);
@@ -360,7 +360,7 @@ function Row({ booking: b, now }: { booking: Booking; now: number }): React.Reac
       <TableCell>{courtName(b.courtId)}</TableCell>
       <TableCell>
         {customer ? (
-          <CustomerPreview customer={customer} onClick={() => ui.openBooking(b.id)}>
+          <CustomerPreview customer={customer} onClick={() => ui.openBooking(b.id)} today={today}>
             {title}
           </CustomerPreview>
         ) : (

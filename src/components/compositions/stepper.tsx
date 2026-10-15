@@ -1,10 +1,11 @@
 import { CheckIcon } from "lucide-react";
 import type * as React from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 /**
  * A numbered list of steps. The current step carries `aria-current="step"`;
- * finished steps are buttons, so a person can go back to any of them, and
+ * finished steps are coss Buttons, so a person can go back to any of them, and
  * steps ahead are plain text, because skipping forward is not allowed.
  */
 
@@ -53,15 +54,15 @@ export function StepperItem({
       {...props}
     >
       {state === "complete" && onSelect ? (
-        <button
+        <Button
           aria-label={`Step ${index + 1}, ${label}, done. Go back to this step`}
-          className="flex min-w-0 cursor-pointer items-center gap-2 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+          className="h-auto min-w-0 gap-2 rounded-full px-0 py-0 font-normal before:rounded-full hover:bg-transparent sm:h-auto"
           onClick={onSelect}
-          type="button"
+          variant="ghost"
         >
           {marker}
           {text}
-        </button>
+        </Button>
       ) : (
         <span className="flex min-w-0 items-center gap-2">
           <span className="sr-only">{`Step ${index + 1}, ${label}${state === "current" ? ", current" : ""}`}</span>

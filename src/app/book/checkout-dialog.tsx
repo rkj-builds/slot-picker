@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
+import { Form } from "@/components/ui/form";
+import { Frame, FramePanel } from "@/components/ui/frame";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import type { PayResult } from "@/lib/checkout";
@@ -39,16 +41,10 @@ export function CheckoutDialog({
 }): React.ReactElement {
   const [method, setMethod] = React.useState<Method>("upi");
   const [upi, setUpi] = React.useState("player@upi");
-  const [upiError, setUpiError] = React.useState<string | null>(null);
   const [declined, setDeclined] = React.useState(false);
   const [busy, setBusy] = React.useState(false);
 
   const submit = async (): Promise<void> => {
-    if (method === "upi" && !UPI_ID.test(upi.trim())) {
-      setUpiError("Enter a UPI ID like name@bank.");
-      return;
-    }
-    setUpiError(null);
     setBusy(true);
     const result = await onPay(method);
     setBusy(false);
@@ -71,26 +67,27 @@ export function CheckoutDialog({
       open={open}
     >
       <DialogPopup showCloseButton={!busy}>
-        <form
-          className="flex min-h-0 flex-col"
-          noValidate
+        <DialogHeader>
+          <div className="flex flex-wrap items-center gap-2">
+            <DialogTitle>Checkout</DialogTitle>
+            <Badge variant="warning">Demo · no real money</Badge>
+          </div>
+          <DialogDescription>In production, payments go through Razorpay. Here, nothing is charged.</DialogDescription>
+        </DialogHeader>
+        <Form
+          className="contents"
           onSubmit={(event) => {
             event.preventDefault();
             void submit();
           }}
         >
-          <DialogHeader>
-            <div className="flex flex-wrap items-center gap-2">
-              <DialogTitle>Checkout</DialogTitle>
-              <Badge variant="warning">Demo · no real money</Badge>
-            </div>
-            <DialogDescription>In production, payments go through Razorpay. Here, nothing is charged.</DialogDescription>
-          </DialogHeader>
           <DialogPanel className="flex flex-col gap-4">
-            <div className="flex items-baseline justify-between gap-3 rounded-xl border bg-muted/40 px-4 py-3">
-              <span className="text-muted-foreground text-sm">{summary}</span>
-              <span className="font-semibold text-xl tabular-nums">{formatInr(amountPaise)}</span>
-            </div>
+            <Frame>
+              <FramePanel className="flex items-baseline justify-between gap-3 px-4 py-3">
+                <span className="text-muted-foreground text-sm">{summary}</span>
+                <span className="font-semibold text-xl tabular-nums">{formatInr(amountPaise)}</span>
+              </FramePanel>
+            </Frame>
 
             {declined && (
               <Alert role="alert" variant="error">
@@ -112,20 +109,19 @@ export function CheckoutDialog({
                 </TabsTab>
               </TabsList>
               <TabsPanel value="upi">
-                <Field className="w-full" invalid={Boolean(upiError)}>
+                <Field className="w-full" name="upi" validate={() => (UPI_ID.test(upi.trim()) ? null : "Enter a UPI ID like name@bank.")}>
                   <FieldLabel>UPI ID</FieldLabel>
-                  <Input autoComplete="off" onChange={(event) => setUpi(event.target.value)} size="lg" spellCheck={false} value={upi} />
-                  {upiError ? <FieldError match>{upiError}</FieldError> : <FieldDescription>A collect request would go to your UPI app.</FieldDescription>}
+                  <Input autoComplete="off" onChange={(event) => setUpi(event.target.value)} size="lg" spellCheck={false} type="text" value={upi} />
+                  <FieldError />
+                  <FieldDescription>A collect request would go to your UPI app.</FieldDescription>
                 </Field>
               </TabsPanel>
               <TabsPanel value="card">
-                <div className="flex items-center gap-3 rounded-xl border px-4 py-3">
-                  <CreditCardIcon aria-hidden="true" className="size-5 text-muted-foreground" />
-                  <div className="flex flex-col">
-                    <span className="font-medium text-sm">Demo card ending 4242</span>
-                    <span className="text-muted-foreground text-xs">No card details are collected in this demo.</span>
-                  </div>
-                </div>
+                <Alert>
+                  <CreditCardIcon aria-hidden="true" />
+                  <AlertTitle>Demo card ending 4242</AlertTitle>
+                  <AlertDescription>No card details are collected in this demo.</AlertDescription>
+                </Alert>
               </TabsPanel>
             </Tabs>
           </DialogPanel>
@@ -138,7 +134,7 @@ export function CheckoutDialog({
               {declined ? "Try again" : "Pay"} {formatInr(amountPaise)}
             </Button>
           </DialogFooter>
-        </form>
+        </Form>
       </DialogPopup>
     </Dialog>
   );

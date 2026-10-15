@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcwIcon, UserMinusIcon } from "lucide-react";
+import { RotateCcwIcon, UserMinusIcon, UsersIcon } from "lucide-react";
 import * as React from "react";
 import { useDeskActions } from "@/app/desk/desk-actions";
 import { durationOf, minuteLabel } from "@/app/format";
@@ -17,7 +17,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxGroup } from "@/components/ui/checkbox-group";
 import { Combobox, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup } from "@/components/ui/combobox";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
+import { Field, FieldDescription, FieldItem, FieldLabel } from "@/components/ui/field";
+import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
+import { Form } from "@/components/ui/form";
 import { Label } from "@/components/ui/label";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -25,11 +30,9 @@ import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toastManager } from "@/components/ui/toast";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import type { Customer } from "@/lib/booking";
 import { formatInr, splitPaise } from "@/lib/money";
 import { formatPhone } from "@/lib/phone";
-import type { Weekday } from "@/lib/plain-date";
 import { listDays, type VenueSettings, WEEKDAY_LABEL, WEEKDAYS } from "@/lib/venue";
 
 const HOLD_OPTIONS = [5, 10, 15, 20, 30];
@@ -62,7 +65,13 @@ export function SettingsView(): React.ReactElement {
   };
 
   return (
-    <div className="flex flex-col gap-5 pb-24">
+    <Form
+      className="flex flex-col gap-5"
+      onSubmit={(event) => {
+        event.preventDefault();
+        if (dirty) save();
+      }}
+    >
       <Card>
         <CardHeader>
           <h2>
@@ -71,7 +80,9 @@ export function SettingsView(): React.ReactElement {
           <CardDescription>What a customer pays before a court is held for them.</CardDescription>
         </CardHeader>
         <CardPanel className="flex flex-col gap-6">
-          <div className="flex flex-col gap-2">
+          {/* Deposit and prices keep a coss Label rather than a Field: a Field would add step validity, and 33% or ₹825 are allowed. */}
+          <Fieldset className="flex flex-col gap-2">
+            <FieldsetLegend className="sr-only">Deposit</FieldsetLegend>
             <div className="flex flex-wrap items-end justify-between gap-3">
               <NumberField
                 format={{ style: "percent", maximumFractionDigits: 0 }}
@@ -94,27 +105,36 @@ export function SettingsView(): React.ReactElement {
               </p>
             </div>
             <Slider max={100} min={0} onValueChange={(v: number | readonly number[]) => set("depositPercent", typeof v === "number" ? v : (v[0] ?? 0))} step={5} getAriaLabel={() => "Deposit percent"} value={draft.depositPercent} />
-          </div>
+          </Fieldset>
 
-          <div className="flex flex-col gap-2">
-            <Label id="prepay-days">Prepay days</Label>
-            <ToggleGroup aria-labelledby="prepay-days" multiple onValueChange={(days) => set("prepayDays", days as Weekday[])} value={draft.prepayDays}>
+          <Field name="prepayDays" render={(props) => <Fieldset {...props} />}>
+            <FieldsetLegend className="font-medium text-sm">Prepay days</FieldsetLegend>
+            <CheckboxGroup
+              aria-describedby="prepay-days-hint"
+              className="flex-row flex-wrap gap-x-4 gap-y-2"
+              onValueChange={(days) => set("prepayDays", WEEKDAYS.filter((d) => days.includes(d)))}
+              value={draft.prepayDays}
+            >
               {WEEKDAYS.map((d) => (
-                <ToggleGroupItem aria-label={WEEKDAY_LABEL[d].long} key={d} value={d}>
-                  {WEEKDAY_LABEL[d].short}
-                </ToggleGroupItem>
+                <FieldItem key={d}>
+                  <FieldLabel className="font-normal">
+                    <Checkbox value={d} />
+                    <span aria-hidden="true">{WEEKDAY_LABEL[d].short}</span>
+                    <span className="sr-only">{WEEKDAY_LABEL[d].long}</span>
+                  </FieldLabel>
+                </FieldItem>
               ))}
-            </ToggleGroup>
-            <p className="text-muted-foreground text-xs">
+            </CheckboxGroup>
+            <FieldDescription id="prepay-days-hint">
               {draft.prepayDays.length === 0 ? "No day requires payment up front." : `A deposit or full payment is required on ${listDays(draft.prepayDays)}.`}
-            </p>
-          </div>
+            </FieldDescription>
+          </Field>
 
           <div className="flex flex-wrap gap-6">
-            <div className="flex flex-col gap-2">
-              <Label id="hold-minutes">Hold while paying</Label>
+            <Field>
+              <FieldLabel>Hold while paying</FieldLabel>
               <Select<number> items={HOLD_OPTIONS.map((m) => ({ label: durationOf(m), value: m }))} onValueChange={(v) => v !== null && set("holdMinutes", v)} value={draft.holdMinutes}>
-                <SelectTrigger aria-labelledby="hold-minutes">
+                <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectPopup>
@@ -125,22 +145,14 @@ export function SettingsView(): React.ReactElement {
                   ))}
                 </SelectPopup>
               </Select>
-            </div>
-            <div className="flex max-w-sm items-start gap-3">
-              <Switch
-                aria-describedby="new-customers-hint"
-                checked={draft.requirePaymentForNewCustomers}
-                className="mt-0.5"
-                id="new-customers"
-                onCheckedChange={(v) => set("requirePaymentForNewCustomers", v)}
-              />
-              <div className="flex flex-col">
-                <Label htmlFor="new-customers">Deposit from new customers</Label>
-                <span className="text-muted-foreground text-xs" id="new-customers-hint">
-                  A first booking asks for the deposit on any day.
-                </span>
+            </Field>
+            <Field className="max-w-sm flex-row items-start gap-3">
+              <Switch checked={draft.requirePaymentForNewCustomers} className="mt-0.5" onCheckedChange={(v) => set("requirePaymentForNewCustomers", v)} />
+              <div className="flex flex-col gap-1">
+                <FieldLabel>Deposit from new customers</FieldLabel>
+                <FieldDescription>A first booking asks for the deposit on any day.</FieldDescription>
               </div>
-            </div>
+            </Field>
           </div>
         </CardPanel>
       </Card>
@@ -154,17 +166,24 @@ export function SettingsView(): React.ReactElement {
           </h2>
           <CardDescription>Per hour, per court. Peak applies in the band below{draft.weekendIsPeak ? " and all weekend" : ""}.</CardDescription>
         </CardHeader>
-        <CardPanel className="flex flex-col gap-5">
-          <div className="flex flex-wrap gap-4">
+        <CardPanel className="flex flex-col gap-6">
+          <Fieldset className="flex flex-col gap-3">
+            <FieldsetLegend className="font-medium text-sm">Prices</FieldsetLegend>
+            <div className="flex flex-wrap gap-4">
             <PriceField id="base-price" label="Off-peak" onChange={(v) => set("basePricePaise", v)} value={draft.basePricePaise} />
             <PriceField id="peak-price" label="Peak" onChange={(v) => set("peakPricePaise", v)} value={draft.peakPricePaise} />
-            <TimeSelect id="peak-start" label="Peak from" onChange={(v) => set("peakStartMinute", v)} value={draft.peakStartMinute} />
-            <TimeSelect id="peak-end" label="Peak until" onChange={(v) => set("peakEndMinute", v)} value={draft.peakEndMinute} />
-            <div className="flex items-center gap-2 self-end pb-1.5">
-              <Checkbox checked={draft.weekendIsPeak} id="weekend-peak" onCheckedChange={(v) => set("weekendIsPeak", v)} />
-              <Label htmlFor="weekend-peak">Weekends are peak</Label>
+            <TimeSelect label="Peak from" onChange={(v) => set("peakStartMinute", v)} value={draft.peakStartMinute} />
+            <TimeSelect label="Peak until" onChange={(v) => set("peakEndMinute", v)} value={draft.peakEndMinute} />
+            <Field className="self-end pb-1.5">
+              <FieldLabel>
+                <Checkbox checked={draft.weekendIsPeak} onCheckedChange={(v) => set("weekendIsPeak", v)} />
+                Weekends are peak
+              </FieldLabel>
+            </Field>
             </div>
-          </div>
+          </Fieldset>
+          <Fieldset className="flex flex-col gap-3">
+            <FieldsetLegend className="font-medium text-sm">Opening hours</FieldsetLegend>
           <Table aria-label="Opening hours">
             <TableHeader>
               <TableRow>
@@ -185,36 +204,37 @@ export function SettingsView(): React.ReactElement {
                       <Checkbox aria-label={`Open on ${WEEKDAY_LABEL[d].long}`} checked={!h.closed} onCheckedChange={(v) => setHours({ closed: !v })} />
                     </TableCell>
                     <TableCell>
-                      <TimeSelect disabled={h.closed} hideLabel id={`open-${d}`} label={`${WEEKDAY_LABEL[d].long} opens`} onChange={(v) => setHours({ open: v })} value={h.open} />
+                      <TimeSelect disabled={h.closed} hideLabel label={`${WEEKDAY_LABEL[d].long} opens`} onChange={(v) => setHours({ open: v })} value={h.open} />
                     </TableCell>
                     <TableCell>
-                      <TimeSelect disabled={h.closed} hideLabel id={`close-${d}`} label={`${WEEKDAY_LABEL[d].long} closes`} onChange={(v) => setHours({ close: v })} value={h.close} />
+                      <TimeSelect disabled={h.closed} hideLabel label={`${WEEKDAY_LABEL[d].long} closes`} onChange={(v) => setHours({ close: v })} value={h.close} />
                     </TableCell>
                   </TableRow>
                 );
               })}
             </TableBody>
           </Table>
+          </Fieldset>
         </CardPanel>
         <CardFooter>
           <ResetDemo />
         </CardFooter>
       </Card>
 
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t bg-background/92 backdrop-blur" data-slot="settings-savebar">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-3 px-4 py-3">
+      <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/92 backdrop-blur" data-slot="settings-savebar">
+        <div className="flex w-full items-center justify-end gap-3 px-4 py-3">
           <span aria-live="polite" className="me-auto text-muted-foreground text-sm">
             {dirty ? "Unsaved changes" : "All changes saved"}
           </span>
           <Button disabled={!dirty} onClick={() => setDraft(state.settings)} variant="ghost">
             Discard
           </Button>
-          <Button disabled={!dirty} onClick={save}>
+          <Button disabled={!dirty} type="submit">
             Save settings
           </Button>
         </div>
       </div>
-    </div>
+    </Form>
   );
 }
 
@@ -234,7 +254,14 @@ function PayFirstCard(): React.ReactElement {
       </CardHeader>
       <CardPanel className="flex flex-col gap-4">
         {flagged.length === 0 ? (
-          <p className="rounded-xl border border-dashed px-4 py-3 text-muted-foreground text-sm">Nobody is on the list.</p>
+          <Empty className="rounded-xl border border-dashed p-4 md:p-4">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <UsersIcon aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyDescription>Nobody is on the list. Add a customer who has ghosted before.</EmptyDescription>
+            </EmptyHeader>
+          </Empty>
         ) : (
           <Table aria-label="Pay-first customers">
             <TableHeader>
@@ -263,10 +290,10 @@ function PayFirstCard(): React.ReactElement {
           </Table>
         )}
         <div className="flex flex-wrap items-end gap-2">
-          <div className="flex min-w-60 flex-1 flex-col gap-1.5">
-            <Label htmlFor="add-pay-first">Add a customer</Label>
+          <Field className="min-w-60 flex-1">
+            <FieldLabel>Add a customer</FieldLabel>
             <Combobox<Customer> isItemEqualToValue={(a, b) => a.id === b.id} itemToStringLabel={(c) => c.name} items={others} onValueChange={setPicked} value={picked}>
-              <ComboboxInput id="add-pay-first" placeholder="Search by name" />
+              <ComboboxInput placeholder="Search by name" />
               <ComboboxPopup>
                 <ComboboxEmpty>No customer by that name.</ComboboxEmpty>
                 <ComboboxList>
@@ -278,7 +305,7 @@ function PayFirstCard(): React.ReactElement {
                 </ComboboxList>
               </ComboboxPopup>
             </Combobox>
-          </div>
+          </Field>
           <Button
             disabled={!picked}
             onClick={() => {
@@ -319,14 +346,12 @@ function PriceField({ id, label, value, onChange }: { id: string; label: string;
 }
 
 function TimeSelect({
-  id,
   label,
   value,
   onChange,
   disabled,
   hideLabel = false,
 }: {
-  id: string;
   label: string;
   value: number;
   onChange: (minute: number) => void;
@@ -334,12 +359,10 @@ function TimeSelect({
   hideLabel?: boolean;
 }): React.ReactElement {
   return (
-    <div className="flex flex-col gap-1.5">
-      <Label className={hideLabel ? "sr-only" : undefined} id={id}>
-        {label}
-      </Label>
+    <Field disabled={disabled}>
+      <FieldLabel className={hideLabel ? "sr-only" : undefined}>{label}</FieldLabel>
       <Select<number> disabled={disabled} items={TIMES.map((m) => ({ label: m === 24 * 60 ? "Midnight" : minuteLabel(m), value: m }))} onValueChange={(v) => v !== null && onChange(v)} value={value}>
-        <SelectTrigger aria-labelledby={id} className="min-w-28">
+        <SelectTrigger className="min-w-28">
           <SelectValue />
         </SelectTrigger>
         <SelectPopup>
@@ -350,7 +373,7 @@ function TimeSelect({
           ))}
         </SelectPopup>
       </Select>
-    </div>
+    </Field>
   );
 }
 

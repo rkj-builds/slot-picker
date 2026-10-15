@@ -37,6 +37,8 @@ export interface Draft {
   name: string;
   phone: string;
   notes: string;
+  /** The number (E.164) whose WhatsApp code was entered this visit, so it is asked once. */
+  verifiedPhone: string;
   /** The held (then confirmed) booking, once there is one. */
   bookingId: string | null;
 }
@@ -50,6 +52,7 @@ export const EMPTY_DRAFT: Draft = {
   name: "",
   phone: "",
   notes: "",
+  verifiedPhone: "",
   bookingId: null,
 };
 

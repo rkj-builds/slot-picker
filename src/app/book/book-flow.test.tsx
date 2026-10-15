@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
-import { renderApp } from "@/app/test-utils";
+import { renderApp, enterDemoCode } from "@/app/test-utils";
 import { seedState } from "@/lib/seed";
 import { STATE_VERSION } from "@/lib/store";
 import { instantAt } from "@/lib/time-zone";
@@ -31,6 +31,7 @@ describe("booking flow", () => {
     await toDetails(user);
     await fillDetails(user, "Kavya Menon", "98000 00001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
 
     expect(await screen.findByRole("heading", { level: 1, name: "Hold and pay" })).toBeInTheDocument();
     expect(window.location.hash).toBe("#/book/pay");
@@ -50,13 +51,14 @@ describe("booking flow", () => {
     expect(screen.getByText(/Sat, 17 Oct/)).toBeInTheDocument();
     await fillDetails(user, "Kavya Menon", "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
 
     // Weekend: no pay-at-venue option, deposit preselected.
     expect(screen.queryByRole("radio", { name: /Pay at the venue/ })).toBeNull();
     expect(screen.getByRole("radio", { name: /Pay a deposit/ })).toBeChecked();
     await user.click(screen.getByRole("button", { name: "Pay ₹400" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: "Checkout" });
     expect(within(dialog).getByText("Demo · no real money")).toBeInTheDocument();
     await user.click(within(dialog).getByRole("button", { name: "Pay ₹400" }));
 
@@ -70,10 +72,11 @@ describe("booking flow", () => {
     await toDetails(user);
     await fillDetails(user, "Kavya Menon", "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
     await user.click(screen.getByRole("radio", { name: /Pay in full/ }));
     await user.click(screen.getByRole("button", { name: "Pay ₹800" }));
-    const dialog = await screen.findByRole("dialog");
+    const dialog = await screen.findByRole("dialog", { name: "Checkout" });
     await user.click(within(dialog).getByRole("button", { name: "Pay ₹800" }));
 
     expect(await within(dialog).findByRole("alert")).toHaveTextContent("The payment did not go through");
@@ -88,10 +91,11 @@ describe("booking flow", () => {
     await toDetails(user);
     await fillDetails(user, "Kavya Menon", "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
     await user.click(screen.getByRole("radio", { name: /Pay in full/ }));
     await user.click(screen.getByRole("button", { name: "Pay ₹800" }));
-    await user.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Pay ₹800" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Checkout" })).getByRole("button", { name: "Pay ₹800" }));
 
     expect(await screen.findByRole("heading", { level: 1, name: "Someone else got that court" })).toBeInTheDocument();
     const offers = within(screen.getByRole("list", { name: "Free times nearby" })).getAllByRole("button");
@@ -108,6 +112,7 @@ describe("booking flow", () => {
     expect(screen.getByRole("textbox", { name: "Name" })).toHaveValue("Rohan Mehta");
     expect(await screen.findByText("This booking needs payment up front")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    await enterDemoCode(user);
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
     expect(within(screen.getByRole("main")).queryAllByRole("radio")).toHaveLength(0);
     expect(screen.getByText("Pay in full")).toBeInTheDocument();

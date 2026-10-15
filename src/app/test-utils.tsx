@@ -2,7 +2,8 @@
  * Render the whole app at a hash with a pinned clock, no latency and no
  * persistence, so a test drives the real screens deterministically.
  */
-import { act, render, type RenderResult } from "@testing-library/react";
+import { act, render, type RenderResult, screen } from "@testing-library/react";
+import type { UserEvent } from "@testing-library/user-event";
 import { Routes } from "@/app/app";
 import { ClockProvider } from "@/app/clock";
 import { type Scenarios, StoreProvider } from "@/app/store";
@@ -49,4 +50,11 @@ export async function axeViolations(): Promise<string[]> {
   const { default: axe } = await import("axe-core");
   const results = await axe.run(document.body, { rules: { "color-contrast": { enabled: false } } });
   return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
+}
+
+/** Type the demo's WhatsApp code into the OTP field that "Hold this court" reveals. */
+export async function enterDemoCode(user: UserEvent, code = "123456"): Promise<void> {
+  const first = await screen.findByRole("textbox", { name: /^Code sent to/ });
+  await user.click(first);
+  await user.keyboard(code);
 }

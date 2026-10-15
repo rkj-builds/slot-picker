@@ -7,6 +7,7 @@ import { LOCALE, minuteLabel } from "@/app/format";
 import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { BookingSlotPicker } from "@/components/booking/booking-slot-picker";
+import { Card, CardPanel } from "@/components/ui/card";
 import { ANY_COURT, anyCourtReservations, reservationsFrom } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
 import { addDays, type PlainDate, todayIn, type Weekday, weekdayOf } from "@/lib/plain-date";
@@ -36,7 +37,8 @@ export function WhenStep(): React.ReactElement {
         description={`${formatInr(basePricePaise)} an hour, ${formatInr(peakPricePaise)} from ${minuteLabel(peakStartMinute)} and at weekends. Times are at the venue in Jamshedpur.`}
         title="Pick a time"
       />
-      <div className="rounded-2xl border bg-card p-4 shadow-xs/5 sm:p-5">
+      <Card>
+        <CardPanel className="p-4 sm:p-5">
         <BookingSlotPicker
           confirmLabel="Continue"
           defaultDate={scenarios.weekend ? nextSaturday : (draft.date ?? undefined)}
@@ -59,7 +61,8 @@ export function WhenStep(): React.ReactElement {
           spaces={[space]}
           viewerTimeZone={localTimeZone()}
         />
-      </div>
+        </CardPanel>
+      </Card>
     </section>
   );
 }
