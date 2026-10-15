@@ -15,12 +15,9 @@ export function CardHeader({ className, ...props }: React.ComponentProps<"div">)
   return <div className={cn("flex flex-col gap-1 p-5 pb-3", className)} data-slot="card-header" {...props} />;
 }
 
-export function CardTitle({ className, children, ...props }: React.ComponentProps<"h3">): React.ReactElement {
-  return (
-    <h3 className={cn("font-semibold text-base leading-tight tracking-tight", className)} data-slot="card-title" {...props}>
-      {children}
-    </h3>
-  );
+/** A div, as in coss ui; wrap it in a heading where the document outline needs one. */
+export function CardTitle({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
+  return <div className={cn("font-semibold text-base leading-tight tracking-tight", className)} data-slot="card-title" {...props} />;
 }
 
 export function CardDescription({ className, ...props }: React.ComponentProps<"p">): React.ReactElement {

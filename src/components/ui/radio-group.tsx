@@ -19,7 +19,7 @@ export function Radio<Value>({ className, ...props }: RadioPrimitive.Root.Props<
   return (
     <RadioPrimitive.Root
       className={cn(
-        "relative inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-input bg-popover shadow-xs/5 outline-none transition-[background-color,border-color] duration-150 ease-out-quart focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:border-primary data-checked:bg-primary data-disabled:cursor-not-allowed data-disabled:opacity-64 dark:bg-input/32 sm:size-4",
+        "relative inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-full border border-input bg-popover shadow-xs/5 outline-none transition-[background-color,border-color] duration-150 ease-out-quart focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:border-primary data-checked:bg-primary data-disabled:cursor-not-allowed data-disabled:opacity-64 dark:not-data-checked:bg-input/32 sm:size-4",
         className,
       )}
       data-slot="radio"
@@ -44,7 +44,7 @@ export function RadioCard<Value>({ className, children, ...props }: RadioPrimiti
     >
       <span
         aria-hidden="true"
-        className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-input bg-popover transition-colors group-data-checked/radio-card:border-primary group-data-checked/radio-card:bg-primary dark:bg-input/32"
+        className="mt-0.5 inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-input bg-popover transition-colors group-data-checked/radio-card:border-primary group-data-checked/radio-card:bg-primary"
       >
         <span className="size-1.5 rounded-full bg-primary-foreground opacity-0 group-data-checked/radio-card:opacity-100" />
       </span>

@@ -15,7 +15,7 @@ export const toggleVariants = cva(
         sm: "h-7 min-w-7 px-2 text-xs",
       },
       variant: {
-        outline: "border-input bg-popover shadow-xs/5 dark:bg-input/32",
+        outline: "border-input bg-popover shadow-xs/5 dark:not-data-pressed:bg-input/32",
         ghost: "border-transparent",
       },
     },

@@ -39,6 +39,16 @@ export interface BookingSlotPickerProps {
   defaultDurationMinutes?: number;
   /** Initial start, as a slot id ("2026-10-18T19:00"); it also sets the day. */
   defaultSlotId?: string;
+  /** Initial day when no slot is seeded; defaults to today. */
+  defaultDate?: PlainDate;
+  /** Last day the stepper may reach. */
+  maxDate?: PlainDate;
+  /** The section's heading; defaults to "Book a court". */
+  heading?: string;
+  /** The summary's button; defaults to "Continue". */
+  confirmLabel?: string;
+  /** Extra detail for the summary line, such as the price of the selection. */
+  renderSummaryExtra?: (selection: BookingSelection) => React.ReactNode;
   onRetry?: () => void;
   onConfirm?: (selection: BookingSelection) => void;
   className?: string;
@@ -59,6 +69,11 @@ export function BookingSlotPicker({
   status = "ready",
   defaultDurationMinutes,
   defaultSlotId,
+  defaultDate: defaultDateProp,
+  maxDate,
+  heading = "Book a court",
+  confirmLabel = "Continue",
+  renderSummaryExtra,
   onRetry,
   onConfirm,
   className,
@@ -69,7 +84,9 @@ export function BookingSlotPicker({
   const today = todayIn(schedule.timeZone, now);
   const [spaceId, setSpaceId] = React.useState<string>(spaces[0]?.id ?? "");
   const defaultDate = defaultSlotId?.slice(0, 10);
-  const [date, setDate] = React.useState<PlainDate>(defaultDate && isPlainDate(defaultDate) ? defaultDate : today);
+  const [date, setDate] = React.useState<PlainDate>(
+    defaultDate && isPlainDate(defaultDate) ? defaultDate : defaultDateProp && defaultDateProp >= today ? defaultDateProp : today,
+  );
   const [durationMinutes, setDurationMinutes] = React.useState<number>(
     defaultDurationMinutes && schedule.durationsMinutes.includes(defaultDurationMinutes)
       ? defaultDurationMinutes
@@ -105,7 +122,7 @@ export function BookingSlotPicker({
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold text-base tracking-tight" id={headingId}>
-            Book a court
+            {heading}
           </h2>
           <TimeZoneHint
             end={selected?.end}
@@ -118,6 +135,7 @@ export function BookingSlotPicker({
         </div>
         <DayStepper
           locale={locale}
+          maxDate={maxDate}
           minDate={today}
           now={now}
           onValueChange={(next) => {
@@ -198,11 +216,17 @@ export function BookingSlotPicker({
               {formatTime(selected.end, { locale, timeZone: schedule.timeZone })}
               <Separator />
               {formatDuration(durationMinutes, { locale })}
+              {renderSummaryExtra && (
+                <>
+                  <Separator />
+                  {renderSummaryExtra({ spaceId, date, durationMinutes, slot: selected })}
+                </>
+              )}
             </p>
             <Button
               onClick={() => onConfirm?.({ spaceId, date, durationMinutes, slot: selected })}
             >
-              Continue
+              {confirmLabel}
             </Button>
           </>
         ) : (

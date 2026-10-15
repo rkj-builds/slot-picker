@@ -9,7 +9,7 @@ export function Checkbox({ className, ...props }: CheckboxPrimitive.Root.Props):
   return (
     <CheckboxPrimitive.Root
       className={cn(
-        "relative inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-[0.3rem] border border-input bg-popover shadow-xs/5 outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out-quart pointer-coarse:after:absolute pointer-coarse:after:size-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-64 data-invalid:border-destructive/60 dark:bg-input/32 sm:size-4",
+        "relative inline-flex size-4.5 shrink-0 cursor-pointer items-center justify-center rounded-[0.3rem] border border-input bg-popover shadow-xs/5 outline-none transition-[background-color,border-color,box-shadow] duration-150 ease-out-quart pointer-coarse:after:absolute pointer-coarse:after:size-11 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background data-checked:border-primary data-checked:bg-primary data-checked:text-primary-foreground data-indeterminate:border-primary data-indeterminate:bg-primary data-indeterminate:text-primary-foreground data-disabled:cursor-not-allowed data-disabled:opacity-64 data-invalid:border-destructive/60 dark:not-data-checked:not-data-indeterminate:bg-input/32 sm:size-4",
         className,
       )}
       data-slot="checkbox"

@@ -4,17 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>Slot Picker</title>
+    <title>Court Booking</title>
+    <meta name="description" content="A court-booking product for Project 831, built on Base UI in the coss ui style." />
     <script>
       // Apply a saved theme before first paint, so dark-mode viewers never see a white flash.
       try {
         const theme = localStorage.getItem("slot-picker:theme");
         if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+        if (theme === "dark") document.documentElement.classList.add("dark");
       } catch {}
     </script>
   </head>
   <body>
     <div id="root"></div>
-    <script type="module" src="/src/demo/main.tsx"></script>
+    <script type="module" src="/src/app/main.tsx"></script>
   </body>
 </html>

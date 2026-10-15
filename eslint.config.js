@@ -35,6 +35,11 @@ export default tseslint.config(
     rules: { "react-refresh/only-export-components": "off" },
   },
   {
+    // App-level providers export their hook next to the provider, as context modules do.
+    files: ["src/app/{store,clock,theme,app-shell,router,test-utils}.tsx", "src/app/book/flow.tsx"],
+    rules: { "react-refresh/only-export-components": "off" },
+  },
+  {
     files: ["**/*.test.{ts,tsx}", "vitest.setup.ts"],
     rules: {
       "@typescript-eslint/no-non-null-assertion": "off",
