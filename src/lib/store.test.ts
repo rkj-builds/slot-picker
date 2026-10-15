@@ -51,6 +51,12 @@ describe("reducer", () => {
     expect(reducer(held, { type: "mark-no-show", bookingId: "bk_1" })).toBe(held);
   });
 
+  it("undoing a desk booking removes it", () => {
+    const state = aState({ bookings: [aBooking()] });
+    expect(reducer(state, { type: "remove", bookingId: "bk_1" }).bookings).toEqual([]);
+    expect(reducer(state, { type: "remove", bookingId: "nope" })).toBe(state);
+  });
+
   it("flags a customer pay-first", () => {
     expect(reducer(aState(), { type: "set-customer-flag", customerId: "cus_a", flag: "payFirst", value: true }).customers[0]?.payFirst).toBe(true);
   });

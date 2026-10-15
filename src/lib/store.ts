@@ -38,6 +38,8 @@ export type Action =
   | { type: "record-cash"; bookingId: string; amountPaise: Paise; at: number; entryId: string }
   | { type: "mark-no-show"; bookingId: string }
   | { type: "cancel"; bookingId: string; resolution: CancelResolution; at: number; entryId: string }
+  /** Undo of a desk "create": the booking never happened. */
+  | { type: "remove"; bookingId: string }
   /** Undo: put a booking (and its customer) back exactly as they were. */
   | { type: "restore"; booking: Booking; customer?: Customer }
   | { type: "set-customer-flag"; customerId: string; flag: "payFirst" | "trusted"; value: boolean }
@@ -118,6 +120,11 @@ export function reducer(state: AppState, action: Action): AppState {
         customers: next.customers.map((c) => (c.id === booking.customerId ? { ...c, creditPaise: c.creditPaise + paid } : c)),
       };
     }
+
+    case "remove":
+      return state.bookings.some((b) => b.id === action.bookingId)
+        ? { ...state, bookings: state.bookings.filter((b) => b.id !== action.bookingId) }
+        : state;
 
     case "restore":
       return {

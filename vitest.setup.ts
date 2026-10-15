@@ -17,7 +17,8 @@ afterEach(() => cleanup());
 if (!window.matchMedia) {
   window.matchMedia = (query: string): MediaQueryList =>
     ({
-      matches: false,
+      // Enough of a media engine for min-width queries against jsdom's 1024px window.
+      matches: Number(/min-width:\s*(\d+)px/.exec(query)?.[1] ?? Infinity) <= window.innerWidth,
       media: query,
       onchange: null,
       addListener: () => undefined,
