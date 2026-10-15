@@ -39,7 +39,7 @@ export function StepperItem({
         state === "upcoming" && "border-input text-muted-foreground",
       )}
     >
-      {state === "complete" ? <CheckIcon strokeWidth={3} /> : index + 1}
+      {state === "complete" ? <CheckIcon className="relative size-3.5 text-primary-foreground opacity-100" strokeWidth={3} /> : index + 1}
     </span>
   );
   const text = (

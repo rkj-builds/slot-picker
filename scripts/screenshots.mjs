@@ -35,10 +35,12 @@ try {
         "--headless=new",
         "--disable-gpu",
         "--hide-scrollbars",
+        // Stills, not motion: the app drops its animations under reduced motion, so nothing is caught mid-fade.
+        "--force-prefers-reduced-motion",
         "--lang=en-IN",
         "--force-device-scale-factor=2",
         `--window-size=${shot.size}`,
-        "--virtual-time-budget=4000",
+        "--virtual-time-budget=8000",
         `--screenshot=${out}`,
         url,
       ]);

@@ -59,7 +59,7 @@ export function Routes(): React.ReactElement {
   return (
     <div className="flex min-h-dvh flex-col">
       <Button
-        className="sr-only z-50 focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
+        className="fixed start-3 top-3 z-50 -translate-y-24 focus:translate-y-0"
         onClick={(event: React.MouseEvent) => {
           event.preventDefault();
           document.querySelector<HTMLElement>("main h1")?.focus();
