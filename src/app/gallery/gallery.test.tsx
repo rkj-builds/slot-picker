@@ -5,7 +5,8 @@ import { axeViolations, renderApp } from "@/app/test-utils";
 describe("#/components", () => {
   it("renders every section in a light and a dark panel", async () => {
     renderApp("#/components");
-    await screen.findByRole("heading", { level: 1, name: "Components" });
+    // The gallery is lazy-loaded; under a full parallel run it can take over a second.
+    await screen.findByRole("heading", { level: 1, name: "Components" }, { timeout: 5000 });
     const light = document.querySelectorAll('[data-theme-scope="light"]');
     const dark = document.querySelectorAll('[data-theme-scope="dark"]');
     expect(light.length).toBeGreaterThan(20);
