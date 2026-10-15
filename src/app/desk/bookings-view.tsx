@@ -9,9 +9,12 @@ import { dayOf, timeRangeOf } from "@/app/format";
 import { useStore } from "@/app/store";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Frame, FrameFooter } from "@/components/ui/frame";
 import { Input } from "@/components/ui/input";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { Label } from "@/components/ui/label";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -80,10 +83,12 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex min-w-48 flex-1 flex-col gap-1.5">
           <Label htmlFor="bookings-search">Search</Label>
-          <div className="relative">
-            <SearchIcon aria-hidden="true" className="pointer-events-none absolute start-2.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input className="ps-8" id="bookings-search" onChange={(e) => resetPage(setQuery)(e.target.value)} placeholder="Name or phone" type="search" value={query} />
-          </div>
+          <InputGroup>
+            <InputGroupInput id="bookings-search" onChange={(e) => resetPage(setQuery)(e.target.value)} placeholder="Name or phone" type="search" value={query} />
+            <InputGroupAddon>
+              <SearchIcon aria-hidden="true" />
+            </InputGroupAddon>
+          </InputGroup>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label id="bookings-status">Status</Label>
@@ -120,13 +125,13 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
 
       {rows.length === 0 ? (
         <Empty className="rounded-2xl border border-dashed">
-          <EmptyMedia>
-            <SearchXIcon aria-hidden="true" />
-          </EmptyMedia>
-          <div className="flex flex-col gap-1">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <SearchXIcon aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>Nothing matches</EmptyTitle>
             <EmptyDescription>{filtered ? "Try another name, or clear the filters." : "No bookings in these dates."}</EmptyDescription>
-          </div>
+          </EmptyHeader>
           {filtered && (
             <EmptyContent>
               <Button
@@ -143,40 +148,47 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
           )}
         </Empty>
       ) : (
-        <Table aria-label="Bookings">
-          <TableHeader>
-            <TableRow>
-              <TableHead>When</TableHead>
-              <TableHead>Court</TableHead>
-              <TableHead>Customer</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-end">Price</TableHead>
-              <TableHead className="text-end">Due</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {visible.map((b) => (
-              <Row actions={actions} booking={b} key={b.id} now={now} ui={ui} />
-            ))}
-          </TableBody>
-        </Table>
-      )}
-
-      {pages > 1 && (
-        <nav aria-label="Pages" className="flex items-center justify-end gap-2">
-          <Button disabled={current === 0} onClick={() => setPage(current - 1)} size="sm" variant="outline">
-            Previous
-          </Button>
-          <span className="text-muted-foreground text-sm tabular-nums">
-            Page {current + 1} of {pages}
-          </span>
-          <Button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} size="sm" variant="outline">
-            Next
-          </Button>
-        </nav>
+        <Frame>
+          <Table aria-label="Bookings" variant="card">
+            <TableHeader>
+              <TableRow>
+                <TableHead>When</TableHead>
+                <TableHead>Court</TableHead>
+                <TableHead>Customer</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-end">Price</TableHead>
+                <TableHead className="text-end">Due</TableHead>
+                <TableHead>
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {visible.map((b) => (
+                <Row actions={actions} booking={b} key={b.id} now={now} ui={ui} />
+              ))}
+            </TableBody>
+          </Table>
+        {pages > 1 && (
+          <FrameFooter className="p-2">
+            <Pagination aria-label="Pages" className="justify-end">
+              <PaginationContent className="gap-2">
+                <PaginationItem>
+                  <PaginationPrevious render={<Button disabled={current === 0} onClick={() => setPage(current - 1)} size="sm" variant="outline" />} />
+                </PaginationItem>
+                <PaginationItem>
+                  <span className="text-muted-foreground text-sm tabular-nums">
+                    Page {current + 1} of {pages}
+                  </span>
+                </PaginationItem>
+                <PaginationItem>
+                  <PaginationNext render={<Button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} size="sm" variant="outline" />} />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          </FrameFooter>
+        )}
+        </Frame>
       )}
     </div>
   );

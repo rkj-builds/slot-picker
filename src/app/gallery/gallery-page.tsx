@@ -22,26 +22,30 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Combobox, ComboboxEmpty, ComboboxInput, ComboboxItem, ComboboxList, ComboboxPopup } from "@/components/ui/combobox";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Frame, FrameFooter, FramePanel } from "@/components/ui/frame";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Label } from "@/components/ui/label";
 import { Menu, MenuGroup, MenuGroupLabel, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
-import { Meter, MeterLabel } from "@/components/ui/meter";
+import { Meter, MeterIndicator, MeterLabel, MeterTrack } from "@/components/ui/meter";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { Popover, PopoverDescription, PopoverPopup, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
-import { Progress, ProgressLabel, ProgressValue } from "@/components/ui/progress";
-import { Radio, RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { Progress, ProgressIndicator, ProgressLabel, ProgressTrack, ProgressValue } from "@/components/ui/progress";
+import { Radio, RadioGroup } from "@/components/ui/radio-group";
+import { RadioCard } from "@/components/compositions/radio-card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetDescription, SheetHeader, SheetPanel, SheetPopup, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Slider } from "@/components/ui/slider";
 import { Spinner } from "@/components/ui/spinner";
-import { Stepper, StepperItem } from "@/components/ui/stepper";
+import { Stepper, StepperItem } from "@/components/compositions/stepper";
 import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
@@ -58,14 +62,14 @@ import { cn } from "@/lib/utils";
 const SECTIONS = [
   "Button", "Badge", "Field and Input", "Number field", "Checkbox, Switch, Radio", "Radio card", "Toggle and Toggle group",
   "Segmented control", "Slider", "Meter and Progress", "Select and Combobox", "Tabs", "Accordion and Collapsible", "Alert",
-  "Card", "Table", "Avatar, Kbd, Separator", "Stepper and Breadcrumb", "Skeleton, Spinner, Empty", "Overlays", "Scroll area",
+  "Card", "Frame, Input group, Pagination", "Table", "Avatar, Kbd, Separator", "Stepper and Breadcrumb", "Skeleton, Spinner, Empty", "Overlays", "Scroll area",
   "Booking blocks", "Slot picker",
 ] as const;
 
 /**
- * Every primitive in its states, light and dark side by side. Each panel pins
- * its own `color-scheme` (data-theme-scope), so both themes render at once
- * from the same tokens with no duplicated CSS.
+ * Every coss component the product uses, in its states, light and dark side
+ * by side. Each panel carries coss's own `.dark` (or the app's `.light`
+ * opt-out) class, so both themes render at once from coss's tokens.
  */
 export function GalleryPage(): React.ReactElement {
   return (
@@ -73,8 +77,12 @@ export function GalleryPage(): React.ReactElement {
       <div className="flex flex-col gap-2">
         <h1 className="font-semibold text-3xl tracking-tight">Components</h1>
         <p className="max-w-2xl text-muted-foreground">
-          {SECTIONS.length} sections, {COMPONENT_COUNT} primitives. Base UI underneath, in the coss ui house style: one file per family, a <code className="text-foreground">data-slot</code> on
-          every part, tokens for every colour. Each row shows light and dark at once.
+          The real{" "}
+          <a className="text-foreground underline underline-offset-4" href="https://coss.com/ui" rel="noreferrer" target="_blank">
+            coss ui
+          </a>{" "}
+          components ({COSS_COUNT} of them), installed from the coss registry with the shadcn CLI and left unmodified, shown the way this product uses them. Segmented control,
+          radio card, stepper and the booking blocks are this app&apos;s own compositions, built from coss parts. Each row shows light and dark at once.
         </p>
         <nav aria-label="Sections">
           <ul className="flex flex-wrap gap-1.5">
@@ -209,7 +217,7 @@ export function GalleryPage(): React.ReactElement {
         </RadioGroup>
       </Section>
 
-      <Section title="Radio card">
+      <Section note="App composition: coss's card-radio pattern, a Label wrapping a Radio." title="Radio card">
         <RadioGroup aria-label="How to pay" className="w-full" defaultValue="part">
           <RadioCard value="part">
             <span className="font-medium text-sm">Pay a deposit</span>
@@ -243,7 +251,7 @@ export function GalleryPage(): React.ReactElement {
         </Row>
       </Section>
 
-      <Section title="Segmented control">
+      <Section note="App composition: coss Radio Group primitives with coss's @coss/segmented-control recipe." title="Segmented control">
         <Row>
           <SegmentedControl aria-label="View" defaultValue="day">
             <SegmentedControlItem value="day">Day</SegmentedControlItem>
@@ -258,8 +266,8 @@ export function GalleryPage(): React.ReactElement {
 
       <Section title="Slider">
         <div className="flex w-full max-w-sm flex-col gap-4">
-          <Slider defaultValue={50} step={5} thumbLabel="Deposit" />
-          <Slider defaultValue={30} disabled thumbLabel="Disabled" />
+          <Slider defaultValue={50} getAriaLabel={() => "Deposit"} step={5} />
+          <Slider defaultValue={30} disabled getAriaLabel={() => "Disabled"} />
         </div>
       </Section>
 
@@ -267,21 +275,36 @@ export function GalleryPage(): React.ReactElement {
         <div className="grid w-full gap-4 sm:grid-cols-3">
           <Meter max={900} value={720}>
             <MeterLabel>Held · 12:00</MeterLabel>
+            <MeterTrack className="rounded-full">
+              <MeterIndicator />
+            </MeterTrack>
           </Meter>
-          <Meter max={900} tone="warning" value={150}>
+          <Meter max={900} value={150}>
             <MeterLabel>Held · 2:30</MeterLabel>
+            <MeterTrack className="rounded-full">
+              <MeterIndicator className="bg-warning" />
+            </MeterTrack>
           </Meter>
-          <Meter max={900} tone="destructive" value={40}>
+          <Meter max={900} value={40}>
             <MeterLabel>Held · 0:40</MeterLabel>
+            <MeterTrack className="rounded-full">
+              <MeterIndicator className="bg-destructive" />
+            </MeterTrack>
           </Meter>
           <Progress value={64}>
             <div className="flex justify-between">
               <ProgressLabel>Upload</ProgressLabel>
               <ProgressValue />
             </div>
+            <ProgressTrack>
+              <ProgressIndicator />
+            </ProgressTrack>
           </Progress>
           <Progress value={null}>
             <ProgressLabel>Waiting for the bank</ProgressLabel>
+            <ProgressTrack>
+              <ProgressIndicator />
+            </ProgressTrack>
           </Progress>
         </div>
       </Section>
@@ -402,6 +425,34 @@ export function GalleryPage(): React.ReactElement {
         </Card>
       </Section>
 
+      <Section note="As on the desk's bookings list: a card Table inside a Frame, with coss Pagination." title="Frame, Input group, Pagination">
+        {(scope) => (
+          <div className="flex w-full flex-col gap-3">
+            <InputGroup className="max-w-xs">
+              <InputGroupInput aria-label={`Search, ${scope}`} placeholder="Name or phone" type="search" />
+              <InputGroupAddon>
+                <SearchIcon aria-hidden="true" />
+              </InputGroupAddon>
+            </InputGroup>
+            <Frame>
+              <FramePanel className="text-sm">Showing 1–12 of 159 bookings</FramePanel>
+              <FrameFooter className="p-2">
+                <Pagination aria-label={`Pages, ${scope}`} className="justify-end">
+                  <PaginationContent className="gap-2">
+                    <PaginationItem>
+                      <PaginationPrevious render={<Button disabled size="sm" variant="outline" />} />
+                    </PaginationItem>
+                    <PaginationItem>
+                      <PaginationNext render={<Button size="sm" variant="outline" />} />
+                    </PaginationItem>
+                  </PaginationContent>
+                </Pagination>
+              </FrameFooter>
+            </Frame>
+          </div>
+        )}
+      </Section>
+
       <Section title="Table">
         <Table>
           <TableHeader>
@@ -448,7 +499,7 @@ export function GalleryPage(): React.ReactElement {
         </Row>
       </Section>
 
-      <Section title="Stepper and Breadcrumb">
+      <Section note="The stepper is an app composition; the breadcrumb is coss." title="Stepper and Breadcrumb">
         {(scope) => (
           <div className="flex w-full flex-col gap-4">
             <Stepper>
@@ -478,12 +529,14 @@ export function GalleryPage(): React.ReactElement {
             <Skeleton className="h-10" />
             <Spinner />
           </div>
-          <Empty className="rounded-xl border border-dashed py-6">
-            <EmptyMedia>
-              <SearchIcon aria-hidden="true" />
-            </EmptyMedia>
-            <EmptyTitle>Nothing matches</EmptyTitle>
-            <EmptyDescription>Try another name.</EmptyDescription>
+          <Empty className="rounded-xl border border-dashed py-6 md:py-6">
+            <EmptyHeader>
+              <EmptyMedia variant="icon">
+                <SearchIcon aria-hidden="true" />
+              </EmptyMedia>
+              <EmptyTitle>Nothing matches</EmptyTitle>
+              <EmptyDescription>Try another name.</EmptyDescription>
+            </EmptyHeader>
             <EmptyContent>
               <Button size="sm" variant="outline">
                 Clear filters
@@ -572,7 +625,7 @@ export function GalleryPage(): React.ReactElement {
 
       <Section title="Scroll area">
         {(scope) => (
-          <ScrollArea className="h-32 w-full max-w-xs rounded-xl border" viewportLabel={`Customers, ${scope}`}>
+          <ScrollArea aria-label={`Customers, ${scope}`} className="h-32 w-full max-w-xs rounded-xl border" role="region">
             <ul className="p-3 text-sm">
               {["Aarav Sharma", "Diya Patel", "Ishaan Verma", "Ananya Iyer", "Kabir Singh", "Meera Nair", "Rohan Mehta", "Saanvi Gupta", "Vihaan Reddy", "Tara Banerjee"].map((n) => (
                 <li className="py-1" key={n}>
@@ -645,7 +698,8 @@ function SlotPickerSection(): React.ReactElement {
   );
 }
 
-const COMPONENT_COUNT = 40;
+/** The coss ui files under src/components/ui that this product imports. */
+const COSS_COUNT = 41;
 
 function slug(title: string): string {
   return title.toLowerCase().replaceAll(/[^a-z]+/g, "-");
@@ -676,7 +730,7 @@ function Section({
         {(["light", "dark"] as const).map((scope: Scope) => (
           <div
             aria-label={`${title}, ${scope} theme`}
-            className="flex min-w-0 flex-col gap-4 rounded-2xl border bg-background p-5 text-foreground"
+            className={`${scope} flex min-w-0 flex-col gap-4 rounded-2xl border bg-background p-5 text-foreground`}
             data-theme-scope={scope}
             key={scope}
             role="group"
