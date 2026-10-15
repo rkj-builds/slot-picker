@@ -5,15 +5,18 @@ import * as React from "react";
 import { DemoBar, useFocusHeadingOnNavigate } from "@/app/app-shell";
 import { BookPage } from "@/app/book/book-page";
 import { ClockProvider, pinnedNowFromUrl } from "@/app/clock";
-import { DeskPage } from "@/app/desk/desk-page";
-import { GalleryPage } from "@/app/gallery/gallery-page";
 import { HomePage } from "@/app/home-page";
 import { useRoute } from "@/app/router";
 import { StoreProvider } from "@/app/store";
 import { buttonVariants } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+// The desk and the gallery load on demand: a customer on #/book never downloads them.
+const DeskPage = React.lazy(() => import("@/app/desk/desk-page").then((m) => ({ default: m.DeskPage })));
+const GalleryPage = React.lazy(() => import("@/app/gallery/gallery-page").then((m) => ({ default: m.GalleryPage })));
 
 export function App(): React.ReactElement {
   const [start] = React.useState(pinnedNowFromUrl);
@@ -66,8 +69,18 @@ export function Routes(): React.ReactElement {
       </a>
       <DemoBar route={route} />
       <div className="flex flex-1 flex-col" id="main">
-        {page}
+        <React.Suspense fallback={<PageFallback />}>{page}</React.Suspense>
       </div>
+    </div>
+  );
+}
+
+function PageFallback(): React.ReactElement {
+  return (
+    <div aria-busy="true" className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6" role="status">
+      <span className="sr-only">Loading</span>
+      <Skeleton className="h-8 w-40" />
+      <Skeleton className="h-64 rounded-2xl" />
     </div>
   );
 }

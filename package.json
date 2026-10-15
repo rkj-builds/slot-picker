@@ -2,7 +2,7 @@
   "name": "slot-picker",
   "version": "0.1.0",
   "private": true,
-  "description": "A time-zone-aware booking slot picker built on Base UI, in the coss ui style.",
+  "description": "An end-to-end court-booking product (customer flow, venue desk, payment policy) built on Base UI in the coss ui style.",
   "license": "MIT",
   "author": "Rahul Jha",
   "type": "module",

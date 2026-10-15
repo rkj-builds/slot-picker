@@ -136,20 +136,23 @@ function HBars({ rows, max, format, label }: { rows: BarRow[]; max?: number; for
           );
         })}
       </svg>
-      <table className="sr-only">
-        <caption>{label}</caption>
-        <tbody>
-          {rows.map((r) => (
-            <tr key={r.label}>
-              <th scope="row">{r.label}</th>
-              <td>
-                {format(r.value)}
-                {r.note ? ` (${r.note})` : ""}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* sr-only on a wrapper: a <table> ignores the 1px width and would widen the page. */}
+      <div className="sr-only">
+        <table>
+          <caption>{label}</caption>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.label}>
+                <th scope="row">{r.label}</th>
+                <td>
+                  {format(r.value)}
+                  {r.note ? ` (${r.note})` : ""}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }
@@ -214,29 +217,32 @@ function WeekColumns({ weeks, policyWeek }: { weeks: ReturnType<typeof computeIn
           );
         })()}
       </svg>
-      <table className="sr-only">
-        <caption>Bookings per week by channel</caption>
-        <thead>
-          <tr>
-            <th scope="col">Week of</th>
-            {SERIES.map((s) => (
-              <th key={s.key} scope="col">
-                {s.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {weeks.map((w) => (
-            <tr key={w.weekOf}>
-              <th scope="row">{dayOf(w.weekOf)}</th>
-              <td>{w.selfServe - w.selfServeUnpaid}</td>
-              <td>{w.selfServeUnpaid}</td>
-              <td>{w.desk}</td>
+      {/* sr-only on a wrapper: a <table> ignores the 1px width and would widen the page. */}
+      <div className="sr-only">
+        <table>
+          <caption>Bookings per week by channel</caption>
+          <thead>
+            <tr>
+              <th scope="col">Week of</th>
+              {SERIES.map((s) => (
+                <th key={s.key} scope="col">
+                  {s.label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {weeks.map((w) => (
+              <tr key={w.weekOf}>
+                <th scope="row">{dayOf(w.weekOf)}</th>
+                <td>{w.selfServe - w.selfServeUnpaid}</td>
+                <td>{w.selfServeUnpaid}</td>
+                <td>{w.desk}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </figure>
   );
 }
