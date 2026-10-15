@@ -118,9 +118,8 @@ export function YouStep(): React.ReactElement {
     if (!phone) return;
     if (verified) return void hold();
     if (!awaitingCode) return sendCode(phone);
-    if (code.length === CODE_LENGTH) return checkCode(code);
-    setCodeError(`Enter the ${CODE_LENGTH}-digit code.`);
-    codeRef.current?.querySelector("input")?.focus();
+    // An incomplete code never gets here: the OTP Field is invalid, so the Form stops and focuses it.
+    checkCode(code);
   };
 
   return (
@@ -219,7 +218,8 @@ export function YouStep(): React.ReactElement {
                   </React.Fragment>
                 ))}
               </OTPField>
-              {codeError && <FieldError match>{codeError}</FieldError>}
+              {/* Shown for a wrong code, and when Base UI's own check finds the code incomplete on submit. */}
+              <FieldError>{codeError ?? `Enter the ${CODE_LENGTH}-digit code.`}</FieldError>
               <FieldDescription className="flex flex-wrap items-center gap-1" id="code-help">
                 <MessageCircleIcon aria-hidden="true" className="size-3.5" />
                 Check WhatsApp for a {CODE_LENGTH}-digit code.

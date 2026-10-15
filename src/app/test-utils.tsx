@@ -45,10 +45,14 @@ export async function goToHash(hash: string): Promise<void> {
   });
 }
 
-/** axe on the whole document (dialogs render in portals). Contrast is checked by eye: jsdom has no layout. */
-export async function axeViolations(): Promise<string[]> {
+/**
+ * axe on the whole document (dialogs render in portals). Contrast is checked by eye: jsdom has no layout.
+ * `popupOpen`: a non-modal popup (menu, preview card) is portaled to the end of <body>, outside every
+ * landmark, by design; axe's best-practice "region" rule would flag it, so it is skipped while one is open.
+ */
+export async function axeViolations({ popupOpen = false }: { popupOpen?: boolean } = {}): Promise<string[]> {
   const { default: axe } = await import("axe-core");
-  const results = await axe.run(document.body, { rules: { "color-contrast": { enabled: false } } });
+  const results = await axe.run(document.body, { rules: { "color-contrast": { enabled: false }, region: { enabled: !popupOpen } } });
   return results.violations.map((v) => `${v.id}: ${v.nodes.map((n) => n.target.join(" ")).join(", ")}`);
 }
 

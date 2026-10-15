@@ -91,7 +91,7 @@ export function DayStepper({
             <span>{formatDay(value, locale)}</span>
             {relative && <span className="font-normal text-muted-foreground max-sm:hidden">{relative}</span>}
           </PopoverTrigger>
-          <PopoverPopup>
+          <PopoverPopup aria-label="Choose a date">
             <Calendar
               // The popover just opened from the date button: focus the chosen day, as a date picker should.
               // eslint-disable-next-line jsx-a11y/no-autofocus
