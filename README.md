@@ -2,6 +2,8 @@
 
 A time-zone-aware booking slot picker for React, built on [Base UI](https://base-ui.com) in the [coss ui](https://coss.com/ui) style.
 
+**[Live demo →](https://rkj-builds.github.io/slot-picker/)** · try `?tz=America/New_York` · the case study it comes from: [Project 831](https://rkj-builds.github.io/project-831-case-study/)
+
 <p>
   <img src="docs/screenshot-light.png" alt="The slot picker in light mode: a day stepper, duration choice, and a grid of start times grouped by morning, afternoon and evening, with a one-line booking summary." width="100%" />
 </p>
