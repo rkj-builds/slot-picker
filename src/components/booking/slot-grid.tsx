@@ -40,14 +40,14 @@ const PERIOD_LABEL: Record<Period, string> = {
   evening: "Evening",
 };
 
+/** Status texture on top of the coss Button variant: a taken slot must not look like a free one in greyscale. */
 const SLOT_STYLE: Record<SlotStatus, string> = {
-  available:
-    "border-input bg-popover text-foreground shadow-xs/5 hover:border-ring/60 hover:bg-accent dark:bg-input/32 dark:hover:bg-input/64",
-  booked: "border-transparent bg-muted text-muted-foreground/72",
-  held: "border-dashed border-input bg-hatch text-muted-foreground",
-  past: "border-transparent text-muted-foreground/56",
-  conflict: "border-transparent bg-muted/60 text-muted-foreground/72",
-  closing: "border-transparent bg-muted/60 text-muted-foreground/72",
+  available: "hover:border-ring/60",
+  booked: "bg-muted text-muted-foreground/72 hover:bg-muted",
+  held: "border-dashed border-input bg-hatch text-muted-foreground hover:bg-hatch",
+  past: "text-muted-foreground/56 hover:bg-transparent",
+  conflict: "bg-muted/60 text-muted-foreground/72 hover:bg-muted/60",
+  closing: "bg-muted/60 text-muted-foreground/72 hover:bg-muted/60",
 };
 
 /**
@@ -272,16 +272,14 @@ export function SlotGrid({
               const checked = slot.id === value;
               const available = slot.status === "available";
               return (
-                <button
+                <Button
                   aria-checked={checked}
                   aria-disabled={available ? undefined : true}
                   aria-label={reason ? `${time}, ${reason}` : time}
                   className={cn(
-                    "relative flex min-h-10 flex-col items-center justify-center rounded-lg border px-2 py-1.5 text-sm tabular-nums outline-none transition-[background-color,border-color,box-shadow,color] duration-150 ease-out-quart focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
+                    "h-auto min-h-10 flex-col gap-0 px-2 py-1.5 font-normal tabular-nums sm:h-auto",
                     available ? "cursor-pointer" : "cursor-not-allowed",
-                    SLOT_STYLE[slot.status],
-                    checked &&
-                      "border-primary bg-primary text-primary-foreground shadow-xs hover:border-primary hover:bg-primary dark:bg-primary dark:hover:bg-primary",
+                    !checked && SLOT_STYLE[slot.status],
                   )}
                   data-slot="slot"
                   data-slot-id={slot.id}
@@ -296,7 +294,7 @@ export function SlotGrid({
                   role="radio"
                   tabIndex={slot.id === tabStopId ? 0 : -1}
                   title={reason ? `${time} · ${reason}` : undefined}
-                  type="button"
+                  variant={checked ? "default" : available ? "outline" : "ghost"}
                 >
                   <span className={cn("font-medium", slot.status === "booked" && "line-through decoration-muted-foreground/40")}>{time}</span>
                   {viewerTime && (
@@ -304,7 +302,7 @@ export function SlotGrid({
                       {viewerTime}
                     </span>
                   )}
-                </button>
+                </Button>
               );
             })}
           </div>

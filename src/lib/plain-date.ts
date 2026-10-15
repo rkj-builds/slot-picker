@@ -65,3 +65,18 @@ export function todayIn(timeZone: string, now: number = Date.now()): PlainDate {
     Number(parts.find((p) => p.type === type)?.value ?? 0);
   return toPlainDate({ year: read("year"), month: read("month"), day: read("day") });
 }
+
+/**
+ * The date as a local-midnight `Date`, for calendar widgets that work in the
+ * browser's zone (the coss Calendar, on DayPicker). Only the year, month and
+ * day survive the round trip; no instant is implied.
+ */
+export function toLocalDate(date: PlainDate): Date {
+  const { year, month, day } = parsePlainDate(date);
+  return new Date(year, month - 1, day);
+}
+
+/** The calendar day a local `Date` falls on: the inverse of `toLocalDate`. */
+export function fromLocalDate(date: Date): PlainDate {
+  return toPlainDate({ year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() });
+}

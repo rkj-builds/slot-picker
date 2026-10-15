@@ -6,6 +6,7 @@ import { DurationPicker } from "@/components/booking/duration-picker";
 import { SlotGrid, type SlotGridStatus } from "@/components/booking/slot-grid";
 import { TimeZoneHint } from "@/components/booking/time-zone-hint";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
 import { computeDaySlots, nextAvailableDate, type Reservation, type Slot, type VenueSchedule } from "@/lib/availability";
 import { formatDuration } from "@/lib/duration";
@@ -200,10 +201,11 @@ export function BookingSlotPicker({
         />
       </div>
 
-      <footer
+      <Card
         aria-live="polite"
-        className="flex min-h-12 flex-wrap items-center justify-between gap-3 rounded-xl border bg-card px-4 py-3 shadow-xs/5"
+        className="min-h-12 flex-row flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 before:rounded-[calc(var(--radius-xl)-1px)]"
         data-slot="booking-summary"
+        render={<footer />}
       >
         {selected && space ? (
           <>
@@ -232,7 +234,7 @@ export function BookingSlotPicker({
         ) : (
           <p className="text-muted-foreground text-sm">Pick a start time to continue.</p>
         )}
-      </footer>
+      </Card>
     </section>
   );
 }
