@@ -1,6 +1,8 @@
 # Court Booking
 
-A court-booking product for a two-court pickleball venue, built end to end on [Base UI](https://base-ui.com) in the [coss ui](https://coss.com/ui) house style.
+A court-booking product for a two-court pickleball venue, built end to end with [coss ui](https://coss.com/ui).
+
+**UI primitives are coss ui ([cosscom/ui](https://github.com/cosscom/ui), MIT), installed with the shadcn CLI and unmodified; product components are composed from them.**
 
 **[Live demo →](https://rkj-builds.github.io/slot-picker/)** · the case study it comes from: [Project 831](https://rkj-builds.github.io/project-831-case-study/)
 
@@ -22,7 +24,7 @@ At [Project 831](https://project831.in) in Jamshedpur, self-serve bookings with 
 - **Book** (`#/book`, phone first). Five steps with their own URLs: court, time, details, hold and pay, done. The payment step offers what the policy decides (pay at the venue or now on a weekday; 50% or full at the weekend; full for a pay-first customer), holds the court with a visible countdown, and handles a declined payment, an expired hold and a slot taken mid-payment. Done has the paid and due split, an `.ics`, a WhatsApp share and cancellation with credit or refund. A **Scenarios** popover forces each of those states in seconds.
 - **Desk** (`#/desk`, desktop and tablet first; phones get a list). The day as courts by half hours, every booking's ledger in a side sheet; record cash, mark no-show, cancel, flag pay-first, copy a payment link, each with a toast and an Undo. Plus a searchable bookings table with CSV export, and **Insights** charts drawn from the same store.
 - **Settings** (`#/desk/settings`). Deposit, prepay days, hold length, pay-first list, hours and prices. Save a 30% deposit and the next customer on `#/book` is asked for 30%.
-- **Components** (`#/components`). All 40 primitives in their states, light and dark side by side.
+- **Components** (`#/components`). The 41 coss ui components this product uses, in their states and as the product uses them, light and dark side by side, with the app's own compositions labelled.
 
 ## What I obsessed over
 
@@ -34,13 +36,31 @@ At [Project 831](https://project831.in) in Jamshedpur, self-serve bookings with 
 - **Durations are never decimal and times keep their zone.** "1 hour 30 minutes", Asia/Kolkata everywhere, `Intl` only, no date library.
 - **Nothing is faked to look finished.** 300–600 ms of latency in the store makes every skeleton real; `?offline=1` shows the error states.
 
-## Component inventory (40)
+## Components
 
-Base UI underneath: accordion, alert-dialog, avatar, checkbox, collapsible, combobox, dialog, field, input, menu, meter, number-field, popover, progress, radio-group (with radio cards), scroll-area, segmented-control, select, separator, sheet (a dialog from the edge), slider, switch, tabs, textarea, toast, toggle, toggle-group, tooltip.
-Plain HTML: alert, badge, breadcrumb, button, card, empty, kbd, label, skeleton, spinner, stepper, table.
-Booking parts: `BookingSlotPicker`, `SlotGrid`, `DayStepper`, `DurationPicker`, `TimeZoneHint`, still exported from `src/index.ts`.
+### coss ui, as installed
 
-Each primitive is one lower-case file in `src/components/ui`: a named function with a `data-slot` on every part, its Base UI part imported from its own path, `cn()` and `cva` over the shared tokens in `src/styles/theme.css`. It follows coss ui's conventions and component names only; no coss code is copied.
+`src/components/ui`, `src/hooks` and the coss files in `src/lib` (`segmented-control.ts`, `composer-*.ts`, `utils.ts`) were written by
+
+```sh
+npx shadcn@latest add @coss/ui @coss/colors-neutral   # registry: https://coss.com/ui/r/{name}.json (components.json)
+```
+
+and are not edited here. To check: reinstall into an empty copy of the project and diff, or `npx shadcn@latest add @coss/ui --diff`. Theme tokens in `src/styles/theme.css` are coss's neutral palette as the CLI wrote them, plus the font contract and base layer from `@coss/style`; the app's own additions there are marked. Fonts are Inter and Geist Mono from `@fontsource-variable`, the Vite equivalent of `@coss/fonts`. Dark mode is coss's `.dark` class on `<html>` (set from the OS when the theme is "system").
+
+All 55 coss primitives are installed. The product uses 41: accordion, alert, alert-dialog, avatar, badge, breadcrumb, button, card, checkbox, collapsible, combobox, dialog, empty, field, frame, input, input-group, kbd, label, menu, meter, number-field, pagination, popover, progress, radio-group, scroll-area, select, separator, sheet, skeleton, slider, spinner, switch, table, tabs, textarea, toast, toggle, toggle-group, tooltip.
+
+Only two project settings bend around the vendored code, and neither touches a coss file: ESLint skips the coss files (they are linted upstream under different rules), and `tsconfig.json` sets `noUnusedLocals: false` because `src/lib/composer-editor.ts` has one unused type import upstream. typescript-eslint's `no-unused-vars` still checks all app code.
+
+### The app's compositions
+
+What coss does not ship is built from coss parts, outside `src/components/ui`:
+
+- `src/components/compositions/segmented-control.tsx`: coss Radio Group primitives with coss's `@coss/segmented-control` recipe, the way coss's segmented-control guide says to build a one-of-many choice.
+- `src/components/compositions/radio-card.tsx`: coss's card-radio pattern, a `Label` wrapping a `Radio`.
+- `src/components/compositions/stepper.tsx`: the booking flow's numbered steps.
+- `src/components/booking/`: `BookingSlotPicker`, `SlotGrid`, `DayStepper`, `DurationPicker`, `TimeZoneHint`, still exported from `src/index.ts`. The slot grid keeps its own roving-focus radio group (Page Up/Down between periods, geometry-aware Up/Down, focusable-but-disabled slots that say why), which Base UI's Radio Group has no hook for.
+- The desk grid, booking blocks, page headers and charts in `src/app`.
 
 ## Run it
 
@@ -58,6 +78,6 @@ URL switches: `?theme=light|dark`, `?now=2026-10-17T05:30:00Z` to pin the clock,
 
 ## Stack
 
-React 19, TypeScript, Vite, Tailwind v4, `@base-ui/react`, Vitest. No router, state, chart or date library: a hash router, a reducer in context, inline SVG and `Intl`.
+React 19, TypeScript, Vite, Tailwind v4, coss ui on `@base-ui/react`, Vitest. No router, state, chart or date library: a hash router, a reducer in context, inline SVG and `Intl`.
 
-MIT © Rahul Jha
+MIT © Rahul Jha. coss ui is MIT © coss.com; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
