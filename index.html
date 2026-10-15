@@ -4,16 +4,19 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
-    <title>Slot Picker</title>
+    <title>Court Booking</title>
+    <meta name="description" content="A court-booking product for Project 831, built from coss ui components." />
     <script>
       // Apply a saved theme before first paint, so dark-mode viewers never see a white flash.
       try {
         const theme = localStorage.getItem("slot-picker:theme");
-        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+        const system = !theme && matchMedia("(prefers-color-scheme: dark)").matches;
+        if (theme === "dark" || system) document.documentElement.classList.add("dark");
       } catch {}
     </script>
-    <script type="module" crossorigin src="/slot-picker/assets/index-CjoR2wSX.js"></script>
-    <link rel="stylesheet" crossorigin href="/slot-picker/assets/index-CO7LKTQi.css">
+    <script type="module" crossorigin src="/slot-picker/assets/index-Diyuw3Oz.js"></script>
+    <link rel="modulepreload" crossorigin href="/slot-picker/assets/utils-0MzkHkZl.js">
+    <link rel="stylesheet" crossorigin href="/slot-picker/assets/index-DyyuFXSY.css">
   </head>
   <body>
     <div id="root"></div>
