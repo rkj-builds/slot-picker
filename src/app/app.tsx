@@ -11,7 +11,7 @@ import { useRoute } from "@/app/router";
 import { StoreProvider } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Spinner } from "@/components/ui/spinner";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
@@ -77,12 +77,12 @@ export function Routes(): React.ReactElement {
   );
 }
 
+/** The desk and the gallery arrive as their own chunk: a short, indeterminate wait, so a coss Spinner with a label. */
 function PageFallback(): React.ReactElement {
   return (
-    <div aria-busy="true" className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-4 py-6" role="status">
-      <span className="sr-only">Loading</span>
-      <Skeleton className="h-8 w-40" />
-      <Skeleton className="h-64 rounded-2xl" />
+    <div aria-busy="true" className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center gap-2 px-4 py-16" role="status">
+      <Spinner aria-hidden="true" />
+      <span className="text-muted-foreground text-sm">Loading…</span>
     </div>
   );
 }

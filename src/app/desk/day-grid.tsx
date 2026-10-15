@@ -8,6 +8,7 @@ import { useDeskUi } from "@/app/desk/desk-ui";
 import { minuteLabel, timeRangeOf } from "@/app/format";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { type Booking, type Customer, deskState, duePaise } from "@/lib/booking";
 import { formatCountdown, holdRemainingMs } from "@/lib/holds";
@@ -111,7 +112,9 @@ export function DayGrid({
   const nowMinute = minuteOfDayIn(now, date);
 
   return (
-    <Card className="overflow-x-auto" data-slot="day-grid-frame">
+    <Card className="overflow-hidden" data-slot="day-grid-frame">
+      {/* coss ScrollArea: on a narrow window the two courts scroll sideways instead of squeezing. */}
+      <ScrollArea scrollFade>
       <div
         aria-label="Courts by half hour"
         className="relative grid min-w-[34rem] grid-cols-[4.5rem_repeat(2,minmax(0,1fr))]"
@@ -231,6 +234,7 @@ export function DayGrid({
           </div>
         )}
       </div>
+      </ScrollArea>
     </Card>
   );
 }

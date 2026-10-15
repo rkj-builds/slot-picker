@@ -1,7 +1,7 @@
 "use client";
 
 import { Anchor } from "@/app/anchor";
-import { MessageCircleIcon, SendIcon } from "lucide-react";
+import { ChevronRightIcon, MessageCircleIcon, SendIcon } from "lucide-react";
 import * as React from "react";
 import { useBookingActions } from "@/app/desk/booking-actions";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
@@ -14,6 +14,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Collapsible, CollapsiblePanel, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Composer, ComposerActionGroup, ComposerActions, ComposerInput, ComposerSubmit, type ComposerValue, getComposerText } from "@/components/ui/composer";
 import { Drawer, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle } from "@/components/ui/drawer";
 import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
@@ -159,6 +160,12 @@ function PanelBody({ booking, parts: P }: { booking: Booking; parts: Parts }): R
             {booking.ledger.length === 0 ? (
               <p className="text-muted-foreground text-sm">Nothing paid yet.</p>
             ) : (
+              <Collapsible defaultOpen>
+                <CollapsibleTrigger render={<Button className="-ms-2 text-muted-foreground" size="sm" variant="ghost" />}>
+                  <ChevronRightIcon aria-hidden="true" className="transition-transform in-data-panel-open:rotate-90" />
+                  Payment history · {booking.ledger.length} {booking.ledger.length === 1 ? "entry" : "entries"}
+                </CollapsibleTrigger>
+                <CollapsiblePanel>
               <Table>
                 <TableCaption className="sr-only">Payment history</TableCaption>
                 <TableHeader className="sr-only">
@@ -186,6 +193,8 @@ function PanelBody({ booking, parts: P }: { booking: Booking; parts: Parts }): R
                   ))}
                 </TableBody>
               </Table>
+                </CollapsiblePanel>
+              </Collapsible>
             )}
           </section>
         )}

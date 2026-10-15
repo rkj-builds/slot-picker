@@ -10,6 +10,7 @@ import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui
 import { Form } from "@/components/ui/form";
 import { Frame, FramePanel } from "@/components/ui/frame";
 import { Input } from "@/components/ui/input";
+import { Progress, ProgressIndicator, ProgressLabel, ProgressTrack } from "@/components/ui/progress";
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import type { PayResult } from "@/lib/checkout";
 import { formatInr } from "@/lib/money";
@@ -88,6 +89,15 @@ export function CheckoutDialog({
                 <span className="font-semibold text-xl tabular-nums">{formatInr(amountPaise)}</span>
               </FramePanel>
             </Frame>
+
+            {busy && (
+              <Progress value={null}>
+                <ProgressLabel>Waiting for the bank…</ProgressLabel>
+                <ProgressTrack>
+                  <ProgressIndicator />
+                </ProgressTrack>
+              </Progress>
+            )}
 
             {declined && (
               <Alert role="alert" variant="error">
