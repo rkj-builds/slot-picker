@@ -1,22 +1,29 @@
 "use client";
 
-import { BanknoteIcon, CircleSlashIcon, LinkIcon, UserXIcon } from "lucide-react";
+import { Anchor } from "@/app/anchor";
+import { MessageCircleIcon, SendIcon } from "lucide-react";
 import * as React from "react";
+import { useBookingActions } from "@/app/desk/booking-actions";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
-import { useDeskActions } from "@/app/desk/desk-actions";
+import { paymentLinkFor, useDeskActions } from "@/app/desk/desk-actions";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
-import { useDeskUi } from "@/app/desk/desk-ui";
 import { durationOf, initialsOf, LOCALE, whenOf } from "@/app/format";
 import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Card } from "@/components/ui/card";
+import { Composer, ComposerActionGroup, ComposerActions, ComposerInput, ComposerSubmit, type ComposerValue, getComposerText } from "@/components/ui/composer";
+import { Drawer, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle } from "@/components/ui/drawer";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetDescription, SheetFooter, SheetHeader, SheetPanel, SheetPopup, SheetTitle } from "@/components/ui/sheet";
 import { Switch } from "@/components/ui/switch";
-import { type Booking, customerById, deskState, duePaise, type LedgerEntry, paidPaise } from "@/lib/booking";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { toastManager } from "@/components/ui/toast";
+import { useMediaQuery } from "@/hooks/use-media-query";
+import { type Booking, type Customer, customerById, deskState, duePaise, type LedgerEntry, paidPaise } from "@/lib/booking";
 import { formatCountdown, holdRemainingMs } from "@/lib/holds";
 import { formatInr } from "@/lib/money";
 import { formatPhone } from "@/lib/phone";
@@ -31,29 +38,54 @@ const LEDGER_LABEL: Record<LedgerEntry["kind"], string> = {
   "credit-issued": "Became credit",
 };
 
-/** The booking's panel: who, when, the money line by line, and what the desk can do about it. */
+/** The overlay parts the panel is drawn with: a coss Sheet on a laptop, a coss Drawer on a phone (coss's responsive pattern, p-drawer-12). */
+interface Parts {
+  Header: React.ComponentType<{ children: React.ReactNode }>;
+  Title: React.ComponentType<{ children: React.ReactNode }>;
+  Description: React.ComponentType<{ children: React.ReactNode }>;
+  Panel: React.ComponentType<{ children: React.ReactNode; className?: string }>;
+  Footer: React.ComponentType<{ children: React.ReactNode; className?: string }>;
+}
+
+const SHEET_PARTS: Parts = { Header: SheetHeader, Title: SheetTitle, Description: SheetDescription, Panel: SheetPanel, Footer: SheetFooter };
+const DRAWER_PARTS: Parts = { Header: DrawerHeader, Title: DrawerTitle, Description: DrawerDescription, Panel: DrawerPanel, Footer: DrawerFooter };
+
+/** The booking's panel: who, when, the money line by line, a message box, and what the desk can do about it. */
 export function BookingSheet({ bookingId, onClose }: { bookingId: string | null; onClose: () => void }): React.ReactElement {
   const { state } = useStore();
+  const phone = useMediaQuery("max-md");
   const booking = bookingId ? state.bookings.find((b) => b.id === bookingId) : undefined;
-  // Keep the last booking on screen while the sheet animates out.
+  // Keep the last booking on screen while the panel animates out.
   const [last, setLast] = React.useState<Booking | undefined>(booking);
   if (booking && booking !== last) setLast(booking);
   const shown = booking ?? last;
+  const onOpenChange = (open: boolean): void => {
+    if (!open) onClose();
+  };
 
+  if (phone) {
+    return (
+      <Drawer onOpenChange={onOpenChange} open={Boolean(booking)}>
+        <DrawerPopup showBar>
+          {shown && <PanelBody booking={shown} parts={DRAWER_PARTS} />}
+          <DeskOverlays />
+        </DrawerPopup>
+      </Drawer>
+    );
+  }
   return (
-    <Sheet onOpenChange={(open) => !open && onClose()} open={Boolean(booking)}>
+    <Sheet onOpenChange={onOpenChange} open={Boolean(booking)}>
       <SheetPopup>
-        {shown && <SheetBody booking={shown} />}
+        {shown && <PanelBody booking={shown} parts={SHEET_PARTS} />}
         <DeskOverlays />
       </SheetPopup>
     </Sheet>
   );
 }
 
-function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
+function PanelBody({ booking, parts: P }: { booking: Booking; parts: Parts }): React.ReactElement {
   const { state } = useStore();
   const actions = useDeskActions();
-  const ui = useDeskUi();
   const now = useNow(1000);
   const ds = deskState(booking, now);
   const meta = STATE_META[ds];
@@ -62,11 +94,11 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
   const due = duePaise(booking);
   const paid = paidPaise(booking);
   const isBooking = booking.kind === "booking";
-  const live = ds !== "cancelled" && ds !== "expired";
+  const footerActions = useBookingActions(booking, now, { includeOpen: false });
 
   return (
     <>
-      <SheetHeader>
+      <P.Header>
         <div className="flex items-center gap-2">
           <Badge variant={meta.badge}>
             <Icon aria-hidden="true" />
@@ -74,13 +106,13 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
           </Badge>
           {ds === "held" && <span className="text-muted-foreground text-xs tabular-nums">{formatCountdown(holdRemainingMs(booking, now))} left</span>}
         </div>
-        <SheetTitle>{bookingTitle(booking, state.customers)}</SheetTitle>
-        <SheetDescription>
+        <P.Title>{bookingTitle(booking, state.customers)}</P.Title>
+        <P.Description>
           {courtName(booking.courtId)} · {whenOf(booking)} · {durationOf(booking.durationMinutes)}
-        </SheetDescription>
-      </SheetHeader>
+        </P.Description>
+      </P.Header>
 
-      <SheetPanel className="flex flex-col gap-5">
+      <P.Panel className="flex flex-col gap-5">
         {customer && (
           <section aria-labelledby="sheet-customer" className="flex flex-col gap-3">
             <h3 className="sr-only" id="sheet-customer">
@@ -90,11 +122,11 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
               <Avatar>
                 <AvatarFallback>{initialsOf(customer.name)}</AvatarFallback>
               </Avatar>
-              <div className="flex min-w-0 flex-col">
+              <div className="flex min-w-0 flex-col items-start">
                 <span className="font-medium text-sm">{customer.name}</span>
-                <a className="text-muted-foreground text-xs underline-offset-2 hover:underline" href={`tel:${customer.phone}`}>
+                <Button className="h-auto px-0 py-0 font-normal text-muted-foreground sm:h-auto" render={<Anchor href={`tel:${customer.phone}`} />} size="xs" variant="link">
                   {formatPhone(customer.phone)}
-                </a>
+                </Button>
               </div>
               {customer.creditPaise > 0 && (
                 <Badge className="ms-auto" variant="info">
@@ -102,20 +134,15 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
                 </Badge>
               )}
             </div>
-            <div className="flex items-start justify-between gap-4 rounded-xl border px-3 py-2.5">
-              <div className="flex flex-col">
-                <Label htmlFor="pay-first">Pay first</Label>
-                <span className="text-muted-foreground text-xs" id="pay-first-hint">
-                  Ask for full payment before holding a court for {customer.name.split(" ")[0]}.
-                </span>
-              </div>
-              <Switch
-                aria-describedby="pay-first-hint"
-                checked={customer.payFirst}
-                id="pay-first"
-                onCheckedChange={(value) => void actions.setPayFirst(customer, value)}
-              />
-            </div>
+            <Card className="rounded-xl px-3 py-2.5 before:rounded-[calc(var(--radius-xl)-1px)]">
+              <Field className="flex-row items-start justify-between gap-4">
+                <div className="flex flex-col gap-1">
+                  <FieldLabel>Pay first</FieldLabel>
+                  <FieldDescription>Ask for full payment before holding a court for {customer.name.split(" ")[0]}.</FieldDescription>
+                </div>
+                <Switch checked={customer.payFirst} onCheckedChange={(value) => void actions.setPayFirst(customer, value)} />
+              </Field>
+            </Card>
           </section>
         )}
 
@@ -132,25 +159,38 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
             {booking.ledger.length === 0 ? (
               <p className="text-muted-foreground text-sm">Nothing paid yet.</p>
             ) : (
-              <ol aria-label="Payment history" className="flex flex-col divide-y rounded-xl border">
-                {booking.ledger.map((e) => (
-                  <li className="flex items-center justify-between gap-3 px-3 py-2 text-sm" key={e.id}>
-                    <span className="flex min-w-0 flex-col">
-                      <span>{LEDGER_LABEL[e.kind]}</span>
-                      <span className="truncate text-muted-foreground text-xs">
-                        {new Intl.DateTimeFormat(LOCALE, { timeZone: VENUE.timeZone, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(e.at)} · {e.note}
-                      </span>
-                    </span>
-                    <span className={cn("tabular-nums", e.kind === "refund" && "text-destructive-foreground")}>
-                      {e.kind === "refund" ? "−" : ""}
-                      {formatInr(e.amountPaise)}
-                    </span>
-                  </li>
-                ))}
-              </ol>
+              <Table>
+                <TableCaption className="sr-only">Payment history</TableCaption>
+                <TableHeader className="sr-only">
+                  <TableRow>
+                    <TableHead>What</TableHead>
+                    <TableHead className="text-end">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {booking.ledger.map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="whitespace-normal">
+                        <span className="flex min-w-0 flex-col">
+                          <span>{LEDGER_LABEL[e.kind]}</span>
+                          <span className="text-muted-foreground text-xs">
+                            {new Intl.DateTimeFormat(LOCALE, { timeZone: VENUE.timeZone, day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(e.at)} · {e.note}
+                          </span>
+                        </span>
+                      </TableCell>
+                      <TableCell className={cn("text-end tabular-nums", e.kind === "refund" && "text-destructive-foreground")}>
+                        {e.kind === "refund" ? "−" : ""}
+                        {formatInr(e.amountPaise)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             )}
           </section>
         )}
+
+        {customer && <WhatsAppComposer booking={booking} customer={customer} due={due} />}
 
         <Separator />
         <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
@@ -165,33 +205,22 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
           <dt className="text-muted-foreground">Notes</dt>
           <dd className="text-pretty">{booking.notes || "None"}</dd>
         </dl>
-      </SheetPanel>
+      </P.Panel>
 
-      {live && (
-        <SheetFooter>
-          {isBooking && due > 0 && ds !== "held" && (
-            <Button onClick={() => ui.recordCash(booking.id)}>
-              <BanknoteIcon aria-hidden="true" />
-              Record cash
+      {footerActions.length > 0 && (
+        <P.Footer className="flex-wrap">
+          {footerActions.map(({ id, label, icon: ActionIcon, run, destructive }, i) => (
+            <Button
+              className={cn(destructive && "sm:ms-auto")}
+              key={id}
+              onClick={run}
+              variant={destructive ? "destructive-outline" : i === 0 && id === "record-cash" ? "default" : "outline"}
+            >
+              <ActionIcon aria-hidden="true" />
+              {label}
             </Button>
-          )}
-          {isBooking && due > 0 && (
-            <Button onClick={() => void actions.copyPaymentLink(booking)} variant="outline">
-              <LinkIcon aria-hidden="true" />
-              Copy payment link
-            </Button>
-          )}
-          {isBooking && booking.status === "confirmed" && (
-            <Button onClick={() => void actions.markNoShow(booking)} variant="outline">
-              <UserXIcon aria-hidden="true" />
-              Mark no-show
-            </Button>
-          )}
-          <Button className="sm:ms-auto" onClick={() => ui.cancel(booking.id)} variant="destructive-outline">
-            <CircleSlashIcon aria-hidden="true" />
-            {ds === "held" ? "Release hold" : isBooking ? "Cancel booking" : "Remove block"}
-          </Button>
-        </SheetFooter>
+          ))}
+        </P.Footer>
       )}
     </>
   );
@@ -199,9 +228,63 @@ function SheetBody({ booking }: { booking: Booking }): React.ReactElement {
 
 function MoneyCell({ label, value, emphasis = false }: { label: string; value: number; emphasis?: boolean }): React.ReactElement {
   return (
-    <div className="flex flex-col rounded-xl border px-2 py-2">
+    <Card className="rounded-xl px-2 py-2 shadow-none before:hidden">
       <dt className="text-muted-foreground text-xs">{label}</dt>
       <dd className={cn("font-semibold tabular-nums", emphasis && "text-warning-foreground")}>{formatInr(value)}</dd>
-    </div>
+    </Card>
+  );
+}
+
+/**
+ * Message the customer from the panel: coss Composer with a plain-text
+ * textarea (its documented "plain-text message" input). The demo queues
+ * nothing; the real 831 sends through the WhatsApp Business number.
+ */
+function WhatsAppComposer({ booking, customer, due }: { booking: Booking; customer: Customer; due: number }): React.ReactElement {
+  const [value, setValue] = React.useState<ComposerValue>([]);
+  const first = customer.name.split(" ")[0] ?? customer.name;
+  const where = `${courtName(booking.courtId)}, ${whenOf(booking)}`;
+  const templates = [
+    due > 0 ? { label: "Payment link", text: `Hi ${first}, ${formatInr(due)} is due for ${where}. Pay here: ${paymentLinkFor(booking)}` } : null,
+    { label: "See you soon", text: `Hi ${first}, see you on ${where}. Paddles and balls are at the desk.` },
+  ].filter((t): t is { label: string; text: string } => t !== null);
+
+  return (
+    <section aria-labelledby="sheet-message" className="flex flex-col gap-2">
+      <h3 className="flex items-center gap-1.5 font-medium text-sm" id="sheet-message">
+        <MessageCircleIcon aria-hidden="true" className="size-4 text-muted-foreground" />
+        Message on WhatsApp
+      </h3>
+      <Composer
+        onSubmit={(draft) => {
+          const text = getComposerText(draft).trim();
+          if (!text) return;
+          toastManager.add({ title: "Message queued (demo)", description: `To ${customer.name} on ${formatPhone(customer.phone)}. Nothing is sent from this demo.`, type: "success" });
+          setValue([]);
+        }}
+        onValueChange={setValue}
+        value={value}
+      >
+        <ComposerInput render={<textarea aria-label={`Message to ${customer.name}`} placeholder={`Write to ${first}…`} />} />
+        <ComposerActions>
+          <ComposerActionGroup>
+            {templates.map((t) => (
+              <Button key={t.label} onClick={() => setValue([{ type: "text", text: t.text }])} size="xs" variant="ghost">
+                {t.label}
+              </Button>
+            ))}
+          </ComposerActionGroup>
+          <ComposerActionGroup align="end">
+            <ComposerSubmit
+              render={
+                <Button aria-label="Send on WhatsApp" size="icon-sm">
+                  <SendIcon aria-hidden="true" />
+                </Button>
+              }
+            />
+          </ComposerActionGroup>
+        </ComposerActions>
+      </Composer>
+    </section>
   );
 }

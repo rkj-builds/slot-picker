@@ -133,10 +133,13 @@ describe("desk bookings and insights", () => {
   it("filters by search and shows an empty state that clears", async () => {
     const user = userEvent.setup();
     renderApp("#/desk/bookings", { state: stateWith([booking({})]) });
-    const search = await screen.findByRole("searchbox", { name: "Search" });
+    const search = await screen.findByRole("combobox", { name: "Search" });
     await user.type(search, "zzz");
     expect(await screen.findByText("Nothing matches")).toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Clear filters" }));
+    // The suggestions popup says so too; close it to get back to the page.
+    expect(await screen.findByText("No customer by that name or number.")).toBeInTheDocument();
+    await user.keyboard("{Escape}");
+    await user.click(await screen.findByRole("button", { name: "Clear filters" }));
     expect(screen.getByRole("table", { name: "Bookings" })).toBeInTheDocument();
     expect(await axeViolations()).toEqual([]);
   });

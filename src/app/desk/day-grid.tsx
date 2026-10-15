@@ -1,10 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { BookingContextMenu } from "@/app/desk/booking-context-menu";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { describeBooking } from "@/app/desk/desk-model";
 import { useDeskUi } from "@/app/desk/desk-ui";
 import { minuteLabel, timeRangeOf } from "@/app/format";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import { type Booking, type Customer, deskState, duePaise } from "@/lib/booking";
 import { formatCountdown, holdRemainingMs } from "@/lib/holds";
@@ -108,7 +111,7 @@ export function DayGrid({
   const nowMinute = minuteOfDayIn(now, date);
 
   return (
-    <div className="overflow-x-auto rounded-2xl border bg-card" data-slot="day-grid-frame">
+    <Card className="overflow-x-auto" data-slot="day-grid-frame">
       <div
         aria-label="Courts by half hour"
         className="relative grid min-w-[34rem] grid-cols-[4.5rem_repeat(2,minmax(0,1fr))]"
@@ -147,11 +150,12 @@ export function DayGrid({
                 <Tooltip key={minute}>
                   <TooltipTrigger
                     render={
-                      <button
+                      <Button
                         aria-label={`${court.name}, ${minuteLabel(minute, date)}, empty, ${formatInr(rate)} an hour`}
                         className={cn(
-                          "group absolute inset-x-0 flex cursor-pointer items-center justify-end px-2 outline-none transition-colors hover:bg-accent focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
-                          minute % 60 === 0 ? "border-t" : "border-t border-t-border/40 border-dashed",
+                          "group absolute inset-x-0 h-auto justify-end rounded-none px-2 font-normal focus-visible:z-10 focus-visible:ring-inset focus-visible:ring-offset-0 pointer-coarse:after:min-h-0 pointer-coarse:after:min-w-0 sm:h-auto",
+                          minute % 60 === 0 ? "border-t-border" : "border-dashed border-t-border/40",
+                          "border-x-0 border-b-0",
                           nowMinute !== null && minute + STEP <= nowMinute && "bg-muted/30",
                         )}
                         data-cell-id={cell.id}
@@ -161,7 +165,7 @@ export function DayGrid({
                         onKeyDown={(event) => onKeyDown(event, row, col)}
                         style={{ top: `${row * ROW_REM}rem`, height: `${ROW_REM}rem` }}
                         tabIndex={cell.id === activeId ? 0 : -1}
-                        type="button"
+                        variant="ghost"
                       />
                     }
                   >
@@ -179,18 +183,18 @@ export function DayGrid({
             {cancelled
               .filter((b) => b.courtId === court.id)
               .map((b) => (
-                <button
+                <Button
                   aria-hidden="true"
-                  className="absolute end-1 w-[28%] overflow-hidden rounded-md border border-foreground/20 border-dashed bg-background/80 px-1.5 py-1 text-start text-[11px] text-muted-foreground line-through"
+                  className="absolute end-1 h-auto w-[28%] justify-start overflow-hidden rounded-md border-foreground/20 border-dashed bg-background/80 px-1.5 py-1 font-normal text-[11px] text-muted-foreground line-through sm:h-auto sm:text-[11px]"
                   data-slot="day-grid-ghost"
                   key={b.id}
                   onClick={() => ui.openBooking(b.id)}
                   style={blockStyle(b, open)}
                   tabIndex={-1}
-                  type="button"
+                  variant="outline"
                 >
-                  {bookingTitle(b, customers)}
-                </button>
+                  <span className="truncate">{bookingTitle(b, customers)}</span>
+                </Button>
               ))}
 
             {bookings
@@ -227,7 +231,7 @@ export function DayGrid({
           </div>
         )}
       </div>
-    </div>
+    </Card>
   );
 }
 
@@ -263,42 +267,47 @@ function BookingBlock({
   const court = COURTS.find((c) => c.id === booking.courtId)?.name ?? "";
   const short = booking.durationMinutes <= 30;
   return (
-    <button
-      aria-label={`${court}, ${timeRangeOf(booking)}, ${describeBooking(booking, customers, state, now)}`}
-      className={cn(
-        "absolute start-1 z-[1] flex cursor-pointer flex-col items-start gap-0.5 overflow-hidden rounded-lg border px-2 py-1.5 text-start text-xs shadow-xs/5 outline-none transition-[box-shadow,translate] duration-150 ease-out-quart hover:shadow-md/10 focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1 focus-visible:ring-offset-background",
-        narrow ? "w-[calc(70%-0.25rem)]" : "end-1",
-        meta.block,
-      )}
-      data-cell-id={booking.id}
-      data-slot="day-grid-booking"
-      data-state={state}
-      onClick={onOpen}
-      onFocus={onFocus}
-      onKeyDown={onKeyDown}
+    <BookingContextMenu
+      booking={booking}
+      className={cn("absolute start-1 z-[1]", narrow ? "w-[calc(70%-0.25rem)]" : "end-1")}
+      now={now}
       style={blockStyle(booking, open)}
-      tabIndex={active ? 0 : -1}
-      type="button"
     >
-      <span className="flex w-full min-w-0 items-center gap-1.5">
-        <Icon aria-hidden="true" className="size-3.5 shrink-0" />
-        <span className="truncate font-medium" data-name="">
-          {bookingTitle(booking, customers)}
+      <Button
+        aria-label={`${court}, ${timeRangeOf(booking)}, ${describeBooking(booking, customers, state, now)}`}
+        className={cn(
+          "size-full flex-col items-start justify-start gap-0.5 overflow-hidden px-2 py-1.5 text-start font-normal text-xs shadow-xs/5 transition-[box-shadow,background-color] duration-150 ease-out-quart hover:shadow-md/10 focus-visible:z-10 pointer-coarse:after:min-h-0 pointer-coarse:after:min-w-0 sm:h-full sm:text-xs",
+          meta.block,
+        )}
+        data-cell-id={booking.id}
+        data-slot="day-grid-booking"
+        data-state={state}
+        onClick={onOpen}
+        onFocus={onFocus}
+        onKeyDown={onKeyDown}
+        tabIndex={active ? 0 : -1}
+        variant="outline"
+      >
+        <span className="flex w-full min-w-0 items-center gap-1.5">
+          <Icon aria-hidden="true" className="size-3.5 shrink-0" />
+          <span className="truncate font-medium" data-name="">
+            {bookingTitle(booking, customers)}
+          </span>
+          {state === "held" && (
+            <span className="ms-auto font-medium tabular-nums" data-slot="day-grid-countdown">
+              {formatCountdown(holdRemainingMs(booking, now))}
+            </span>
+          )}
         </span>
-        {state === "held" && (
-          <span className="ms-auto font-medium tabular-nums" data-slot="day-grid-countdown">
-            {formatCountdown(holdRemainingMs(booking, now))}
+        {!short && (
+          <span className="flex w-full min-w-0 items-center gap-1 text-muted-foreground">
+            <span className="truncate tabular-nums">{timeRangeOf(booking)}</span>
+            <span aria-hidden="true">·</span>
+            <span className="shrink-0">{state === "part-paid" || state === "due" ? `${formatInr(due)} due` : stateLabel(state)}</span>
           </span>
         )}
-      </span>
-      {!short && (
-        <span className="flex w-full min-w-0 items-center gap-1 text-muted-foreground">
-          <span className="truncate tabular-nums">{timeRangeOf(booking)}</span>
-          <span aria-hidden="true">·</span>
-          <span className="shrink-0">{state === "part-paid" || state === "due" ? `${formatInr(due)} due` : stateLabel(state)}</span>
-        </span>
-      )}
-    </button>
+      </Button>
+    </BookingContextMenu>
   );
 }
 

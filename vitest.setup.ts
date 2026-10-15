@@ -1,6 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 import { cleanup } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
+import { installCookieStoreShim } from "@/app/cookie-store-shim";
+
+installCookieStoreShim();
 
 beforeEach(() => {
   try {
@@ -27,6 +30,23 @@ if (!window.matchMedia) {
       removeEventListener: () => undefined,
       dispatchEvent: () => false,
     }) as MediaQueryList;
+}
+// coss's Composer sizes its input with a ResizeObserver; jsdom has no layout, so observing is a no-op.
+globalThis.ResizeObserver ??= class {
+  observe(): void {
+    /* nothing to measure in jsdom */
+  }
+  unobserve(): void {
+    /* nothing to measure in jsdom */
+  }
+  disconnect(): void {
+    /* nothing to measure in jsdom */
+  }
+};
+// Base UI's ScrollArea waits for animations, and the Composer re-measures when fonts load; jsdom has neither API.
+Element.prototype.getAnimations ??= () => [];
+if (!("fonts" in document)) {
+  Object.defineProperty(document, "fonts", { value: { addEventListener: () => undefined, removeEventListener: () => undefined, ready: Promise.resolve() } });
 }
 URL.createObjectURL ??= () => "blob:test";
 URL.revokeObjectURL ??= () => undefined;

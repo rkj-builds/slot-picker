@@ -1,32 +1,49 @@
 "use client";
 
-import { DownloadIcon, EllipsisIcon, SearchIcon, SearchXIcon } from "lucide-react";
+import { enIN } from "@daypicker/react/locale/en-IN";
+import { CalendarRangeIcon, DownloadIcon, EllipsisIcon, ListFilterIcon, SearchIcon, SearchXIcon } from "lucide-react";
 import * as React from "react";
+import { useBookingActions } from "@/app/desk/booking-actions";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
-import { useDeskActions } from "@/app/desk/desk-actions";
+import { CustomerPreview } from "@/app/desk/customer-preview";
 import { useDeskUi } from "@/app/desk/desk-ui";
 import { dayOf, timeRangeOf } from "@/app/format";
 import { useStore } from "@/app/store";
+import {
+  Autocomplete,
+  AutocompleteCollection,
+  AutocompleteEmpty,
+  AutocompleteGroup,
+  AutocompleteGroupLabel,
+  AutocompleteInput,
+  AutocompleteItem,
+  AutocompleteList,
+  AutocompletePopup,
+  AutocompleteSeparator,
+} from "@/components/ui/autocomplete";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
+import { Checkbox } from "@/components/ui/checkbox";
+import { CheckboxGroup } from "@/components/ui/checkbox-group";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Field, FieldItem, FieldLabel } from "@/components/ui/field";
+import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
 import { Frame, FrameFooter } from "@/components/ui/frame";
-import { Input } from "@/components/ui/input";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { Label } from "@/components/ui/label";
-import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
 import { Menu, MenuItem, MenuPopup, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
-import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Pagination, PaginationContent, PaginationItem, PaginationNext, PaginationPrevious } from "@/components/ui/pagination";
+import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { type Booking, customerById, deskState, type DeskState, duePaise, paidPaise, sortBookings } from "@/lib/booking";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator } from "@/components/ui/toolbar";
+import { type Booking, type Customer, customerById, deskState, type DeskState, duePaise, paidPaise, sortBookings } from "@/lib/booking";
 import { downloadText, toCsv } from "@/lib/csv";
 import { formatInr } from "@/lib/money";
-import { addDays, compareDates, type PlainDate } from "@/lib/plain-date";
+import { formatPhone } from "@/lib/phone";
+import { addDays, compareDates, fromLocalDate, type PlainDate, toLocalDate } from "@/lib/plain-date";
 import { courtName } from "@/lib/venue";
 
-type StatusFilter = "all" | DeskState;
-const FILTERS: { value: StatusFilter; label: string }[] = [
-  { value: "all", label: "All statuses" },
+const STATUSES: { value: DeskState; label: string }[] = [
   { value: "held", label: "Held" },
   { value: "paid", label: "Paid" },
   { value: "part-paid", label: "Part-paid" },
@@ -37,21 +54,41 @@ const FILTERS: { value: StatusFilter; label: string }[] = [
 ];
 const PAGE = 12;
 
-export function BookingsView({ today, now }: { today: PlainDate; now: number }): React.ReactElement {
+type Preset = "past" | "today" | "next";
+
+interface Suggestion {
+  id: string;
+  label: string;
+  /** What the search box holds once it is picked. */
+  value: string;
+  hint?: string;
+}
+
+interface SuggestionGroup {
+  value: string;
+  items: Suggestion[];
+}
+
+export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDate; now: number; initialQuery?: string }): React.ReactElement {
   const { state } = useStore();
-  const ui = useDeskUi();
-  const actions = useDeskActions();
-  const [query, setQuery] = React.useState("");
-  const [status, setStatus] = React.useState<StatusFilter>("all");
-  const [from, setFrom] = React.useState<string>(addDays(today, -7));
-  const [to, setTo] = React.useState<string>(addDays(today, 7));
+  const [query, setQuery] = React.useState(initialQuery);
+  const [statuses, setStatuses] = React.useState<DeskState[]>([]);
+  const [from, setFrom] = React.useState<PlainDate>(addDays(today, -7));
+  const [to, setTo] = React.useState<PlainDate>(addDays(today, 7));
   const [page, setPage] = React.useState(0);
+
+  const presets: Record<Preset, { label: string; from: PlainDate; to: PlainDate }> = {
+    past: { label: "Last 7 days", from: addDays(today, -7), to: today },
+    today: { label: "Today", from: today, to: today },
+    next: { label: "Next 7 days", from: today, to: addDays(today, 7) },
+  };
+  const preset = (Object.keys(presets) as Preset[]).find((p) => presets[p].from === from && presets[p].to === to);
 
   const q = query.trim().toLowerCase();
   const digits = q.replaceAll(/\D/g, "");
   const rows = state.bookings
-    .filter((b) => (!from || compareDates(b.date, from as PlainDate) >= 0) && (!to || compareDates(b.date, to as PlainDate) <= 0))
-    .filter((b) => status === "all" || deskState(b, now) === status)
+    .filter((b) => compareDates(b.date, from) >= 0 && compareDates(b.date, to) <= 0)
+    .filter((b) => statuses.length === 0 || statuses.includes(deskState(b, now)))
     .filter((b) => {
       if (!q) return true;
       const c = customerById(state.customers, b.customerId);
@@ -61,10 +98,11 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
   const pages = Math.max(1, Math.ceil(rows.length / PAGE));
   const current = Math.min(page, pages - 1);
   const visible = rows.slice(current * PAGE, current * PAGE + PAGE);
-  const filtered = Boolean(q) || status !== "all";
+  const filtered = Boolean(q) || statuses.length > 0;
 
-  const resetPage = <T,>(set: (v: T) => void) => (v: T): void => {
-    set(v);
+  const setRange = (nextFrom: PlainDate, nextTo: PlainDate): void => {
+    setFrom(nextFrom);
+    setTo(nextTo);
     setPage(0);
   };
 
@@ -81,42 +119,94 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-end gap-3">
-        <div className="flex min-w-48 flex-1 flex-col gap-1.5">
-          <Label htmlFor="bookings-search">Search</Label>
-          <InputGroup>
-            <InputGroupInput id="bookings-search" onChange={(e) => resetPage(setQuery)(e.target.value)} placeholder="Name or phone" type="search" value={query} />
-            <InputGroupAddon>
-              <SearchIcon aria-hidden="true" />
-            </InputGroupAddon>
-          </InputGroup>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label id="bookings-status">Status</Label>
-          <Select<StatusFilter> items={FILTERS} onValueChange={(v) => v && resetPage(setStatus)(v)} value={status}>
-            <SelectTrigger aria-labelledby="bookings-status">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectPopup>
-              {FILTERS.map((f) => (
-                <SelectItem key={f.value} value={f.value}>
-                  {f.label}
-                </SelectItem>
-              ))}
-            </SelectPopup>
-          </Select>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="bookings-from">From</Label>
-          <Input className="w-38" id="bookings-from" max={to} onChange={(e) => resetPage(setFrom)(e.target.value)} type="date" value={from} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="bookings-to">To</Label>
-          <Input className="w-38" id="bookings-to" min={from} onChange={(e) => resetPage(setTo)(e.target.value)} type="date" value={to} />
-        </div>
-        <Button disabled={rows.length === 0} onClick={exportCsv} variant="outline">
-          <DownloadIcon aria-hidden="true" />
-          Export CSV
-        </Button>
+        <SearchField customers={state.customers} onChange={(value) => {
+          setQuery(value);
+          setPage(0);
+        }} value={query} />
+        <Toolbar aria-label="Filters and export" className="flex-wrap">
+          <ToolbarGroup>
+            <Popover>
+              <ToolbarButton render={<PopoverTrigger render={<Button variant="ghost" />} />}>
+                <ListFilterIcon aria-hidden="true" />
+                Status
+                {statuses.length > 0 && (
+                  <Badge className="-me-1" variant="outline">
+                    {statuses.length}
+                  </Badge>
+                )}
+              </ToolbarButton>
+              <PopoverPopup align="start">
+                <Field name="status" render={(props) => <Fieldset {...props} />}>
+                  <FieldsetLegend className="mb-3 font-medium text-sm">Show statuses</FieldsetLegend>
+                  <CheckboxGroup
+                    onValueChange={(value) => {
+                      setStatuses(value as DeskState[]);
+                      setPage(0);
+                    }}
+                    value={statuses}
+                  >
+                    {STATUSES.map((s) => (
+                      <FieldItem key={s.value}>
+                        <FieldLabel className="font-normal">
+                          <Checkbox value={s.value} />
+                          {s.label}
+                        </FieldLabel>
+                      </FieldItem>
+                    ))}
+                  </CheckboxGroup>
+                </Field>
+                <Button className="mt-3 w-full" disabled={statuses.length === 0} onClick={() => setStatuses([])} size="sm" variant="ghost">
+                  Show every status
+                </Button>
+              </PopoverPopup>
+            </Popover>
+            <Popover>
+              <ToolbarButton
+                aria-label={`Dates, ${dayOf(from)} to ${dayOf(to)}`}
+                render={<PopoverTrigger render={<Button className="tabular-nums" variant="ghost" />} />}
+              >
+                <CalendarRangeIcon aria-hidden="true" />
+                {from === to ? dayOf(from) : `${dayOf(from)} – ${dayOf(to)}`}
+              </ToolbarButton>
+              <PopoverPopup align="start">
+                <Calendar
+                  defaultMonth={toLocalDate(from)}
+                  locale={enIN}
+                  mode="range"
+                  onSelect={(range) => {
+                    if (range?.from) setRange(fromLocalDate(range.from), fromLocalDate(range.to ?? range.from));
+                  }}
+                  selected={{ from: toLocalDate(from), to: toLocalDate(to) }}
+                  today={toLocalDate(today)}
+                />
+              </PopoverPopup>
+            </Popover>
+          </ToolbarGroup>
+          <ToolbarSeparator orientation="vertical" />
+          <ToggleGroup
+            aria-label="Quick dates"
+            className="border-none p-0"
+            onValueChange={(value) => {
+              const picked = value[0] as Preset | undefined;
+              if (picked) setRange(presets[picked].from, presets[picked].to);
+              else setRange(addDays(today, -7), addDays(today, 7));
+            }}
+            value={preset ? [preset] : []}
+          >
+            {(Object.keys(presets) as Preset[]).map((p) => (
+              <ToolbarButton key={p} render={<ToggleGroupItem value={p} />}>
+                {presets[p].label}
+              </ToolbarButton>
+            ))}
+          </ToggleGroup>
+          <ToolbarSeparator orientation="vertical" />
+          <ToolbarGroup>
+            <ToolbarButton disabled={rows.length === 0} onClick={exportCsv} render={<Button variant="outline" />}>
+              <DownloadIcon aria-hidden="true" />
+              Export CSV
+            </ToolbarButton>
+          </ToolbarGroup>
+        </Toolbar>
       </div>
 
       <p aria-live="polite" className="text-muted-foreground text-sm">
@@ -137,7 +227,7 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
               <Button
                 onClick={() => {
                   setQuery("");
-                  setStatus("all");
+                  setStatuses([]);
                   setPage(0);
                 }}
                 variant="outline"
@@ -165,42 +255,100 @@ export function BookingsView({ today, now }: { today: PlainDate; now: number }):
             </TableHeader>
             <TableBody>
               {visible.map((b) => (
-                <Row actions={actions} booking={b} key={b.id} now={now} ui={ui} />
+                <Row booking={b} key={b.id} now={now} />
               ))}
             </TableBody>
           </Table>
-        {pages > 1 && (
-          <FrameFooter className="p-2">
-            <Pagination aria-label="Pages" className="justify-end">
-              <PaginationContent className="gap-2">
-                <PaginationItem>
-                  <PaginationPrevious render={<Button disabled={current === 0} onClick={() => setPage(current - 1)} size="sm" variant="outline" />} />
-                </PaginationItem>
-                <PaginationItem>
-                  <span className="text-muted-foreground text-sm tabular-nums">
-                    Page {current + 1} of {pages}
-                  </span>
-                </PaginationItem>
-                <PaginationItem>
-                  <PaginationNext render={<Button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} size="sm" variant="outline" />} />
-                </PaginationItem>
-              </PaginationContent>
-            </Pagination>
-          </FrameFooter>
-        )}
+          {pages > 1 && (
+            <FrameFooter className="p-2">
+              <Pagination aria-label="Pages" className="justify-end">
+                <PaginationContent className="gap-2">
+                  <PaginationItem>
+                    <PaginationPrevious render={<Button disabled={current === 0} onClick={() => setPage(current - 1)} size="sm" variant="outline" />} />
+                  </PaginationItem>
+                  <PaginationItem>
+                    <span className="text-muted-foreground text-sm tabular-nums">
+                      Page {current + 1} of {pages}
+                    </span>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationNext render={<Button disabled={current >= pages - 1} onClick={() => setPage(current + 1)} size="sm" variant="outline" />} />
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </FrameFooter>
+          )}
         </Frame>
       )}
     </div>
   );
 }
 
-function Row({ booking: b, now, ui, actions }: { booking: Booking; now: number; ui: ReturnType<typeof useDeskUi>; actions: ReturnType<typeof useDeskActions> }): React.ReactElement {
+/**
+ * Free-text search with suggestions: coss Autocomplete (particles
+ * p-autocomplete-5 and -10, grouped). Typing filters the table as you go;
+ * picking a customer or a number fills the box with it.
+ */
+function SearchField({ customers, value, onChange }: { customers: readonly Customer[]; value: string; onChange: (value: string) => void }): React.ReactElement {
+  const groups = React.useMemo<SuggestionGroup[]>(
+    () => [
+      { value: "Customers", items: customers.map((c) => ({ id: `name-${c.id}`, label: c.name, value: c.name, hint: formatPhone(c.phone) })) },
+      {
+        value: "Phone numbers",
+        items: customers.map((c) => ({ id: `phone-${c.id}`, label: formatPhone(c.phone), value: c.phone.replace(/^\+91/, ""), hint: c.name })),
+      },
+    ],
+    [customers],
+  );
+  return (
+    <Field className="min-w-56 flex-1">
+      <FieldLabel>Search</FieldLabel>
+      <Autocomplete
+        items={groups}
+        itemToStringValue={(item: unknown) => (item as Suggestion).value}
+        onValueChange={onChange}
+        value={value}
+      >
+        <AutocompleteInput placeholder="Name or phone" showClear startAddon={<SearchIcon />} />
+        <AutocompletePopup>
+          <AutocompleteEmpty>No customer by that name or number.</AutocompleteEmpty>
+          <AutocompleteList>
+            {(group: SuggestionGroup) => (
+              <React.Fragment key={group.value}>
+                <AutocompleteGroup items={group.items}>
+                  <AutocompleteGroupLabel>{group.value}</AutocompleteGroupLabel>
+                  <AutocompleteCollection>
+                    {(item: Suggestion) => (
+                      <AutocompleteItem key={item.id} value={item}>
+                        <span className="flex w-full items-center justify-between gap-3">
+                          <span className="truncate">{item.label}</span>
+                          {item.hint && <span className="shrink-0 text-muted-foreground text-xs tabular-nums">{item.hint}</span>}
+                        </span>
+                      </AutocompleteItem>
+                    )}
+                  </AutocompleteCollection>
+                </AutocompleteGroup>
+                {group.value === "Customers" && <AutocompleteSeparator />}
+              </React.Fragment>
+            )}
+          </AutocompleteList>
+        </AutocompletePopup>
+      </Autocomplete>
+    </Field>
+  );
+}
+
+function Row({ booking: b, now }: { booking: Booking; now: number }): React.ReactElement {
   const { state } = useStore();
+  const ui = useDeskUi();
+  const actions = useBookingActions(b, now);
   const ds = deskState(b, now);
   const Icon = STATE_META[ds].icon;
   const due = duePaise(b);
   const title = bookingTitle(b, state.customers);
-  const live = ds !== "cancelled" && ds !== "expired";
+  const customer = b.kind === "booking" ? customerById(state.customers, b.customerId) : undefined;
+  const safe = actions.filter((a) => !a.destructive);
+  const destructive = actions.filter((a) => a.destructive);
   return (
     <TableRow>
       <TableCell>
@@ -211,9 +359,15 @@ function Row({ booking: b, now, ui, actions }: { booking: Booking; now: number; 
       </TableCell>
       <TableCell>{courtName(b.courtId)}</TableCell>
       <TableCell>
-        <button className="rounded-sm font-medium outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring" onClick={() => ui.openBooking(b.id)} type="button">
-          {title}
-        </button>
+        {customer ? (
+          <CustomerPreview customer={customer} onClick={() => ui.openBooking(b.id)}>
+            {title}
+          </CustomerPreview>
+        ) : (
+          <Button className="h-auto px-0 py-0 font-medium sm:h-auto" onClick={() => ui.openBooking(b.id)} size="sm" variant="link">
+            {title}
+          </Button>
+        )}
         {b.kind === "booking" && <span className="block text-muted-foreground text-xs">{b.source === "self-serve" ? "Online" : "Desk"}</span>}
       </TableCell>
       <TableCell>
@@ -229,22 +383,24 @@ function Row({ booking: b, now, ui, actions }: { booking: Booking; now: number; 
           <MenuTrigger render={<Button aria-label={`Actions for ${title}, ${dayOf(b.date)} ${timeRangeOf(b)}`} size="icon-sm" variant="ghost" />}>
             <EllipsisIcon aria-hidden="true" />
           </MenuTrigger>
-          <MenuPopup>
-            <MenuItem onClick={() => ui.openBooking(b.id)}>Open</MenuItem>
-            {live && b.kind === "booking" && due > 0 && ds !== "held" && <MenuItem onClick={() => ui.recordCash(b.id)}>Record cash</MenuItem>}
-            {live && b.kind === "booking" && due > 0 && <MenuItem onClick={() => void actions.copyPaymentLink(b)}>Copy payment link</MenuItem>}
-            {b.kind === "booking" && b.status === "confirmed" && <MenuItem onClick={() => void actions.markNoShow(b)}>Mark no-show</MenuItem>}
-            {live && (
-              <>
-                <MenuSeparator />
-                <MenuItem onClick={() => ui.cancel(b.id)} variant="destructive">
-                  {ds === "held" ? "Release hold" : "Cancel"}
-                </MenuItem>
-              </>
-            )}
+          <MenuPopup align="end">
+            {safe.map(({ id, label, icon: ActionIcon, run }) => (
+              <MenuItem key={id} onClick={run}>
+                <ActionIcon aria-hidden="true" />
+                {label}
+              </MenuItem>
+            ))}
+            {destructive.length > 0 && <MenuSeparator />}
+            {destructive.map(({ id, label, icon: ActionIcon, run }) => (
+              <MenuItem key={id} onClick={run} variant="destructive">
+                <ActionIcon aria-hidden="true" />
+                {label}
+              </MenuItem>
+            ))}
           </MenuPopup>
         </Menu>
       </TableCell>
     </TableRow>
   );
 }
+

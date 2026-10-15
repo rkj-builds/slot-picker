@@ -30,3 +30,25 @@ export function describeBooking(b: Booking, customers: readonly Customer[], stat
   return parts.join(", ");
 }
 
+export interface CustomerHistory {
+  bookings: number;
+  paidAhead: number;
+  unpaid: number;
+  noShows: number;
+  cancelled: number;
+  last: Booking | undefined;
+}
+
+/** A customer's record at this venue: what the desk wants to know before taking their next booking. */
+export function customerHistory(customer: Customer, bookings: readonly Booking[]): CustomerHistory {
+  const theirs = bookings.filter((b) => b.kind === "booking" && b.customerId === customer.id && b.status !== "held" && b.status !== "expired");
+  const kept = theirs.filter((b) => b.status !== "cancelled");
+  return {
+    bookings: theirs.length,
+    paidAhead: theirs.filter((b) => b.ledger.some((e) => e.kind === "online")).length,
+    unpaid: theirs.filter((b) => paidPaise(b) <= 0).length,
+    noShows: theirs.filter((b) => b.status === "no-show").length,
+    cancelled: theirs.filter((b) => b.status === "cancelled").length,
+    last: [...kept].sort((a, b) => (a.date < b.date ? 1 : -1))[0],
+  };
+}

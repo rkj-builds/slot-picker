@@ -93,6 +93,8 @@ export function DayStepper({
           </PopoverTrigger>
           <PopoverPopup>
             <Calendar
+              // The popover just opened from the date button: focus the chosen day, as a date picker should.
+              // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               defaultMonth={toLocalDate(value)}
               disabled={disabled}
