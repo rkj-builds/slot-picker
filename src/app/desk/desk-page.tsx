@@ -43,6 +43,14 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const [cashId, setCashId] = React.useState<string | null>(null);
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
+
+  // A booking opened on one view should not follow the desk to another.
+  const [sheetTab, setSheetTab] = React.useState(tab);
+  if (sheetTab !== tab) {
+    setSheetTab(tab);
+    setSheetId(null);
+  }
+
   const ui = React.useMemo<DeskUi>(
     () => ({
       openBooking: setSheetId,
