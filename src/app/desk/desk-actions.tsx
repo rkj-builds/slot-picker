@@ -25,7 +25,7 @@ export interface DeskActions {
 }
 
 export function paymentLinkFor(booking: Booking): string {
-  return `https://project831.in/pay/${booking.id}`;
+  return `https://pay.example.com/${booking.id}`;
 }
 
 export function useDeskActions(): DeskActions {
