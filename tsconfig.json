@@ -10,7 +10,7 @@
     "exactOptionalPropertyTypes": false,
     "noImplicitOverride": true,
     "noFallthroughCasesInSwitch": true,
-    "noUnusedLocals": true,
+    "noUnusedLocals": false,
     "noUnusedParameters": true,
     "verbatimModuleSyntax": true,
     "isolatedModules": true,

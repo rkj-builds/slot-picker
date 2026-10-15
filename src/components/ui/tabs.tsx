@@ -2,72 +2,117 @@
 
 import { Tabs as TabsPrimitive } from "@base-ui/react/tabs";
 import * as React from "react";
+import {
+  type SegmentedControlSize,
+  segmentedControlItemLayoutClassName,
+  segmentedControlItemSizeClassNames,
+} from "@/lib/segmented-control";
 import { cn } from "@/lib/utils";
 
-/**
- * Tabs with a sliding indicator. Two looks: `default` is a pill strip on a
- * muted track (the segmented look), `underline` is a quiet line for page-level
- * navigation. Base UI owns the arrow-key model and the tab/panel wiring.
- */
+type TabsVariant = "default" | "underline";
+type TabsSize = SegmentedControlSize;
 
-type Variant = "default" | "underline";
+const TabsListContext: React.Context<TabsSize> =
+  React.createContext<TabsSize>("default");
 
-const TabsVariantContext = React.createContext<Variant>("default");
-
-export function Tabs({ className, ...props }: TabsPrimitive.Root.Props): React.ReactElement {
-  return <TabsPrimitive.Root className={cn("flex flex-col gap-3", className)} data-slot="tabs" {...props} />;
-}
-
-export function TabsList({
+export function Tabs({
   className,
-  variant = "default",
-  children,
   ...props
-}: TabsPrimitive.List.Props & { variant?: Variant }): React.ReactElement {
+}: TabsPrimitive.Root.Props): React.ReactElement {
   return (
-    <TabsVariantContext.Provider value={variant}>
-      <TabsPrimitive.List
-        className={cn(
-          "relative z-0 flex w-fit items-center gap-x-0.5 text-muted-foreground",
-          variant === "default" ? "rounded-lg bg-muted p-0.5" : "gap-x-1 border-b",
-          className,
-        )}
-        data-slot="tabs-list"
-        data-variant={variant}
-        {...props}
-      >
-        {children}
-        <TabsPrimitive.Indicator
-          className={cn(
-            "absolute -z-1 w-(--active-tab-width) translate-x-(--active-tab-left) transition-[width,translate] duration-200 ease-out-quart motion-reduce:transition-none",
-            variant === "default"
-              ? "top-0.5 h-[calc(100%-0.25rem)] rounded-md bg-background shadow-sm/5 dark:bg-input"
-              : "-bottom-px h-0.5 bg-primary",
-          )}
-          data-slot="tabs-indicator"
-        />
-      </TabsPrimitive.List>
-    </TabsVariantContext.Provider>
+    <TabsPrimitive.Root
+      className={cn(
+        "flex flex-col gap-2 data-[orientation=vertical]:flex-row",
+        className,
+      )}
+      data-slot="tabs"
+      {...props}
+    />
   );
 }
 
-export function TabsTab({ className, ...props }: TabsPrimitive.Tab.Props): React.ReactElement {
-  const variant = React.useContext(TabsVariantContext);
+export function TabsList({
+  variant = "default",
+  size = "default",
+  className,
+  children,
+  ...props
+}: TabsPrimitive.List.Props & {
+  size?: TabsSize;
+  variant?: TabsVariant;
+}): React.ReactElement {
+  return (
+    <TabsPrimitive.List
+      className={cn(
+        "relative z-0 flex w-fit items-center justify-center gap-x-0.5 text-muted-foreground",
+        "data-[orientation=vertical]:flex-col",
+        variant === "default"
+          ? "rounded-lg bg-muted p-0.5 text-muted-foreground/72"
+          : "data-[orientation=vertical]:px-1 data-[orientation=horizontal]:py-1 *:data-[slot=tabs-tab]:hover:bg-accent",
+        className,
+      )}
+      data-size={size}
+      data-slot="tabs-list"
+      {...props}
+    >
+      <TabsListContext.Provider value={size}>
+        {children}
+      </TabsListContext.Provider>
+      <TabsPrimitive.Indicator
+        className={cn(
+          "absolute bottom-0 left-0 h-(--active-tab-height) w-(--active-tab-width) translate-x-(--active-tab-left) -translate-y-(--active-tab-bottom) transition-[width,translate] duration-200 ease-in-out",
+          variant === "underline"
+            ? "z-10 bg-primary data-[orientation=horizontal]:h-0.5 data-[orientation=vertical]:w-0.5 data-[orientation=vertical]:-translate-x-px data-[orientation=horizontal]:translate-y-px"
+            : "-z-1 rounded-md bg-background shadow-sm/5 dark:bg-input",
+        )}
+        data-slot="tab-indicator"
+      />
+    </TabsPrimitive.List>
+  );
+}
+
+export function TabsTab({
+  className,
+  size,
+  ...props
+}: TabsPrimitive.Tab.Props & {
+  size?: TabsSize;
+}): React.ReactElement {
+  const contextSize: TabsSize = React.useContext(TabsListContext);
+  const resolvedSize: TabsSize = size ?? contextSize;
+
   return (
     <TabsPrimitive.Tab
       className={cn(
-        "relative inline-flex shrink-0 cursor-pointer items-center justify-center gap-1.5 whitespace-nowrap rounded-md font-medium text-sm outline-none transition-colors duration-150 ease-out-quart hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring data-active:text-foreground data-disabled:pointer-events-none data-disabled:opacity-64 [&_svg]:size-4 [&_svg]:shrink-0",
-        variant === "default" ? "h-7.5 px-3" : "h-9 px-2.5",
+        "relative flex shrink-0 grow cursor-pointer items-center justify-center whitespace-nowrap rounded-md border border-transparent font-medium text-base outline-none transition-[color,background-color,box-shadow] hover:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring data-disabled:pointer-events-none data-[orientation=vertical]:w-full data-[orientation=vertical]:justify-start data-active:text-foreground data-disabled:opacity-64 sm:text-sm",
+        segmentedControlItemLayoutClassName,
+        segmentedControlItemSizeClassNames[resolvedSize],
         className,
       )}
+      data-size={resolvedSize}
       data-slot="tabs-tab"
       {...props}
     />
   );
 }
 
-export function TabsPanel({ className, ...props }: TabsPrimitive.Panel.Props): React.ReactElement {
-  return <TabsPrimitive.Panel className={cn("outline-none", className)} data-slot="tabs-panel" {...props} />;
+export function TabsPanel({
+  className,
+  ...props
+}: TabsPrimitive.Panel.Props): React.ReactElement {
+  return (
+    <TabsPrimitive.Panel
+      className={cn("flex-1 outline-none", className)}
+      data-slot="tabs-content"
+      {...props}
+    />
+  );
 }
 
-export { TabsPrimitive };
+export {
+  TabsPrimitive,
+  TabsTab as TabsTrigger,
+  TabsPanel as TabsContent,
+  type TabsSize,
+  type TabsVariant,
+};

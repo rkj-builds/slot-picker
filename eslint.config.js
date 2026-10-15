@@ -6,7 +6,18 @@ import globals from "globals";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist", "node_modules", "docs"] },
+  {
+    ignores: [
+      "dist",
+      "node_modules",
+      "docs",
+      // coss ui, vendored verbatim by the shadcn CLI: linted upstream, never edited here.
+      "src/components/ui/**",
+      "src/hooks/**",
+      "src/lib/composer-*.ts",
+      "src/lib/segmented-control.ts",
+    ],
+  },
   js.configs.recommended,
   ...tseslint.configs.strictTypeChecked,
   ...tseslint.configs.stylisticTypeChecked,
@@ -28,11 +39,6 @@ export default tseslint.config(
       "@typescript-eslint/restrict-template-expressions": ["error", { allowNumber: true }],
       "@typescript-eslint/no-confusing-void-expression": "off",
     },
-  },
-  {
-    // Primitives export their cva recipes next to the component, as coss ui does.
-    files: ["src/components/ui/**/*.tsx"],
-    rules: { "react-refresh/only-export-components": "off" },
   },
   {
     // App-level providers export their hook next to the provider, as context modules do.

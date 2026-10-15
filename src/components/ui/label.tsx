@@ -1,14 +1,26 @@
-import type * as React from "react";
+"use client";
+
+import { mergeProps } from "@base-ui/react/merge-props";
+import { useRender } from "@base-ui/react/use-render";
+import type React from "react";
 import { cn } from "@/lib/utils";
 
-/** A plain label, for controls that live outside a Field. */
-export function Label({ className, ...props }: React.ComponentProps<"label">): React.ReactElement {
-  return (
-    // eslint-disable-next-line jsx-a11y/label-has-associated-control -- the caller passes htmlFor or wraps the control
-    <label
-      className={cn("inline-flex cursor-default items-center gap-2 font-medium text-sm", className)}
-      data-slot="label"
-      {...props}
-    />
-  );
+export function Label({
+  className,
+  render,
+  ...props
+}: useRender.ComponentProps<"label">): React.ReactElement {
+  const defaultProps = {
+    className: cn(
+      "inline-flex items-center gap-2 font-medium text-base/4.5 text-foreground sm:text-sm/4",
+      className,
+    ),
+    "data-slot": "label",
+  };
+
+  return useRender({
+    defaultTagName: "label",
+    props: mergeProps<"label">(defaultProps, props),
+    render,
+  });
 }
