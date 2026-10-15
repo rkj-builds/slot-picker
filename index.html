@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="color-scheme" content="light dark" />
     <title>Court Booking</title>
-    <meta name="description" content="A court-booking product for Project 831, built on Base UI in the coss ui style." />
+    <meta name="description" content="A court-booking product for Project 831, built from coss ui components." />
     <script>
       // Apply a saved theme before first paint, so dark-mode viewers never see a white flash.
       try {
         const theme = localStorage.getItem("slot-picker:theme");
-        if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
-        if (theme === "dark") document.documentElement.classList.add("dark");
+        const system = !theme && matchMedia("(prefers-color-scheme: dark)").matches;
+        if (theme === "dark" || system) document.documentElement.classList.add("dark");
       } catch {}
     </script>
   </head>

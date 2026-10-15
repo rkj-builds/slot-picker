@@ -13,14 +13,14 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogPanel,
   AlertDialogPopup,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
-import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioCard } from "@/components/compositions/radio-card";
 import { Separator } from "@/components/ui/separator";
 import { toastManager } from "@/components/ui/toast";
 import { type Booking, bookingEnd, bookingStart, duePaise, makeId, paidPaise } from "@/lib/booking";
@@ -209,14 +209,14 @@ function ManageBooking({ booking }: { booking: Booking }): React.ReactElement {
             {courtName(booking.courtId)} · {whenOf(booking)}. The court goes back on sale straight away.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogPanel>
+        <div className="px-6 pb-6">
           {paid > 0 ? (
-            <RadioGroup<CancelResolution> aria-label={`What happens to the ${formatInr(paid)} you paid`} onValueChange={setResolution} value={resolution}>
-              <RadioCard<CancelResolution> value="credit">
+            <RadioGroup aria-label={`What happens to the ${formatInr(paid)} you paid`} onValueChange={(v) => setResolution(v as CancelResolution)} value={resolution}>
+              <RadioCard value="credit">
                 <span className="font-medium text-sm">Keep {formatInr(paid)} as credit</span>
                 <span className="text-muted-foreground text-sm">Instant. It comes off your next booking, any day.</span>
               </RadioCard>
-              <RadioCard<CancelResolution> value="refund">
+              <RadioCard value="refund">
                 <span className="font-medium text-sm">Refund {formatInr(paid)}</span>
                 <span className="text-muted-foreground text-sm">Back to your original payment method in 5–7 working days.</span>
               </RadioCard>
@@ -224,7 +224,7 @@ function ManageBooking({ booking }: { booking: Booking }): React.ReactElement {
           ) : (
             <p className="text-muted-foreground text-sm">Nothing was paid for this booking, so there is nothing to refund.</p>
           )}
-        </AlertDialogPanel>
+        </div>
         <AlertDialogFooter>
           <AlertDialogClose disabled={busy} render={<Button variant="ghost" />}>
             Keep booking

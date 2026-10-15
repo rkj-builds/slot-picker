@@ -3,7 +3,7 @@
 import { CalendarOffIcon, CloudAlertIcon } from "lucide-react";
 import * as React from "react";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { describeSlotStatus, groupByPeriod, type Period, type Slot, type SlotStatus } from "@/lib/availability";
 import { formatTime } from "@/lib/format";
@@ -212,13 +212,13 @@ export function SlotGrid({
     return (
       <div {...groupProps} data-status="error" role="alert">
         <Empty className="animate-fade-in rounded-xl border border-dashed">
-          <EmptyMedia>
-            <CloudAlertIcon aria-hidden="true" />
-          </EmptyMedia>
-          <div className="flex flex-col gap-1">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CloudAlertIcon aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>Could not load times</EmptyTitle>
             <EmptyDescription>Check your connection and try again.</EmptyDescription>
-          </div>
+          </EmptyHeader>
           {onRetry && (
             <EmptyContent>
               <Button onClick={onRetry} variant="outline">
@@ -235,15 +235,15 @@ export function SlotGrid({
     return (
       <div {...groupProps} data-status="empty" role="status">
         <Empty className="animate-fade-in rounded-xl border border-dashed">
-          <EmptyMedia>
-            <CalendarOffIcon aria-hidden="true" />
-          </EmptyMedia>
-          <div className="flex flex-col gap-1">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CalendarOffIcon aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>{order.length === 0 ? "Closed today" : "No slots left today"}</EmptyTitle>
             <EmptyDescription>
               {nextAvailableLabel ? `The next free day is ${nextAvailableLabel}.` : "Try another day or a shorter duration."}
             </EmptyDescription>
-          </div>
+          </EmptyHeader>
           {nextAvailableLabel && onNextAvailable && (
             <EmptyContent>
               <Button onClick={onNextAvailable} variant="outline">

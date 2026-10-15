@@ -13,9 +13,9 @@ import { navigate, type Route } from "@/app/router";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Stepper, StepperItem } from "@/components/ui/stepper";
+import { Stepper, StepperItem } from "@/components/compositions/stepper";
 import { toastManager } from "@/components/ui/toast";
 import { VENUE } from "@/lib/venue";
 
@@ -135,13 +135,13 @@ export function LoadError({ onRetry }: { onRetry: () => void }): React.ReactElem
   return (
     <div role="alert">
       <Empty className="rounded-2xl border border-dashed">
-        <EmptyMedia>
-          <CloudAlertIcon aria-hidden="true" />
-        </EmptyMedia>
-        <div className="flex flex-col gap-1">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <CloudAlertIcon aria-hidden="true" />
+          </EmptyMedia>
           <EmptyTitle>Could not reach the venue</EmptyTitle>
           <EmptyDescription>Courts and times did not load. Check your connection and try again.</EmptyDescription>
-        </div>
+        </EmptyHeader>
         <EmptyContent>
           <Button onClick={onRetry} variant="outline">
             Try again

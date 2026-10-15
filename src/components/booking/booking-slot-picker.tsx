@@ -6,7 +6,7 @@ import { DurationPicker } from "@/components/booking/duration-picker";
 import { SlotGrid, type SlotGridStatus } from "@/components/booking/slot-grid";
 import { TimeZoneHint } from "@/components/booking/time-zone-hint";
 import { Button } from "@/components/ui/button";
-import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
 import { computeDaySlots, nextAvailableDate, type Reservation, type Slot, type VenueSchedule } from "@/lib/availability";
 import { formatDuration } from "@/lib/duration";
 import { formatDay, formatTime } from "@/lib/format";

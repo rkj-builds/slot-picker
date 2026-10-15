@@ -45,3 +45,11 @@ export function durationOf(minutes: number, style: "long" | "short" = "long"): s
 export function whenOf(span: Span): string {
   return `${dayOf(span.date)} · ${timeRangeOf(span)}`;
 }
+
+/** "Asha Rao" → "AR", for an avatar fallback. */
+export function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const first = parts[0]?.[0] ?? "";
+  const last = parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "";
+  return (first + last).toUpperCase() || "?";
+}

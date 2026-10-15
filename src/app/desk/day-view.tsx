@@ -11,7 +11,7 @@ import { useStore } from "@/app/store";
 import { useMediaQuery } from "@/app/use-media-query";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Empty, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { type Booking, deskState, duePaise, sortBookings } from "@/lib/booking";
@@ -63,13 +63,13 @@ export function DayView({ date, now }: { date: PlainDate; now: number }): React.
 
       {hours.closed || hours.close <= hours.open ? (
         <Empty className="rounded-2xl border border-dashed" role="status">
-          <EmptyMedia>
-            <CalendarOffIcon aria-hidden="true" />
-          </EmptyMedia>
-          <div className="flex flex-col gap-1">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <CalendarOffIcon aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>Closed on {WEEKDAY_LABEL[weekdayOf(date)].long}s</EmptyTitle>
             <EmptyDescription>Change opening hours in Settings to take bookings on this day.</EmptyDescription>
-          </div>
+          </EmptyHeader>
         </Empty>
       ) : wide ? (
         <>

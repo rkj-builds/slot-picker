@@ -6,10 +6,10 @@ import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals
 import { useDeskActions } from "@/app/desk/desk-actions";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
 import { useDeskUi } from "@/app/desk/desk-ui";
-import { durationOf, LOCALE, whenOf } from "@/app/format";
+import { durationOf, initialsOf, LOCALE, whenOf } from "@/app/format";
 import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
-import { Avatar, AvatarFallback, initialsOf } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

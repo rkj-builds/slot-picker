@@ -6,7 +6,8 @@ import { useFlow } from "@/app/book/flow";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
-import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioCard } from "@/components/compositions/radio-card";
 import type { CourtId } from "@/lib/venue";
 
 const OPTIONS: { value: CourtId | "any"; title: string; line: string }[] = [
@@ -20,9 +21,9 @@ export function CourtStep(): React.ReactElement {
   return (
     <section>
       <StepHeading description="Both courts are the same size and surface. Pick one, or let us pick." title="Pick a court" />
-      <RadioGroup<CourtId | "any"> aria-label="Court" onValueChange={(courtId) => update({ courtId, startMinute: null })} value={draft.courtId}>
+      <RadioGroup aria-label="Court" onValueChange={(courtId) => update({ courtId: courtId as CourtId | "any", startMinute: null })} value={draft.courtId}>
         {OPTIONS.map((option) => (
-          <RadioCard<CourtId | "any"> key={option.value} value={option.value}>
+          <RadioCard key={option.value} value={option.value}>
             <span className="font-medium text-sm">{option.title}</span>
             <span className="text-muted-foreground text-sm">{option.line}</span>
           </RadioCard>

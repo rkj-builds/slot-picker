@@ -11,9 +11,10 @@ import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
-import { Meter, MeterLabel } from "@/components/ui/meter";
-import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Meter, MeterIndicator, MeterLabel, MeterTrack } from "@/components/ui/meter";
+import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioCard } from "@/components/compositions/radio-card";
 import { Separator } from "@/components/ui/separator";
 import { toastManager } from "@/components/ui/toast";
 import type { Booking, PayMode } from "@/lib/booking";
@@ -95,15 +96,15 @@ export function PayStep(): React.ReactElement | null {
       <section>
         <StepHeading title="Your hold ran out" />
         <Empty className="rounded-2xl border border-dashed" role="status">
-          <EmptyMedia>
-            <HourglassIcon aria-hidden="true" />
-          </EmptyMedia>
-          <div className="flex flex-col gap-1">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <HourglassIcon aria-hidden="true" />
+            </EmptyMedia>
             <EmptyTitle>The court was released</EmptyTitle>
             <EmptyDescription>
               We held {courtName(booking.courtId)} at {timeRangeOf(booking)} so you could pay, then let it go so others could book. Nothing was charged.
             </EmptyDescription>
-          </div>
+          </EmptyHeader>
           <EmptyContent>
             <Button loading={busy} onClick={() => void rehold(booking, draft.courtId === "any" ? null : booking.courtId)}>
               Hold it again
@@ -163,11 +164,14 @@ export function PayStep(): React.ReactElement | null {
   );
 }
 
+/** The hold meter turns amber at three minutes and red at the last one. */
+const TONE_CLASS = { default: undefined, warning: "bg-warning", destructive: "bg-destructive" } as const;
+
 const MILESTONES = [5 * 60_000, 60_000, 30_000, 10_000];
 
 function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number }): React.ReactElement {
   const total = Math.max(1, (booking.holdExpiresAt ?? 0) - booking.createdAt);
-  const tone = remaining <= 60_000 ? "destructive" : remaining <= 3 * 60_000 ? "warning" : "default";
+  const tone: keyof typeof TONE_CLASS = remaining <= 60_000 ? "destructive" : remaining <= 3 * 60_000 ? "warning" : "default";
   // Announce at a few milestones, not every second: a ticking live region is unbearable with a screen reader.
   const passed = MILESTONES.filter((m) => remaining <= m);
   const announcement = passed.length > 0 ? `Hold: ${describeCountdown(Math.min(...passed))}` : "";
@@ -178,7 +182,6 @@ function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number
         aria-valuetext={describeCountdown(remaining)}
         max={Math.ceil(total / 1000)}
         min={0}
-        tone={tone}
         value={Math.ceil(remaining / 1000)}
       >
         <div className="flex items-baseline justify-between gap-3">
@@ -189,6 +192,9 @@ function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number
             {formatCountdown(remaining)}
           </span>
         </div>
+        <MeterTrack className="rounded-full">
+          <MeterIndicator className={TONE_CLASS[tone]} />
+        </MeterTrack>
       </Meter>
       <p className="mt-2 text-muted-foreground text-xs">Nobody else can book it until the timer runs out.</p>
       <span aria-live="polite" className="sr-only">
@@ -225,9 +231,9 @@ function PayOptions({
     );
   }
   return (
-    <RadioGroup<PayMode> aria-label="How to pay" onValueChange={onChange} value={mode}>
+    <RadioGroup aria-label="How to pay" onValueChange={(v) => onChange(v as PayMode)} value={mode}>
       {decision.modes.map((m) => (
-        <RadioCard<PayMode> key={m} value={m}>
+        <RadioCard key={m} value={m}>
           <span className="flex items-baseline justify-between gap-3">
             <span className="font-medium text-sm">{MODE_COPY[m].title}</span>
             <span className="font-medium text-sm tabular-nums">{formatInr(m === "venue" ? 0 : m === "part" ? decision.depositPaise : booking.pricePaise)} now</span>

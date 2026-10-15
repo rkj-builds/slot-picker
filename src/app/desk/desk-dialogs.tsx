@@ -12,7 +12,6 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
-  AlertDialogPanel,
   AlertDialogPopup,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
@@ -20,7 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogDescription, DialogFooter, DialogHeader, DialogPanel, DialogPopup, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
-import { RadioCard, RadioGroup } from "@/components/ui/radio-group";
+import { RadioGroup } from "@/components/ui/radio-group";
+import { RadioCard } from "@/components/compositions/radio-card";
 import { type Booking, duePaise, paidPaise } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
 import type { CancelResolution } from "@/lib/store";
@@ -123,14 +123,14 @@ export function CancelBookingDialog({ booking, onClose }: { booking: Booking | u
             {booking ? `${bookingTitle(booking, state.customers)} · ${courtName(booking.courtId)}, ${whenOf(booking)}. The court becomes free to book.` : ""}
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <AlertDialogPanel>
+        <div className="px-6 pb-6">
           {paid > 0 ? (
-            <RadioGroup<CancelResolution> aria-label={`What happens to the ${formatInr(paid)} paid`} onValueChange={setResolution} value={resolution}>
-              <RadioCard<CancelResolution> value="credit">
+            <RadioGroup aria-label={`What happens to the ${formatInr(paid)} paid`} onValueChange={(v) => setResolution(v as CancelResolution)} value={resolution}>
+              <RadioCard value="credit">
                 <span className="font-medium text-sm">Keep {formatInr(paid)} as credit</span>
                 <span className="text-muted-foreground text-sm">The money stays with the venue and comes off their next booking. Best for late cancellations.</span>
               </RadioCard>
-              <RadioCard<CancelResolution> value="refund">
+              <RadioCard value="refund">
                 <span className="font-medium text-sm">Refund {formatInr(paid)}</span>
                 <span className="text-muted-foreground text-sm">Back to the original payment method in 5–7 working days.</span>
               </RadioCard>
@@ -138,7 +138,7 @@ export function CancelBookingDialog({ booking, onClose }: { booking: Booking | u
           ) : (
             <p className="text-muted-foreground text-sm">Nothing was paid, so there is nothing to refund.</p>
           )}
-        </AlertDialogPanel>
+        </div>
         <AlertDialogFooter>
           <AlertDialogClose disabled={busy} render={<Button variant="ghost" />}>
             Keep it

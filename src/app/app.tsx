@@ -9,7 +9,7 @@ import { HomePage } from "@/app/home-page";
 import { useRoute } from "@/app/router";
 import { StoreProvider } from "@/app/store";
 import { buttonVariants } from "@/components/ui/button";
-import { Empty, EmptyContent, EmptyDescription, EmptyMedia } from "@/components/ui/empty";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -89,13 +89,13 @@ function NotFound(): React.ReactElement {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 items-center px-4 py-16">
       <Empty className="rounded-2xl border border-dashed">
-        <EmptyMedia>
-          <MapPinOffIcon aria-hidden="true" />
-        </EmptyMedia>
-        <div className="flex flex-col gap-1">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <MapPinOffIcon aria-hidden="true" />
+          </EmptyMedia>
           <h1 className="font-medium text-sm">Nothing lives here</h1>
           <EmptyDescription>That link does not go anywhere in this demo.</EmptyDescription>
-        </div>
+        </EmptyHeader>
         <EmptyContent>
           <a className={buttonVariants({ variant: "outline" })} href="#/">
             Go home

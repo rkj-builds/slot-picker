@@ -1,7 +1,7 @@
 "use client";
 
 import type * as React from "react";
-import { SegmentedControl, SegmentedControlItem } from "@/components/ui/segmented-control";
+import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
 import { formatDuration } from "@/lib/duration";
 import { cn } from "@/lib/utils";
 

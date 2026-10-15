@@ -93,12 +93,12 @@ export function SettingsView(): React.ReactElement {
                 A {formatInr(draft.peakPricePaise)} hour: {formatInr(example.now)} now, {formatInr(example.later)} at the venue.
               </p>
             </div>
-            <Slider max={100} min={0} onValueChange={(v: number | readonly number[]) => set("depositPercent", typeof v === "number" ? v : (v[0] ?? 0))} step={5} thumbLabel="Deposit percent" value={draft.depositPercent} />
+            <Slider max={100} min={0} onValueChange={(v: number | readonly number[]) => set("depositPercent", typeof v === "number" ? v : (v[0] ?? 0))} step={5} getAriaLabel={() => "Deposit percent"} value={draft.depositPercent} />
           </div>
 
           <div className="flex flex-col gap-2">
             <Label id="prepay-days">Prepay days</Label>
-            <ToggleGroup<Weekday> aria-labelledby="prepay-days" multiple onValueChange={(days) => set("prepayDays", days)} value={draft.prepayDays}>
+            <ToggleGroup aria-labelledby="prepay-days" multiple onValueChange={(days) => set("prepayDays", days as Weekday[])} value={draft.prepayDays}>
               {WEEKDAYS.map((d) => (
                 <ToggleGroupItem aria-label={WEEKDAY_LABEL[d].long} key={d} value={d}>
                   {WEEKDAY_LABEL[d].short}

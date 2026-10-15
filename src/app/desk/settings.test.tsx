@@ -35,7 +35,7 @@ describe("#/desk/settings", () => {
     await user.type(screen.getByRole("textbox", { name: "Mobile number" }), "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
     await screen.findByRole("heading", { level: 1, name: "Hold and pay" });
-    expect(screen.getByRole("radio", { name: /Pay a deposit/ })).toHaveTextContent("₹240 now, ₹560 at the venue.");
+    expect(screen.getByRole("radio", { name: /Pay a deposit/ }).closest("label")).toHaveTextContent("₹240 now, ₹560 at the venue.");
     expect(screen.getByText(/held with a 30% deposit/)).toBeInTheDocument();
   });
 
