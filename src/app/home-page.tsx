@@ -1,7 +1,10 @@
 import { ArrowRightIcon, BookOpenIcon, LayoutGridIcon, ShapesIcon } from "lucide-react";
 import type * as React from "react";
 import { LogoMark } from "@/app/app-shell";
+import { Anchor } from "@/app/anchor";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { EmptyMedia } from "@/components/ui/empty";
 
 const SURFACES = [
   {
@@ -42,19 +45,18 @@ export function HomePage(): React.ReactElement {
       <ul className="grid gap-3 sm:grid-cols-3">
         {SURFACES.map(({ href, icon: Icon, title, line }) => (
           <li key={href}>
-            <a
-              className="group flex h-full flex-col gap-3 rounded-2xl border bg-card p-5 shadow-xs/5 outline-none transition-[border-color,box-shadow] duration-150 hover:border-ring/40 hover:shadow-md/5 focus-visible:ring-2 focus-visible:ring-ring"
-              href={href}
-            >
-              <span className="flex size-9 items-center justify-center rounded-lg border bg-background text-muted-foreground [&_svg]:size-4.5">
-                <Icon aria-hidden="true" />
-              </span>
-              <span className="flex items-center gap-1.5 font-medium">
-                {title}
-                <ArrowRightIcon aria-hidden="true" className="size-4 opacity-60 transition-transform duration-150 group-hover:translate-x-0.5" />
-              </span>
-              <span className="text-muted-foreground text-sm">{line}</span>
-            </a>
+            <Card className="h-full transition-[border-color,box-shadow] duration-150 hover:border-ring/40 hover:shadow-md/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" render={<Anchor href={href} />}>
+              <CardHeader className="gap-3">
+                <EmptyMedia variant="icon">
+                  <Icon aria-hidden="true" />
+                </EmptyMedia>
+                <CardTitle className="flex items-center gap-1.5 font-medium text-base">
+                  {title}
+                  <ArrowRightIcon aria-hidden="true" className="size-4 opacity-60 transition-transform duration-150 in-[[data-slot=card]:hover]:translate-x-0.5" />
+                </CardTitle>
+                <CardDescription>{line}</CardDescription>
+              </CardHeader>
+            </Card>
           </li>
         ))}
       </ul>

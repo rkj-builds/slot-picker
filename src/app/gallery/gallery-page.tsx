@@ -2,6 +2,7 @@
 
 import { BellIcon, CircleCheckIcon, InfoIcon, PlusIcon, SearchIcon, TriangleAlertIcon } from "lucide-react";
 import * as React from "react";
+import { Anchor } from "@/app/anchor";
 import { STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { useClock } from "@/app/clock";
 import { makeReservations, schedule, spaces } from "@/app/gallery/fixtures";
@@ -78,9 +79,9 @@ export function GalleryPage(): React.ReactElement {
         <h1 className="font-semibold text-3xl tracking-tight">Components</h1>
         <p className="max-w-2xl text-muted-foreground">
           The real{" "}
-          <a className="text-foreground underline underline-offset-4" href="https://coss.com/ui" rel="noreferrer" target="_blank">
+          <Button className="h-auto px-0 py-0 align-baseline text-base underline sm:h-auto sm:text-base" render={<Anchor href="https://coss.com/ui" rel="noreferrer" target="_blank" />} variant="link">
             coss ui
-          </a>{" "}
+          </Button>{" "}
           components ({COSS_COUNT} of them), installed from the coss registry with the shadcn CLI and left unmodified, shown the way this product uses them. Segmented control,
           radio card, stepper and the booking blocks are this app&apos;s own compositions, built from coss parts. Each row shows light and dark at once.
         </p>
@@ -88,9 +89,18 @@ export function GalleryPage(): React.ReactElement {
           <ul className="flex flex-wrap gap-1.5">
             {SECTIONS.map((s) => (
               <li key={s}>
-                <a className="inline-flex h-7 items-center rounded-full border px-2.5 text-muted-foreground text-xs outline-none hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring" href={`#/components`} onClick={(e) => { e.preventDefault(); document.getElementById(slug(s))?.scrollIntoView({ behavior: "smooth" }); }}>
+                <Button
+                  className="rounded-full font-normal text-muted-foreground before:rounded-full"
+                  onClick={(e: React.MouseEvent) => {
+                    e.preventDefault();
+                    document.getElementById(slug(s))?.scrollIntoView({ behavior: "smooth" });
+                  }}
+                  render={<Anchor href="#/components" />}
+                  size="xs"
+                  variant="outline"
+                >
                   {s}
-                </a>
+                </Button>
               </li>
             ))}
           </ul>

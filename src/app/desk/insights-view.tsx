@@ -5,15 +5,17 @@ import { dayOf } from "@/app/format";
 import { useStore } from "@/app/store";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { computeInsights, formatPercent, mondayOf, PAYMENT_GROUP_LABEL } from "@/lib/insights";
 import { formatInr } from "@/lib/money";
 import { addDays, compareDates, type PlainDate } from "@/lib/plain-date";
 import { cn } from "@/lib/utils";
 
 /**
- * The numbers behind the policy, from the store. Every chart is inline SVG
- * with a title, a one-line takeaway, a native tooltip per mark and a table
- * for screen readers, so no number lives in colour or position alone.
+ * The numbers behind the policy, from the store. coss has no chart, so every
+ * chart is inline SVG inside a coss Card, with a title, a one-line takeaway, a
+ * native tooltip per mark and a coss Table for screen readers, so no number
+ * lives in colour or position alone.
  */
 export function InsightsView({ today }: { today: PlainDate }): React.ReactElement {
   const { state } = useStore();
@@ -78,11 +80,11 @@ export function InsightsView({ today }: { today: PlainDate }): React.ReactElemen
 
 function Hero({ label, value, sub }: { label: string; value: string; sub: string }): React.ReactElement {
   return (
-    <div className="flex flex-col gap-1 rounded-2xl border bg-card px-5 py-4">
+    <Card className="gap-1 px-5 py-4">
       <dt className="text-muted-foreground text-sm">{label}</dt>
       <dd className="font-semibold text-3xl tabular-nums tracking-tight">{value}</dd>
       <dd className="text-muted-foreground text-xs">{sub}</dd>
-    </div>
+    </Card>
   );
 }
 
@@ -91,8 +93,8 @@ function ChartCard({ title, description, children }: { title: string; descriptio
     <Card>
       <CardHeader>
         <h2>
-          <CardTitle>{title}</CardTitle>
-        </h2>
+            <CardTitle render={<span className="block" />}>{title}</CardTitle>
+          </h2>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardPanel>{children}</CardPanel>
@@ -102,6 +104,8 @@ function ChartCard({ title, description, children }: { title: string; descriptio
 
 type Tone = "info" | "warning" | "muted";
 const FILL: Record<Tone, string> = { info: "fill-info", warning: "fill-warning", muted: "fill-muted-foreground/40" };
+/** The same tones as a legend key inside a coss Badge. */
+const SWATCH: Record<Tone, string> = { info: "bg-info", warning: "bg-warning", muted: "bg-muted-foreground/40" };
 
 interface BarRow {
   label: string;
@@ -136,22 +140,22 @@ function HBars({ rows, max, format, label }: { rows: BarRow[]; max?: number; for
           );
         })}
       </svg>
-      {/* sr-only on a wrapper: a <table> ignores the 1px width and would widen the page. */}
+      {/* sr-only on a wrapper: a table ignores the 1px width and would widen the page. */}
       <div className="sr-only">
-        <table>
-          <caption>{label}</caption>
-          <tbody>
+        <Table>
+          <TableCaption>{label}</TableCaption>
+          <TableBody>
             {rows.map((r) => (
-              <tr key={r.label}>
-                <th scope="row">{r.label}</th>
-                <td>
+              <TableRow key={r.label}>
+                <TableHead scope="row">{r.label}</TableHead>
+                <TableCell>
                   {format(r.value)}
                   {r.note ? ` (${r.note})` : ""}
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </figure>
   );
@@ -170,13 +174,13 @@ function WeekColumns({ weeks, policyWeek }: { weeks: ReturnType<typeof computeIn
   const bar = Math.min(28, col - 10);
   return (
     <figure className="flex flex-col gap-2">
-      <ul aria-hidden="true" className="flex flex-wrap gap-x-4 gap-y-1 text-muted-foreground text-xs">
+      <ul aria-hidden="true" className="flex flex-wrap gap-1.5">
         {SERIES.map((s) => (
-          <li className="flex items-center gap-1.5" key={s.key}>
-            <svg className="size-2.5" viewBox="0 0 10 10">
-              <rect className={FILL[s.tone]} height="10" rx="2" width="10" />
-            </svg>
-            {s.label}
+          <li key={s.key}>
+            <Badge variant="outline">
+              <span className={cn("size-2 rounded-xs", SWATCH[s.tone])} />
+              {s.label}
+            </Badge>
           </li>
         ))}
       </ul>
@@ -217,31 +221,31 @@ function WeekColumns({ weeks, policyWeek }: { weeks: ReturnType<typeof computeIn
           );
         })()}
       </svg>
-      {/* sr-only on a wrapper: a <table> ignores the 1px width and would widen the page. */}
+      {/* sr-only on a wrapper: a table ignores the 1px width and would widen the page. */}
       <div className="sr-only">
-        <table>
-          <caption>Bookings per week by channel</caption>
-          <thead>
-            <tr>
-              <th scope="col">Week of</th>
+        <Table>
+          <TableCaption>Bookings per week by channel</TableCaption>
+          <TableHeader>
+            <TableRow>
+              <TableHead scope="col">Week of</TableHead>
               {SERIES.map((s) => (
-                <th key={s.key} scope="col">
+                <TableHead key={s.key} scope="col">
                   {s.label}
-                </th>
+                </TableHead>
               ))}
-            </tr>
-          </thead>
-          <tbody>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {weeks.map((w) => (
-              <tr key={w.weekOf}>
-                <th scope="row">{dayOf(w.weekOf)}</th>
-                <td>{w.selfServe - w.selfServeUnpaid}</td>
-                <td>{w.selfServeUnpaid}</td>
-                <td>{w.desk}</td>
-              </tr>
+              <TableRow key={w.weekOf}>
+                <TableHead scope="row">{dayOf(w.weekOf)}</TableHead>
+                <TableCell>{w.selfServe - w.selfServeUnpaid}</TableCell>
+                <TableCell>{w.selfServeUnpaid}</TableCell>
+                <TableCell>{w.desk}</TableCell>
+              </TableRow>
             ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </figure>
   );

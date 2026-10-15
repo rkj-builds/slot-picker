@@ -1,5 +1,5 @@
 import "@testing-library/jest-dom/vitest";
-import { cleanup } from "@testing-library/react";
+import { cleanup, configure } from "@testing-library/react";
 import { afterEach, beforeEach } from "vitest";
 import { installCookieStoreShim } from "@/app/cookie-store-shim";
 
@@ -15,6 +15,9 @@ beforeEach(() => {
 });
 
 afterEach(() => cleanup());
+
+// The desk and the gallery are lazy-loaded; on a cold, parallel run the first import can take over a second.
+configure({ asyncUtilTimeout: 4000 });
 
 // jsdom has no matchMedia or object URLs; the app only needs them to exist.
 if (!window.matchMedia) {

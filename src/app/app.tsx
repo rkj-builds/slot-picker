@@ -2,13 +2,14 @@
 
 import { MapPinOffIcon } from "lucide-react";
 import * as React from "react";
+import { Anchor } from "@/app/anchor";
 import { DemoBar, useFocusHeadingOnNavigate } from "@/app/app-shell";
 import { BookPage } from "@/app/book/book-page";
 import { ClockProvider, pinnedNowFromUrl } from "@/app/clock";
 import { HomePage } from "@/app/home-page";
 import { useRoute } from "@/app/router";
 import { StoreProvider } from "@/app/store";
-import { buttonVariants } from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia } from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ToastProvider } from "@/components/ui/toast";
@@ -57,16 +58,17 @@ export function Routes(): React.ReactElement {
   }
   return (
     <div className="flex min-h-dvh flex-col">
-      <a
-        className="sr-only z-50 rounded-md bg-background px-3 py-2 font-medium text-sm focus:not-sr-only focus:fixed focus:start-3 focus:top-3 focus:ring-2 focus:ring-ring"
-        href="#main"
-        onClick={(event) => {
+      <Button
+        className="sr-only z-50 focus:not-sr-only focus:fixed focus:start-3 focus:top-3"
+        onClick={(event: React.MouseEvent) => {
           event.preventDefault();
           document.querySelector<HTMLElement>("main h1")?.focus();
         }}
+        render={<Anchor href="#main" />}
+        variant="outline"
       >
         Skip to content
-      </a>
+      </Button>
       <DemoBar route={route} />
       <div className="flex flex-1 flex-col" id="main">
         <React.Suspense fallback={<PageFallback />}>{page}</React.Suspense>
@@ -97,9 +99,9 @@ function NotFound(): React.ReactElement {
           <EmptyDescription>That link does not go anywhere in this demo.</EmptyDescription>
         </EmptyHeader>
         <EmptyContent>
-          <a className={buttonVariants({ variant: "outline" })} href="#/">
+          <Button render={<Anchor href="#/" />} variant="outline">
             Go home
-          </a>
+          </Button>
         </EmptyContent>
       </Empty>
     </main>

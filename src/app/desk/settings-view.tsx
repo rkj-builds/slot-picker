@@ -75,7 +75,7 @@ export function SettingsView(): React.ReactElement {
       <Card>
         <CardHeader>
           <h2>
-            <CardTitle>Payment rules</CardTitle>
+            <CardTitle render={<span className="block" />}>Payment rules</CardTitle>
           </h2>
           <CardDescription>What a customer pays before a court is held for them.</CardDescription>
         </CardHeader>
@@ -162,7 +162,7 @@ export function SettingsView(): React.ReactElement {
       <Card>
         <CardHeader>
           <h2>
-            <CardTitle>Hours and prices</CardTitle>
+            <CardTitle render={<span className="block" />}>Hours and prices</CardTitle>
           </h2>
           <CardDescription>Per hour, per court. Peak applies in the band below{draft.weekendIsPeak ? " and all weekend" : ""}.</CardDescription>
         </CardHeader>
@@ -248,8 +248,8 @@ function PayFirstCard(): React.ReactElement {
     <Card>
       <CardHeader>
         <h2>
-          <CardTitle>Pay-first customers</CardTitle>
-        </h2>
+            <CardTitle render={<span className="block" />}>Pay-first customers</CardTitle>
+          </h2>
         <CardDescription>They pay in full before a court is held. Changes apply at once.</CardDescription>
       </CardHeader>
       <CardPanel className="flex flex-col gap-4">
