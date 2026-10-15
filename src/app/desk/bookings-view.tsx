@@ -1,6 +1,5 @@
 "use client";
 
-import { enIN } from "@daypicker/react/locale/en-IN";
 import { CalendarRangeIcon, DownloadIcon, EllipsisIcon, ListFilterIcon, SearchIcon, SearchXIcon } from "lucide-react";
 import * as React from "react";
 import { useBookingActions } from "@/app/desk/booking-actions";
@@ -23,7 +22,7 @@ import {
 } from "@/components/ui/autocomplete";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { LazyCalendar } from "@/components/booking/lazy-calendar";
 import { Checkbox } from "@/components/ui/checkbox";
 import { CheckboxGroup } from "@/components/ui/checkbox-group";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -169,9 +168,8 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
                 {from === to ? dayOf(from) : `${dayOf(from)} – ${dayOf(to)}`}
               </ToolbarButton>
               <PopoverPopup align="start">
-                <Calendar
+                <LazyCalendar
                   defaultMonth={toLocalDate(from)}
-                  locale={enIN}
                   mode="range"
                   onSelect={(range) => {
                     if (range?.from) setRange(fromLocalDate(range.from), fromLocalDate(range.to ?? range.from));

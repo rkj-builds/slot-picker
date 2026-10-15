@@ -1,10 +1,9 @@
 "use client";
 
-import { enIN } from "@daypicker/react/locale/en-IN";
 import { CalendarIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
+import { LazyCalendar } from "@/components/booking/lazy-calendar";
 import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
 import { Group, GroupSeparator } from "@/components/ui/group";
 import { Popover, PopoverPopup, PopoverTrigger } from "@/components/ui/popover";
 import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
@@ -92,14 +91,13 @@ export function DayStepper({
             {relative && <span className="font-normal text-muted-foreground max-sm:hidden">{relative}</span>}
           </PopoverTrigger>
           <PopoverPopup aria-label="Choose a date">
-            <Calendar
+            <LazyCalendar
               // The popover just opened from the date button: focus the chosen day, as a date picker should.
               // eslint-disable-next-line jsx-a11y/no-autofocus
               autoFocus
               defaultMonth={toLocalDate(value)}
               disabled={disabled}
               endMonth={maxDate ? toLocalDate(maxDate) : undefined}
-              locale={locale === "en-IN" ? enIN : undefined}
               mode="single"
               onSelect={(date: Date) => {
                 onValueChange(fromLocalDate(date));

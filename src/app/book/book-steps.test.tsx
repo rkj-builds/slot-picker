@@ -72,8 +72,8 @@ describe("the date picker on the When step", () => {
     expect(screen.getByRole("button", { name: /Previous day/ })).toBeDisabled();
     await user.click(screen.getByRole("button", { name: /^Choose a date, Thursday, 15 October 2026, Today/ }));
     const calendar = await screen.findByRole("dialog", { name: "Choose a date" });
-    // The window is today plus 13 days: 28 October is the last bookable day.
-    expect(within(calendar).getByRole("button", { name: /28 October 2026/ })).toBeEnabled();
+    // The calendar loads on first open. The window is today plus 13 days: 28 October is the last bookable day.
+    expect(await within(calendar).findByRole("button", { name: /28 October 2026/ }, { timeout: 5000 })).toBeEnabled();
     expect(within(calendar).getByRole("button", { name: /29 October 2026/ })).toBeDisabled();
     expect(within(calendar).getByRole("button", { name: /14 October 2026/ })).toBeDisabled();
     await user.click(within(calendar).getByRole("button", { name: /17 October 2026/ }));

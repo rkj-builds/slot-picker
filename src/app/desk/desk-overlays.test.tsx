@@ -79,8 +79,10 @@ describe("desk date picker", () => {
     expect(within(day).getByRole("button", { name: "Today" })).toBeDisabled();
     await user.click(within(day).getByRole("button", { name: /^Choose a date, Thursday, 15 October 2026/ }));
     const calendar = await screen.findByRole("dialog");
+    // The calendar loads on first open; check it once its days are there.
+    const day20 = await within(calendar).findByRole("button", { name: /20 October 2026/ }, { timeout: 5000 });
     expect(await axeViolations()).toEqual([]);
-    await user.click(within(calendar).getByRole("button", { name: /20 October 2026/ }));
+    await user.click(day20);
     await waitFor(() => expect(window.location.hash).toBe("#/desk?date=2026-10-20"));
     expect(screen.queryByRole("dialog")).toBeNull();
     await user.click(within(screen.getByRole("group", { name: "Day" })).getByRole("button", { name: "Today" }));

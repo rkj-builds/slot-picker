@@ -4,7 +4,6 @@ import { MapPinOffIcon } from "lucide-react";
 import * as React from "react";
 import { Anchor } from "@/app/anchor";
 import { DemoBar, useFocusHeadingOnNavigate } from "@/app/app-shell";
-import { BookPage } from "@/app/book/book-page";
 import { ClockProvider, pinnedNowFromUrl } from "@/app/clock";
 import { HomePage } from "@/app/home-page";
 import { useRoute } from "@/app/router";
@@ -15,7 +14,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
-// The desk and the gallery load on demand: a customer on #/book never downloads them.
+// Every page loads on demand: the home page stays small, and a customer on #/book never downloads the desk.
+const BookPage = React.lazy(() => import("@/app/book/book-page").then((m) => ({ default: m.BookPage })));
 const DeskPage = React.lazy(() => import("@/app/desk/desk-page").then((m) => ({ default: m.DeskPage })));
 const GalleryPage = React.lazy(() => import("@/app/gallery/gallery-page").then((m) => ({ default: m.GalleryPage })));
 
@@ -77,7 +77,7 @@ export function Routes(): React.ReactElement {
   );
 }
 
-/** The desk and the gallery arrive as their own chunk: a short, indeterminate wait, so a coss Spinner with a label. */
+/** Each page arrives as its own chunk: a short, indeterminate wait, so a coss Spinner with a label. */
 function PageFallback(): React.ReactElement {
   return (
     <div aria-busy="true" className="mx-auto flex w-full max-w-6xl flex-1 items-center justify-center gap-2 px-4 py-16" role="status">
