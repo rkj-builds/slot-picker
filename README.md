@@ -11,7 +11,7 @@ A time-zone-aware booking slot picker for React, built on [Base UI](https://base
   <img src="docs/screenshot-dark.png" alt="The same picker in dark mode." width="100%" />
 </details>
 
-The venue lives in one zone (Asia/Kolkata). The viewer may be anywhere. Every time is printed on the venue's clock, with the viewer's equivalent one line below. It is lifted from the booking engine behind [Project 831](https://project831-bot.vercel.app), a pickleball venue in Jamshedpur, with the business data left behind.
+The venue lives in one zone (Asia/Kolkata). The viewer may be anywhere. Every time is printed on the venue's clock, with the viewer's equivalent one line below. It is lifted from the booking engine behind [Project 831](https://project831.in), a pickleball venue in Jamshedpur, with the business data left behind.
 
 ## What I obsessed over
 
