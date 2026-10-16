@@ -244,3 +244,12 @@
         color-mix(in srgb, currentColor 14%, transparent) 4px 5px
     );
 }
+
+/*
+ * Toasts share the bottom edge with the anchored action bars (#/book on a phone,
+ * the desk's save bar). Unlayered, so it outranks coss's utility for `bottom`
+ * without touching the coss file; the height comes from useAnchoredBarHeight.
+ */
+[data-slot="toast-viewport"][data-position*="bottom"] {
+    bottom: calc(var(--toast-inset) + var(--anchored-bar-height, 0px));
+}

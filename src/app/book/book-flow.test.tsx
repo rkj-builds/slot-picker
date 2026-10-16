@@ -48,7 +48,7 @@ describe("booking flow", () => {
     const user = userEvent.setup();
     renderApp("#/book", { state: empty, now: NOW, scenarios: { weekend: true } });
     await toDetails(user);
-    expect(screen.getByText(/Sat, 17 Oct/)).toBeInTheDocument();
+    expect(within(screen.getByRole("region", { name: "Your booking" })).getByText("Sat, 17 Oct")).toBeInTheDocument();
     await fillDetails(user, "Kavya Menon", "9800000001");
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
     await enterDemoCode(user);

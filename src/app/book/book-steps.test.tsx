@@ -79,7 +79,9 @@ describe("the date picker on the When step", () => {
     await user.click(within(calendar).getByRole("button", { name: /17 October 2026/ }));
     expect(await screen.findByRole("button", { name: /^Choose a date, Saturday, 17 October 2026/ })).toBeInTheDocument();
     await user.click(screen.getByRole("radio", { name: "7:00 pm" }));
-    expect(screen.getByText(/Sat, 17 Oct/, { selector: "[data-slot=booking-summary-line]" })).toBeInTheDocument();
+    const summary = screen.getByRole("region", { name: "Your booking" });
+    expect(within(summary).getByText("Sat, 17 Oct")).toBeInTheDocument();
+    expect(within(summary).getByText("7:00 – 8:00 pm")).toBeInTheDocument();
   });
 });
 

@@ -13,9 +13,10 @@ describe("#/components", () => {
     expect(dark.length).toBe(light.length);
   });
 
-  it("passes axe", async () => {
+  // axe walks every component twice (light and dark): about 4 s alone, more under a full parallel run.
+  it("passes axe", { timeout: 20_000 }, async () => {
     renderApp("#/components");
-    await screen.findByRole("heading", { level: 1, name: "Components" });
+    await screen.findByRole("heading", { level: 1, name: "Components" }, { timeout: 5000 });
     expect(await axeViolations()).toEqual([]);
   });
 });

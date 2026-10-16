@@ -3,6 +3,7 @@
 import { CalendarPlusIcon, CircleCheckIcon, CircleSlashIcon, MessageCircleIcon, RotateCcwIcon, WalletIcon } from "lucide-react";
 import * as React from "react";
 import { EMPTY_DRAFT, useFlow } from "@/app/book/flow";
+import { StepActions, StepCard, StepLayout } from "@/app/book/step-actions";
 import { durationOf, whenOf } from "@/app/format";
 import { useClock } from "@/app/clock";
 import { useStore } from "@/app/store";
@@ -20,7 +21,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Card, CardAction, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { RadioCard } from "@/components/compositions/radio-card";
 import { Separator } from "@/components/ui/separator";
@@ -48,7 +49,28 @@ export function DoneStep(): React.ReactElement | null {
   };
 
   return (
-    <section className="flex flex-col gap-5">
+    <StepLayout
+      actions={
+        <StepActions
+          compactLine={
+            <p className="truncate tabular-nums">
+              <span className="font-medium">{cancelled ? "Cancelled" : "Confirmed"}</span>
+              <span aria-hidden="true" className="text-muted-foreground/60">{" · "}</span>
+              {where}
+            </p>
+          }
+          note="Your name and number stay filled in."
+          primary={
+            <Button onClick={bookAnother} size="lg">
+              <RotateCcwIcon aria-hidden="true" />
+              Book another court
+            </Button>
+          }
+          rows={[]}
+          title="What next"
+        />
+      }
+    >
       <div className="flex flex-col items-start gap-3">
         <Badge size="lg" variant={cancelled ? "secondary" : "success"}>
           {cancelled ? <CircleSlashIcon aria-hidden="true" /> : <CircleCheckIcon aria-hidden="true" />}
@@ -76,11 +98,13 @@ export function DoneStep(): React.ReactElement | null {
       )}
 
       <Card>
-        <CardHeader className="flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>{VENUE.name}</CardTitle>
-          <Badge variant={cancelled ? "secondary" : due === 0 ? "success" : paid > 0 ? "info" : "warning"}>
-            {cancelled ? "Cancelled" : due === 0 ? "Paid" : paid > 0 ? "Part-paid" : "Pay at venue"}
-          </Badge>
+          <CardAction>
+            <Badge variant={cancelled ? "secondary" : due === 0 ? "success" : paid > 0 ? "info" : "warning"}>
+              {cancelled ? "Cancelled" : due === 0 ? "Paid" : paid > 0 ? "Part-paid" : "Pay at venue"}
+            </Badge>
+          </CardAction>
         </CardHeader>
         <CardPanel>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
@@ -106,7 +130,7 @@ export function DoneStep(): React.ReactElement | null {
           </dl>
         </CardPanel>
         {!cancelled && (
-          <CardFooter>
+          <CardFooter className="flex-wrap gap-2">
             <CalendarButton booking={booking} />
             <Button render={<Anchor href={whatsAppHref(booking)} rel="noreferrer" target="_blank" />} variant="outline">
               <MessageCircleIcon aria-hidden="true" />
@@ -116,35 +140,34 @@ export function DoneStep(): React.ReactElement | null {
         )}
       </Card>
 
-      <h2 className="-mb-3 font-medium text-muted-foreground text-xs uppercase tracking-wide">Good to know</h2>
-      <Accordion>
-        <AccordionItem value="cancel">
-          <AccordionTrigger>Cancellation policy</AccordionTrigger>
-          <AccordionPanel>
-            Cancel any time before your start. Whatever you paid becomes credit straight away, or a refund to the original payment method in 5–7
-            working days. You choose. Nothing paid means nothing to settle.
-          </AccordionPanel>
-        </AccordionItem>
-        <AccordionItem value="arrive">
-          <AccordionTrigger>On the day</AccordionTrigger>
-          <AccordionPanel>Come ten minutes early. Paddles and balls are at the desk; non-marking shoes, please. Pay any balance at the desk by UPI or cash.</AccordionPanel>
-        </AccordionItem>
-        <AccordionItem value="why">
-          <AccordionTrigger>Why we ask for money up front</AccordionTrigger>
-          <AccordionPanel>
-            Unpaid bookings were cancelled almost half the time, often too late for anyone else to play. A deposit keeps courts for people who come.
-          </AccordionPanel>
-        </AccordionItem>
-      </Accordion>
+      <StepCard title="Good to know">
+        <Accordion>
+          <AccordionItem value="cancel">
+            <AccordionTrigger>Cancellation policy</AccordionTrigger>
+            <AccordionPanel>
+              Cancel any time before your start. Whatever you paid becomes credit straight away, or a refund to the original payment method in 5–7
+              working days. You choose. Nothing paid means nothing to settle.
+            </AccordionPanel>
+          </AccordionItem>
+          <AccordionItem value="arrive">
+            <AccordionTrigger>On the day</AccordionTrigger>
+            <AccordionPanel>Come ten minutes early. Paddles and balls are at the desk; non-marking shoes, please. Pay any balance at the desk by UPI or cash.</AccordionPanel>
+          </AccordionItem>
+          <AccordionItem value="why">
+            <AccordionTrigger>Why we ask for money up front</AccordionTrigger>
+            <AccordionPanel>
+              Unpaid bookings were cancelled almost half the time, often too late for anyone else to play. A deposit keeps courts for people who come.
+            </AccordionPanel>
+          </AccordionItem>
+        </Accordion>
+      </StepCard>
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <Button onClick={bookAnother} variant="outline">
-          <RotateCcwIcon aria-hidden="true" />
-          Book another court
-        </Button>
-        {!cancelled && <ManageBooking booking={booking} />}
-      </div>
-    </section>
+      {!cancelled && (
+        <StepCard description="Cancel any time before your start. What you paid becomes credit or a refund, your choice." title="Change of plans?">
+          <ManageBooking booking={booking} />
+        </StepCard>
+      )}
+    </StepLayout>
   );
 }
 

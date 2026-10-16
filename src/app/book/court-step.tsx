@@ -3,12 +3,13 @@
 import type * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { useFlow } from "@/app/book/flow";
+import { StepActions, StepCard, StepLayout } from "@/app/book/step-actions";
+import { bookingRows } from "@/app/book/summary-rows";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { NumberField, NumberFieldDecrement, NumberFieldGroup, NumberFieldIncrement, NumberFieldInput } from "@/components/ui/number-field";
 import { RadioGroup } from "@/components/ui/radio-group";
 import { RadioCard } from "@/components/compositions/radio-card";
-import type { CourtId } from "@/lib/venue";
+import { type CourtId, courtName } from "@/lib/venue";
 
 const OPTIONS: { value: CourtId | "any"; title: string; line: string }[] = [
   { value: "any", title: "Any court", line: "Whichever is free at your time. The most times to choose from." },
@@ -19,39 +20,54 @@ const OPTIONS: { value: CourtId | "any"; title: string; line: string }[] = [
 export function CourtStep(): React.ReactElement {
   const { draft, update, goTo } = useFlow();
   return (
-    <section>
+    <StepLayout
+      actions={
+        <StepActions
+          primary={
+            <Button onClick={() => goTo("when")} size="lg">
+              Continue
+            </Button>
+          }
+          rows={bookingRows({
+            court: draft.courtId === "any" ? "Any court" : courtName(draft.courtId),
+            players: draft.players,
+            day: null,
+            time: null,
+            duration: null,
+            price: null,
+          })}
+          compactLine={
+            <p className="truncate">
+              <span className="font-medium">{draft.courtId === "any" ? "Any court" : courtName(draft.courtId)}</span>
+              <span aria-hidden="true" className="text-muted-foreground/60">{" · "}</span>
+              {draft.players} {draft.players === 1 ? "player" : "players"}
+            </p>
+          }
+          note="Next: pick a day and a time."
+        />
+      }
+    >
       <StepHeading description="Both courts are the same size and surface. Pick one, or let us pick." title="Pick a court" />
-      <RadioGroup aria-label="Court" onValueChange={(courtId) => update({ courtId: courtId as CourtId | "any", startMinute: null })} value={draft.courtId}>
-        {OPTIONS.map((option) => (
-          <RadioCard key={option.value} value={option.value}>
-            <span className="font-medium text-sm">{option.title}</span>
-            <span className="text-muted-foreground text-sm">{option.line}</span>
-          </RadioCard>
-        ))}
-      </RadioGroup>
+      <StepCard description="Any court shows the most free times." title="Court">
+        <RadioGroup aria-label="Court" onValueChange={(courtId) => update({ courtId: courtId as CourtId | "any", startMinute: null })} value={draft.courtId}>
+          {OPTIONS.map((option) => (
+            <RadioCard key={option.value} value={option.value}>
+              <span className="font-medium text-sm">{option.title}</span>
+              <span className="text-muted-foreground text-sm">{option.line}</span>
+            </RadioCard>
+          ))}
+        </RadioGroup>
+      </StepCard>
 
-      <NumberField
-        className="mt-6"
-        id="players"
-        max={8}
-        min={1}
-        onValueChange={(players) => update({ players: players ?? 4 })}
-        value={draft.players}
-      >
-        <Label htmlFor="players">Players</Label>
-        <NumberFieldGroup className="w-36">
-          <NumberFieldDecrement aria-label="Fewer players" />
-          <NumberFieldInput />
-          <NumberFieldIncrement aria-label="More players" />
-        </NumberFieldGroup>
-        <span className="text-muted-foreground text-xs">Doubles is four. The price is per court, not per player.</span>
-      </NumberField>
-
-      <div className="mt-8 flex justify-end">
-        <Button onClick={() => goTo("when")} size="lg">
-          Continue
-        </Button>
-      </div>
-    </section>
+      <StepCard description="Doubles is four. The price is per court, not per player." title="Players">
+        <NumberField id="players" max={8} min={1} onValueChange={(players) => update({ players: players ?? 4 })} value={draft.players}>
+          <NumberFieldGroup className="w-36">
+            <NumberFieldDecrement aria-label="Fewer players" />
+            <NumberFieldInput aria-label="Players" />
+            <NumberFieldIncrement aria-label="More players" />
+          </NumberFieldGroup>
+        </NumberField>
+      </StepCard>
+    </StepLayout>
   );
 }

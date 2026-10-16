@@ -5,7 +5,9 @@ import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { useFlow } from "@/app/book/flow";
 import { SlotTakenNotice } from "@/app/book/slot-taken-notice";
-import { whenOf } from "@/app/format";
+import { StepActions, StepCard, StepLayout } from "@/app/book/step-actions";
+import { bookingRows } from "@/app/book/summary-rows";
+import { dayOf, durationOf, timeRangeOf, whenOf } from "@/app/format";
 import { useStore } from "@/app/store";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +24,7 @@ import type { Alternative } from "@/lib/checkout";
 import { formatInr } from "@/lib/money";
 import { checkIndianPhone, describePhoneProblem, formatPhone } from "@/lib/phone";
 import { customerByPhone } from "@/lib/store";
-import { courtName } from "@/lib/venue";
+import { courtName, priceFor } from "@/lib/venue";
 
 /** The demo's pay-first customer, used by the "Flagged customer" scenario. */
 const FLAGGED = { name: "Rohan Mehta", phone: "+919000000106" };
@@ -46,6 +48,7 @@ export function YouStep(): React.ReactElement {
   const [code, setCode] = React.useState("");
   const [codeError, setCodeError] = React.useState<string | null>(null);
   const codeRef = React.useRef<HTMLDivElement>(null);
+  const formId = React.useId();
 
   // The flagged scenario fills the form with a customer the venue asks to pay first.
   const { flagged } = store.scenarios;
@@ -122,11 +125,45 @@ export function YouStep(): React.ReactElement {
     checkCode(code);
   };
 
+  const court = courtName(draft.courtId === "any" ? "Any court" : draft.courtId);
+  const price = formatInr(priceFor(store.state.settings, span.date, span.startMinute, span.durationMinutes));
+  const holdFor = store.scenarios.shortHold ? "30 seconds" : `${store.state.settings.holdMinutes} minutes`;
+
   return (
-    <section>
-      <StepHeading description={`${courtName(draft.courtId === "any" ? "Any court" : draft.courtId)} · ${whenOf(span)}`} title="Your details" />
+    <StepLayout
+      actions={
+        <StepActions
+          note={`We hold the court for ${holdFor} while you pay.`}
+          onBack={() => goTo("when")}
+          primary={
+            <Button form={formId} loading={busy} size="lg" type="submit">
+              {awaitingCode ? "Verify and hold" : "Hold this court"}
+            </Button>
+          }
+          rows={bookingRows({
+            court,
+            players: draft.players,
+            day: dayOf(span.date),
+            time: timeRangeOf(span),
+            duration: durationOf(span.durationMinutes),
+            price,
+          })}
+          compactLine={
+            <p className="truncate tabular-nums">
+              <span className="font-medium">{court}</span>
+              <span aria-hidden="true" className="text-muted-foreground/60">{" · "}</span>
+              {whenOf(span)}
+              <span aria-hidden="true" className="text-muted-foreground/60">{" · "}</span>
+              <span className="font-semibold">{price}</span>
+            </p>
+          }
+        />
+      }
+    >
+      <StepHeading description={`${court} · ${whenOf(span)}`} title="Your details" />
       <Form
         className="flex flex-col gap-5"
+        id={formId}
         onSubmit={(event) => {
           event.preventDefault();
           submit();
@@ -149,88 +186,90 @@ export function YouStep(): React.ReactElement {
           />
         )}
 
-        <Fieldset className="flex flex-col gap-5">
-          <FieldsetLegend className="sr-only">Who is booking</FieldsetLegend>
-          <Field className="w-full" name="name" validate={() => (draft.name.trim() ? null : "Tell us who is booking.")}>
-            <FieldLabel>Name</FieldLabel>
-            <Input autoComplete="name" onChange={(event) => update({ name: event.target.value })} placeholder="Who is booking" size="lg" type="text" value={draft.name} />
-            <FieldError />
-          </Field>
-
-          <Field
-            className="w-full"
-            name="phone"
-            validate={() => {
-              const problem = checkIndianPhone(draft.phone).problem;
-              return problem ? describePhoneProblem(problem) : null;
-            }}
-          >
-            <FieldLabel>Mobile number</FieldLabel>
-            <InputGroup>
-              <InputGroupInput
-                autoComplete="tel-national"
-                inputMode="tel"
-                onBlur={() => {
-                  const check = checkIndianPhone(draft.phone);
-                  if (check.phone) update({ phone: formatPhone(check.phone).replace(/^\+91 /, "") });
-                }}
-                onChange={(event) => update({ phone: event.target.value })}
-                placeholder="98765 43210"
-                size="lg"
-                type="tel"
-                value={draft.phone.replace(/^\+91 /, "")}
-              />
-              <InputGroupAddon>
-                <InputGroupText>+91</InputGroupText>
-              </InputGroupAddon>
-              {verified && (
-                <InputGroupAddon align="inline-end">
-                  <Badge variant="success">
-                    <ShieldCheckIcon aria-hidden="true" />
-                    Verified
-                  </Badge>
-                </InputGroupAddon>
-              )}
-            </InputGroup>
-            <FieldError />
-            <FieldDescription>For the confirmation and nothing else. We check it once with a code on WhatsApp.</FieldDescription>
-          </Field>
-
-          {awaitingCode && (
-            <Field className="w-full" invalid={Boolean(codeError)}>
-              <FieldLabel>Code sent to {formatPhone(codeSentTo)}</FieldLabel>
-              <OTPField
-                aria-describedby="code-help"
-                length={CODE_LENGTH}
-                onValueChange={(value) => {
-                  setCode(value);
-                  // A new digit clears the last error; the reset to "" after a wrong code does not.
-                  if (codeError && value !== "") setCodeError(null);
-                }}
-                onValueComplete={checkCode}
-                ref={codeRef}
-                size="lg"
-                value={code}
-              >
-                {CODE_SLOTS.map((key, i) => (
-                  <React.Fragment key={key}>
-                    {i === CODE_LENGTH / 2 && <OTPFieldSeparator />}
-                    <OTPFieldInput aria-label={i === 0 ? undefined : `Character ${i + 1} of ${CODE_LENGTH}`} />
-                  </React.Fragment>
-                ))}
-              </OTPField>
-              {/* A wrong code is our error (forced on with `match`); an incomplete one is Base UI's own check on submit. */}
-              {codeError ? <FieldError match>{codeError}</FieldError> : <FieldError>Enter the {CODE_LENGTH}-digit code.</FieldError>}
-              <FieldDescription className="flex flex-wrap items-center gap-1" id="code-help">
-                <MessageCircleIcon aria-hidden="true" className="size-3.5" />
-                Check WhatsApp for a {CODE_LENGTH}-digit code.
-                <Button className="h-auto px-0 py-0 text-xs sm:h-auto" onClick={() => sendCode(codeSentTo)} size="xs" variant="link">
-                  Send it again
-                </Button>
-              </FieldDescription>
+        <StepCard description="Who is booking, and where the confirmation goes." title="Contact">
+          <Fieldset className="flex flex-col gap-5">
+            <FieldsetLegend className="sr-only">Who is booking</FieldsetLegend>
+            <Field className="w-full" name="name" validate={() => (draft.name.trim() ? null : "Tell us who is booking.")}>
+              <FieldLabel>Name</FieldLabel>
+              <Input autoComplete="name" onChange={(event) => update({ name: event.target.value })} placeholder="Who is booking" size="lg" type="text" value={draft.name} />
+              <FieldError />
             </Field>
-          )}
-        </Fieldset>
+
+            <Field
+              className="w-full"
+              name="phone"
+              validate={() => {
+                const problem = checkIndianPhone(draft.phone).problem;
+                return problem ? describePhoneProblem(problem) : null;
+              }}
+            >
+              <FieldLabel>Mobile number</FieldLabel>
+              <InputGroup>
+                <InputGroupInput
+                  autoComplete="tel-national"
+                  inputMode="tel"
+                  onBlur={() => {
+                    const check = checkIndianPhone(draft.phone);
+                    if (check.phone) update({ phone: formatPhone(check.phone).replace(/^\+91 /, "") });
+                  }}
+                  onChange={(event) => update({ phone: event.target.value })}
+                  placeholder="98765 43210"
+                  size="lg"
+                  type="tel"
+                  value={draft.phone.replace(/^\+91 /, "")}
+                />
+                <InputGroupAddon>
+                  <InputGroupText>+91</InputGroupText>
+                </InputGroupAddon>
+                {verified && (
+                  <InputGroupAddon align="inline-end">
+                    <Badge variant="success">
+                      <ShieldCheckIcon aria-hidden="true" />
+                      Verified
+                    </Badge>
+                  </InputGroupAddon>
+                )}
+              </InputGroup>
+              <FieldError />
+              <FieldDescription>For the confirmation and nothing else. We check it once with a code on WhatsApp.</FieldDescription>
+            </Field>
+
+            {awaitingCode && (
+              <Field className="w-full" invalid={Boolean(codeError)}>
+                <FieldLabel>Code sent to {formatPhone(codeSentTo)}</FieldLabel>
+                <OTPField
+                  aria-describedby="code-help"
+                  length={CODE_LENGTH}
+                  onValueChange={(value) => {
+                    setCode(value);
+                    // A new digit clears the last error; the reset to "" after a wrong code does not.
+                    if (codeError && value !== "") setCodeError(null);
+                  }}
+                  onValueComplete={checkCode}
+                  ref={codeRef}
+                  size="lg"
+                  value={code}
+                >
+                  {CODE_SLOTS.map((key, i) => (
+                    <React.Fragment key={key}>
+                      {i === CODE_LENGTH / 2 && <OTPFieldSeparator />}
+                      <OTPFieldInput aria-label={i === 0 ? undefined : `Character ${i + 1} of ${CODE_LENGTH}`} />
+                    </React.Fragment>
+                  ))}
+                </OTPField>
+                {/* A wrong code is our error (forced on with `match`); an incomplete one is Base UI's own check on submit. */}
+                {codeError ? <FieldError match>{codeError}</FieldError> : <FieldError>Enter the {CODE_LENGTH}-digit code.</FieldError>}
+                <FieldDescription className="flex flex-wrap items-center gap-1" id="code-help">
+                  <MessageCircleIcon aria-hidden="true" className="size-3.5" />
+                  Check WhatsApp for a {CODE_LENGTH}-digit code.
+                  <Button className="h-auto px-0 py-0 text-xs sm:h-auto" onClick={() => sendCode(codeSentTo)} size="xs" variant="link">
+                    Send it again
+                  </Button>
+                </FieldDescription>
+              </Field>
+            )}
+          </Fieldset>
+        </StepCard>
 
         <div aria-live="polite" className="empty:hidden">
           {returning && !returning.payFirst && (
@@ -256,23 +295,15 @@ export function YouStep(): React.ReactElement {
           )}
         </div>
 
-        <Field className="w-full" name="notes">
-          <FieldLabel>
-            Notes <span className="font-normal text-muted-foreground">(optional)</span>
-          </FieldLabel>
-          <Textarea onChange={(event) => update({ notes: event.target.value })} placeholder="Need paddles, a coach, or a ball machine?" value={draft.notes} />
-        </Field>
-
-        <div className="flex items-center justify-between gap-3 pt-2">
-          <Button onClick={() => goTo("when")} variant="ghost">
-            Back
-          </Button>
-          <Button loading={busy} size="lg" type="submit">
-            {awaitingCode ? "Verify and hold" : "Hold this court"}
-          </Button>
-        </div>
-        <p className="text-end text-muted-foreground text-xs">We hold the court for {store.scenarios.shortHold ? "30 seconds" : `${store.state.settings.holdMinutes} minutes`} while you pay.</p>
+        <StepCard description="Paddles, a coach, a ball machine: the desk reads these before you arrive." title="Anything else?">
+          <Field className="w-full" name="notes">
+            <FieldLabel>
+              Notes <span className="font-normal text-muted-foreground">(optional)</span>
+            </FieldLabel>
+            <Textarea onChange={(event) => update({ notes: event.target.value })} placeholder="Need paddles, a coach, or a ball machine?" value={draft.notes} />
+          </Field>
+        </StepCard>
       </Form>
-    </section>
+    </StepLayout>
   );
 }

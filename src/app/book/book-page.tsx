@@ -70,7 +70,9 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
 
   return (
     <FlowContext.Provider value={flow}>
-      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 pt-6 pb-28 sm:pt-10">
+      {/* Clips the full-bleed backdrops of the sticky stepper and action bar, without becoming a scroll container. */}
+      <div className="flex flex-1 flex-col overflow-x-clip">
+      <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 pt-6 sm:pt-10 lg:max-w-5xl lg:pb-12">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
             <span className="font-semibold text-sm tracking-tight">{VENUE.name}</span>
@@ -79,9 +81,15 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
               {VENUE.city} · 2 pickleball courts
             </span>
           </div>
+          <ScenariosPopover />
         </div>
 
-        <nav aria-label="Booking steps">
+        {/* The stepper stays under the demo bar; its backdrop runs edge to edge so it reads as part of the page chrome. */}
+        <nav
+          aria-label="Booking steps"
+          className="sticky top-[calc(3rem+1px)] z-20 isolate -my-3 py-3 before:absolute before:inset-y-0 before:left-1/2 before:-z-10 before:w-dvw before:-translate-x-1/2 before:border-b before:border-border before:bg-background/94 before:backdrop-blur-md"
+          data-slot="book-stepper"
+        >
           <Stepper>
             {STEPS.map((s, i) => (
               <StepperItem
@@ -100,7 +108,7 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
         ) : store.status === "error" ? (
           <LoadError onRetry={store.retryLoad} />
         ) : (
-          <div className="animate-fade-in" key={step}>
+          <div className="flex flex-1 animate-fade-in flex-col" key={step}>
             {step === "court" && <CourtStep />}
             {step === "when" && <WhenStep />}
             {step === "you" && <YouStep />}
@@ -109,7 +117,7 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
           </div>
         )}
       </main>
-      <ScenariosPopover />
+      </div>
     </FlowContext.Provider>
   );
 }
@@ -155,7 +163,7 @@ export function LoadError({ onRetry }: { onRetry: () => void }): React.ReactElem
 /** The heading every step starts with; it receives focus when the step changes. */
 export function StepHeading({ title, description }: { title: string; description?: React.ReactNode }): React.ReactElement {
   return (
-    <div className="mb-5 flex flex-col gap-1">
+    <div className="flex flex-col gap-1">
       <h1 className="font-semibold text-2xl tracking-tight outline-none" tabIndex={-1}>
         {title}
       </h1>

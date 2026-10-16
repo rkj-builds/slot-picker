@@ -6,11 +6,12 @@ import { StepHeading } from "@/app/book/book-page";
 import { CheckoutDialog } from "@/app/book/checkout-dialog";
 import { useFlow } from "@/app/book/flow";
 import { SlotTakenNotice } from "@/app/book/slot-taken-notice";
-import { durationOf, timeRangeOf, whenOf } from "@/app/format";
+import { StepActions, StepCard, StepLayout, type SummaryRow } from "@/app/book/step-actions";
+import { dayOf, durationOf, timeRangeOf, whenOf } from "@/app/format";
 import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
-import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Card, CardPanel } from "@/components/ui/card";
 import { Drawer, DrawerClose, DrawerDescription, DrawerFooter, DrawerHeader, DrawerPanel, DrawerPopup, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Meter, MeterIndicator, MeterLabel, MeterTrack } from "@/components/ui/meter";
@@ -18,7 +19,6 @@ import { RadioGroup } from "@/components/ui/radio-group";
 import { RadioCard } from "@/components/compositions/radio-card";
 import { Separator } from "@/components/ui/separator";
 import { toastManager } from "@/components/ui/toast";
-import { useMediaQuery } from "@/hooks/use-media-query";
 import type { Booking, PayMode } from "@/lib/booking";
 import { type Alternative, type PayResult, policyCustomerFor } from "@/lib/checkout";
 import { describeCountdown, formatCountdown, holdRemainingMs } from "@/lib/holds";
@@ -79,7 +79,7 @@ export function PayStep(): React.ReactElement | null {
 
   if (race) {
     return (
-      <section>
+      <section className="flex flex-col gap-5">
         <StepHeading description="Nothing was charged." title="Someone else got that court" />
         <SlotTakenNotice
           alternatives={race}
@@ -95,7 +95,7 @@ export function PayStep(): React.ReactElement | null {
 
   if (expired) {
     return (
-      <section>
+      <section className="flex flex-col gap-5">
         <StepHeading title="Your hold ran out" />
         <Empty className="rounded-2xl border border-dashed" role="status">
           <EmptyHeader>
@@ -127,31 +127,52 @@ export function PayStep(): React.ReactElement | null {
     settle(result);
   };
 
+  const rows: SummaryRow[] = [
+    { label: "Court", value: courtName(booking.courtId) },
+    { label: "Players", value: String(draft.players) },
+    { label: "Date", value: dayOf(booking.date) },
+    { label: "Time", value: timeRangeOf(booking) },
+    { label: "Duration", value: durationOf(booking.durationMinutes) },
+    { label: "Price", value: formatInr(booking.pricePaise) },
+    { label: "Pay now", value: formatInr(amountNow), emphasis: true },
+    { label: "At the venue", value: formatInr(booking.pricePaise - amountNow) },
+  ];
+
   return (
-    <section>
+    <StepLayout
+      actions={
+        <StepActions
+          compactLine={
+            <p className="truncate tabular-nums">
+              <span className="font-semibold">{formatInr(amountNow)} now</span>
+              <span aria-hidden="true" className="text-muted-foreground/60">{" · "}</span>
+              {courtName(booking.courtId)} · {whenOf(booking)}
+            </p>
+          }
+          extra={<SummaryDrawer amountNow={amountNow} booking={booking} players={draft.players} />}
+          note={mode === "venue" ? "Confirmed now, nothing to pay yet." : "Opens a checkout. Nothing is charged yet."}
+          onBack={() => goTo("you")}
+          primary={
+            mode === "venue" ? (
+              <Button loading={busy} onClick={() => void confirmAtVenue()} size="lg">
+                Confirm booking
+              </Button>
+            ) : (
+              <Button onClick={() => setCheckoutOpen(true)} size="lg">
+                Pay {formatInr(amountNow)}
+              </Button>
+            )
+          }
+          rows={rows}
+          status={<HoldChip remaining={remaining} />}
+        />
+      }
+    >
       <StepHeading description={describeDecision(decision, store.state.settings)} title="Hold and pay" />
-      <div className="flex flex-col gap-5">
-        <HoldMeter booking={booking} remaining={remaining} />
-
+      <HoldMeter booking={booking} remaining={remaining} />
+      <StepCard description={decision.modes.length > 1 ? "Choose how much to pay now." : "How this booking is paid."} title="Payment option">
         <PayOptions booking={booking} decision={decision} mode={mode} onChange={setChosen} />
-
-        <OrderSummary amountNow={amountNow} booking={booking} players={draft.players} />
-
-        <div className="flex items-center justify-between gap-3">
-          <Button onClick={() => goTo("you")} variant="ghost">
-            Back
-          </Button>
-          {mode === "venue" ? (
-            <Button loading={busy} onClick={() => void confirmAtVenue()} size="lg">
-              Confirm booking
-            </Button>
-          ) : (
-            <Button onClick={() => setCheckoutOpen(true)} size="lg">
-              Pay {formatInr(amountNow)}
-            </Button>
-          )}
-        </div>
-      </div>
+      </StepCard>
 
       <CheckoutDialog
         amountPaise={amountNow}
@@ -162,7 +183,21 @@ export function PayStep(): React.ReactElement | null {
         open={checkoutOpen && !expired}
         summary={`${courtName(booking.courtId)} · ${whenOf(booking)}`}
       />
-    </section>
+    </StepLayout>
+  );
+}
+
+/** The countdown again, beside the pay button, so it is in sight wherever the page is scrolled. The meter above carries it for screen readers. */
+function HoldChip({ remaining }: { remaining: number }): React.ReactElement {
+  const tone = remaining <= 60_000 ? "text-destructive-foreground" : remaining <= 3 * 60_000 ? "text-warning-foreground" : "text-foreground";
+  return (
+    <p aria-hidden="true" className="flex items-center justify-between gap-2 text-xs" data-slot="hold-chip">
+      <span className="flex items-center gap-1.5 text-muted-foreground">
+        <HourglassIcon className="size-3.5" />
+        Court held for you
+      </span>
+      <span className={`font-semibold tabular-nums ${tone}`}>{formatCountdown(remaining)}</span>
+    </p>
   );
 }
 
@@ -228,12 +263,10 @@ function PayOptions({
   if (decision.modes.length === 1) {
     const only = decision.modes[0] ?? "full";
     return (
-      <Card className="rounded-xl before:rounded-[calc(var(--radius-xl)-1px)]" data-slot="pay-option-single">
-        <CardPanel className="p-4">
-          <p className="font-medium text-sm">{MODE_COPY[only].title}</p>
-          <p className="text-muted-foreground text-sm">{MODE_COPY[only].line(decision, booking.pricePaise)}</p>
-        </CardPanel>
-      </Card>
+      <div className="flex flex-col gap-1 rounded-lg border p-3" data-slot="pay-option-single">
+        <p className="font-medium text-sm">{MODE_COPY[only].title}</p>
+        <p className="text-muted-foreground text-sm">{MODE_COPY[only].line(decision, booking.pricePaise)}</p>
+      </div>
     );
   }
   return (
@@ -252,77 +285,52 @@ function PayOptions({
 }
 
 /**
- * What is being bought. A coss Card beside the options on a laptop; on a
- * phone, a one-line total that opens the full summary in a coss Drawer, so
- * the pay button stays in reach.
+ * Phone and tablet: the full summary, one tap away in a coss Drawer, from the
+ * action bar. (On a laptop the summary Card beside the step shows all of it.)
  */
-function OrderSummary({ booking, players, amountNow }: { booking: Booking; players: number; amountNow: number }): React.ReactElement {
-  const phone = useMediaQuery("max-md");
+function SummaryDrawer({ booking, players, amountNow }: { booking: Booking; players: number; amountNow: number }): React.ReactElement {
   const rows: [string, string][] = [
     ["Court", courtName(booking.courtId)],
     ["When", whenOf(booking)],
     ["Duration", durationOf(booking.durationMinutes)],
     ["Players", String(players)],
   ];
-  const details = (
-    <>
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-        {rows.map(([term, value]) => (
-          <React.Fragment key={term}>
-            <dt className="text-muted-foreground">{term}</dt>
-            <dd className="text-end tabular-nums">{value}</dd>
-          </React.Fragment>
-        ))}
-      </dl>
-      <Separator className="my-3" />
-      <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
-        <dt className="text-muted-foreground">Price</dt>
-        <dd className="text-end tabular-nums">{formatInr(booking.pricePaise)}</dd>
-        <dt className="font-medium">Pay now</dt>
-        <dd className="text-end font-semibold tabular-nums">{formatInr(amountNow)}</dd>
-        <dt className="text-muted-foreground">At the venue</dt>
-        <dd className="text-end tabular-nums">{formatInr(booking.pricePaise - amountNow)}</dd>
-      </dl>
-    </>
-  );
-
-  if (phone) {
-    return (
-      <Drawer>
-        <Card className="flex-row items-center justify-between gap-3 rounded-xl px-4 py-3 before:rounded-[calc(var(--radius-xl)-1px)]" data-slot="order-summary-bar">
-          <span className="flex min-w-0 flex-col">
-            <span className="font-semibold tabular-nums">{formatInr(amountNow)} now</span>
-            <span className="truncate text-muted-foreground text-xs">
-              {courtName(booking.courtId)} · {whenOf(booking)}
-            </span>
-          </span>
-          <DrawerTrigger render={<Button size="sm" variant="outline" />}>
-            <ReceiptIcon aria-hidden="true" />
-            Summary
-          </DrawerTrigger>
-        </Card>
-        <DrawerPopup showBar>
-          <DrawerHeader>
-            <DrawerTitle>Summary</DrawerTitle>
-            <DrawerDescription>
-              {courtName(booking.courtId)} · {whenOf(booking)}
-            </DrawerDescription>
-          </DrawerHeader>
-          <DrawerPanel>{details}</DrawerPanel>
-          <DrawerFooter>
-            <DrawerClose render={<Button variant="ghost" />}>Close</DrawerClose>
-          </DrawerFooter>
-        </DrawerPopup>
-      </Drawer>
-    );
-  }
-
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Summary</CardTitle>
-      </CardHeader>
-      <CardPanel>{details}</CardPanel>
-    </Card>
+    <Drawer>
+      <DrawerTrigger render={<Button size="sm" variant="outline" />}>
+        <ReceiptIcon aria-hidden="true" />
+        Summary
+      </DrawerTrigger>
+      <DrawerPopup showBar>
+        <DrawerHeader>
+          <DrawerTitle>Summary</DrawerTitle>
+          <DrawerDescription>
+            {courtName(booking.courtId)} · {whenOf(booking)}
+          </DrawerDescription>
+        </DrawerHeader>
+        <DrawerPanel>
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+            {rows.map(([term, value]) => (
+              <React.Fragment key={term}>
+                <dt className="text-muted-foreground">{term}</dt>
+                <dd className="text-end tabular-nums">{value}</dd>
+              </React.Fragment>
+            ))}
+          </dl>
+          <Separator className="my-3" />
+          <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
+            <dt className="text-muted-foreground">Price</dt>
+            <dd className="text-end tabular-nums">{formatInr(booking.pricePaise)}</dd>
+            <dt className="font-medium">Pay now</dt>
+            <dd className="text-end font-semibold tabular-nums">{formatInr(amountNow)}</dd>
+            <dt className="text-muted-foreground">At the venue</dt>
+            <dd className="text-end tabular-nums">{formatInr(booking.pricePaise - amountNow)}</dd>
+          </dl>
+        </DrawerPanel>
+        <DrawerFooter>
+          <DrawerClose render={<Button variant="ghost" />}>Close</DrawerClose>
+        </DrawerFooter>
+      </DrawerPopup>
+    </Drawer>
   );
 }
