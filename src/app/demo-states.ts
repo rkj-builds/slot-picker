@@ -32,6 +32,8 @@ export interface DemoState {
   day?: "tomorrow" | "weekday" | "weekend";
   /** The screen, as a hash; "{saturday}" is filled with the next Saturday's date. */
   hash: string;
+  /** Run the first payment during the jump, so the pay step opens on its outcome (declined, slot taken). */
+  opensOutcome?: boolean;
 }
 
 export const DEMO_STATES: readonly DemoState[] = [
@@ -46,8 +48,8 @@ export const DEMO_STATES: readonly DemoState[] = [
 
   { id: "pay-weekday", group: "Payment", label: "Hold and pay, weekday", shows: "Step 4 with the countdown: pay at the venue or now.", setup: "hold", day: "weekday", hash: "#/book/pay" },
   { id: "pay-weekend", group: "Payment", label: "Weekend: 50% or full", shows: "Step 4 at the weekend: a deposit or the full amount.", setup: "hold", day: "weekend", hash: "#/book/pay" },
-  { id: "declined", group: "Payment", label: "Payment declined, then retry", shows: "The first payment fails inside checkout; a retry goes through.", presets: { paymentFails: true }, setup: "hold", hash: "#/book/pay" },
-  { id: "race", group: "Payment", label: "Slot taken mid-payment", shows: "Someone else gets the court while you pay; nearby times are offered.", presets: { slotRace: true }, setup: "hold", hash: "#/book/pay" },
+  { id: "declined", group: "Payment", label: "Payment declined, then retry", shows: "Checkout opens on a declined payment; a retry goes through.", presets: { paymentFails: true }, setup: "hold", hash: "#/book/pay", opensOutcome: true },
+  { id: "race", group: "Payment", label: "Slot taken mid-payment", shows: "Opens after someone else got the court mid-payment; nearby times are offered.", presets: { slotRace: true }, setup: "hold", hash: "#/book/pay", opensOutcome: true },
   { id: "expired", group: "Payment", label: "Hold runs out", shows: "A 30-second hold: watch it turn amber, red, then release the court.", presets: { shortHold: true }, setup: "hold", hash: "#/book/pay" },
 
   { id: "done", group: "After booking", label: "Booked and paid", shows: "Step 5: paid and due, calendar file, WhatsApp share, cancel.", setup: "paid", hash: "#/book/done" },

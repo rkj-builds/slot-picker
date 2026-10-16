@@ -4,6 +4,7 @@ import { HourglassIcon, ReceiptIcon } from "lucide-react";
 import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { CheckoutDialog } from "@/app/book/checkout-dialog";
+import { takePayOutcome } from "@/app/demo-jump";
 import { useFlow } from "@/app/book/flow";
 import { SlotTakenNotice } from "@/app/book/slot-taken-notice";
 import { StepActions, StepCard, StepLayout, type SummaryRow } from "@/app/book/step-actions";
@@ -32,9 +33,11 @@ export function PayStep(): React.ReactElement | null {
   const { draft, update, goTo, booking } = useFlow();
   const store = useStore();
   const now = useNow(1000);
-  const [chosen, setChosen] = React.useState<PayMode | null>(null);
-  const [checkoutOpen, setCheckoutOpen] = React.useState(false);
-  const [race, setRace] = React.useState<Alternative[] | null>(null);
+  // A demo jump may have run the first payment already (declined, slot taken): open on that outcome.
+  const [opened] = React.useState(() => (booking ? takePayOutcome(booking.id) : null));
+  const [chosen, setChosen] = React.useState<PayMode | null>(opened ? "full" : null);
+  const [checkoutOpen, setCheckoutOpen] = React.useState(opened?.kind === "declined");
+  const [race, setRace] = React.useState<Alternative[] | null>(opened?.kind === "race" ? opened.alternatives : null);
   const [busy, setBusy] = React.useState(false);
 
   const remaining = booking ? holdRemainingMs(booking, now) : 0;
@@ -178,6 +181,7 @@ export function PayStep(): React.ReactElement | null {
       <CheckoutDialog
         amountPaise={amountNow}
         onOpenChange={setCheckoutOpen}
+        initiallyDeclined={opened?.kind === "declined"}
         onPay={(method) => store.pay(booking.id, mode, method)}
         onSettled={settle}
         // A hold that runs out mid-checkout closes the checkout; the page explains.

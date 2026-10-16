@@ -8,6 +8,7 @@ import { navigate } from "@/app/router";
 import { type DemoScenarios, useStore } from "@/app/store";
 import { firstFreeCourt, makeId } from "@/lib/booking";
 import { bookingsWithBlocks } from "@/lib/recurring-blocks";
+import type { Alternative } from "@/lib/checkout";
 import type { AppState } from "@/lib/store";
 import { formatPhone } from "@/lib/phone";
 import { addDays, type PlainDate, todayIn, weekdayOf } from "@/lib/plain-date";
@@ -15,6 +16,18 @@ import { COURTS, VENUE } from "@/lib/venue";
 
 /** The book page listens for this to pick up a draft written from outside the flow. */
 export const DRAFT_EVENT = "demo:draft";
+
+/** A payment outcome the jump already produced, for the pay step to open on. */
+export type PayOutcome = { kind: "declined" } | { kind: "race"; alternatives: Alternative[] };
+let pendingOutcome: { bookingId: string; outcome: PayOutcome } | null = null;
+
+/** The outcome waiting for this booking, once: the pay step reads it on mount. */
+export function takePayOutcome(bookingId: string): PayOutcome | null {
+  if (pendingOutcome?.bookingId !== bookingId) return null;
+  const { outcome } = pendingOutcome;
+  pendingOutcome = null;
+  return outcome;
+}
 
 const DEMO_CUSTOMER = { name: "Asha Rao", phone: "+919876543210" };
 
@@ -69,6 +82,13 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
           }
           if (held.ok) {
             draft = { ...draft, bookingId: held.booking.id, verifiedPhone: DEMO_CUSTOMER.phone, startMinute: held.booking.startMinute };
+            pendingOutcome = null;
+            if (target.opensOutcome) {
+              // The first attempt is the one the preset spoils: run it here so the screen opens on the result.
+              const attempt = await pay(held.booking.id, "full", "upi");
+              if (!attempt.ok && attempt.reason === "payment-failed") pendingOutcome = { bookingId: held.booking.id, outcome: { kind: "declined" } };
+              if (!attempt.ok && attempt.reason === "slot-taken") pendingOutcome = { bookingId: held.booking.id, outcome: { kind: "race", alternatives: attempt.alternatives } };
+            }
             if (target.setup !== "hold") {
               await pay(held.booking.id, "full", "upi");
               if (target.setup === "cancel-credit" || target.setup === "cancel-refund") {

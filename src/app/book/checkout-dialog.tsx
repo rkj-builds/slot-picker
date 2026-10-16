@@ -32,6 +32,7 @@ export function CheckoutDialog({
   summary,
   onPay,
   onSettled,
+  initiallyDeclined,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -39,10 +40,12 @@ export function CheckoutDialog({
   summary: string;
   onPay: (method: Method) => Promise<PayResult>;
   onSettled: (result: PayResult) => void;
+  /** Open showing a declined first attempt (a demo jump already made it). */
+  initiallyDeclined?: boolean;
 }): React.ReactElement {
   const [method, setMethod] = React.useState<Method>("upi");
   const [upi, setUpi] = React.useState("player@upi");
-  const [declined, setDeclined] = React.useState(false);
+  const [declined, setDeclined] = React.useState(initiallyDeclined ?? false);
   const [busy, setBusy] = React.useState(false);
 
   const submit = async (): Promise<void> => {

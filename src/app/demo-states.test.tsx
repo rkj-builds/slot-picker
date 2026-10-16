@@ -88,9 +88,8 @@ describe("each preset shows its state", () => {
     expect(await screen.findByRole("heading", { level: 1, name: "Hold and pay" })).toBeInTheDocument();
   });
 
+  // Declined and slot-taken open on their outcome instead; see "payment outcomes open directly".
   it.each([
-    ["Payment declined, then retry", 1],
-    ["Slot taken mid-payment", 1],
     ["Hold runs out", 1],
     ["Weekend: 50% or full", 0],
   ])("%s: the pay step with the court held", async (label, presets) => {
@@ -192,5 +191,26 @@ describe("the repeating block on the desk", () => {
     expect(await screen.findByText("Repeating block added")).toBeInTheDocument();
     // Where a booking already holds a court at 4 pm it stays (the dialog warned); the other court shows the block.
     expect((await screen.findAllByRole("button", { name: /Juniors batch B, Blocked, repeats Every Mon and Wed/ })).length).toBeGreaterThan(0);
+  });
+});
+
+describe("payment outcomes open directly", () => {
+  it("Payment declined: checkout opens on the declined attempt, and a retry books the court", async () => {
+    const user = userEvent.setup();
+    await jump(user, "Payment declined, then retry");
+    const checkout = await screen.findByRole("dialog", { name: /Checkout/ }, { timeout: 8000 });
+    expect(await within(checkout).findByText("The payment did not go through")).toBeInTheDocument();
+    expect(await axeViolations()).toEqual([]);
+    await user.click(within(checkout).getByRole("button", { name: /Try again/ }));
+    expect(await screen.findByRole("heading", { level: 1, name: "You are booked" }, { timeout: 8000 })).toBeInTheDocument();
+  });
+
+  it("Slot taken mid-payment: the pay step opens on the lost slot with free alternatives", async () => {
+    const user = userEvent.setup();
+    await jump(user, "Slot taken mid-payment");
+    expect(await screen.findByRole("heading", { level: 1, name: "Someone else got that court" }, { timeout: 8000 })).toBeInTheDocument();
+    expect(screen.getByText("That slot is gone")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Choose another time" })).toBeInTheDocument();
+    expect(await axeViolations()).toEqual([]);
   });
 });
