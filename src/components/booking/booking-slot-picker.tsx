@@ -52,6 +52,10 @@ export interface BookingSlotPickerProps {
   renderSummaryExtra?: (selection: BookingSelection) => React.ReactNode;
   onRetry?: () => void;
   onConfirm?: (selection: BookingSelection) => void;
+  /** Called whenever the chosen start changes (null when nothing is chosen), so a host can read it back in its own action bar. */
+  onSelectionChange?: (selection: BookingSelection | null) => void;
+  /** Show the built-in summary and confirm button under the times; a host with its own action bar turns it off. Defaults to true. */
+  showSummary?: boolean;
   className?: string;
 }
 
@@ -77,6 +81,8 @@ export function BookingSlotPicker({
   renderSummaryExtra,
   onRetry,
   onConfirm,
+  onSelectionChange,
+  showSummary = true,
   className,
 }: BookingSlotPickerProps): React.ReactElement {
   // Read the clock once per mount, so a re-render never silently moves "now".
@@ -110,6 +116,16 @@ export function BookingSlotPicker({
   );
 
   const space = spaces.find((s) => s.id === spaceId);
+
+  // Tell the host what is chosen. Keyed on the choice, not the object, so a re-render with the same choice stays quiet.
+  const selectionKey = selected ? `${spaceId}|${selected.id}|${durationMinutes}` : "";
+  const reportSelection = React.useEffectEvent(() => {
+    onSelectionChange?.(selected ? { spaceId, date, durationMinutes, slot: selected } : null);
+  });
+  React.useEffect(() => {
+    reportSelection();
+  }, [selectionKey]);
+
   const headingId = React.useId();
   const durationId = React.useId();
   const timesId = React.useId();
@@ -166,7 +182,7 @@ export function BookingSlotPicker({
           </SegmentedControl>
         )}
         <div className="flex flex-col gap-1.5">
-          <span className="text-muted-foreground text-xs" id={durationId}>
+          <span className="font-medium text-sm" id={durationId}>
             Duration
           </span>
           <DurationPicker
@@ -183,7 +199,7 @@ export function BookingSlotPicker({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-muted-foreground text-xs" id={timesId}>
+        <span className="font-medium text-sm" id={timesId}>
           Start time
         </span>
         <SlotGrid
@@ -201,6 +217,7 @@ export function BookingSlotPicker({
         />
       </div>
 
+      {showSummary && (
       <Card
         aria-live="polite"
         className="min-h-12 flex-row flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3 before:rounded-[calc(var(--radius-xl)-1px)]"
@@ -235,6 +252,7 @@ export function BookingSlotPicker({
           <p className="text-muted-foreground text-sm">Pick a start time to continue.</p>
         )}
       </Card>
+      )}
     </section>
   );
 }
