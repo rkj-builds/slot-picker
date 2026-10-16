@@ -1,7 +1,9 @@
 "use client";
 
-import { RotateCcwIcon, UserMinusIcon, UsersIcon } from "lucide-react";
+import { CircleCheckIcon, RotateCcwIcon, UserMinusIcon, UsersIcon } from "lucide-react";
 import * as React from "react";
+import { useAnchoredBarHeight } from "@/app/anchored-bar";
+import { DeskViewFooter } from "@/app/desk/desk-toolbar";
 import { useDeskActions } from "@/app/desk/desk-actions";
 import { durationOf, minuteLabel } from "@/app/format";
 import { useStore } from "@/app/store";
@@ -14,6 +16,7 @@ import {
   AlertDialogPopup,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -49,6 +52,7 @@ export function SettingsView(): React.ReactElement {
   const dirty = JSON.stringify(draft) !== JSON.stringify(state.settings);
   const set = <K extends keyof VenueSettings>(key: K, value: VenueSettings[K]): void => setDraft((d) => ({ ...d, [key]: value }));
   const example = splitPaise(draft.peakPricePaise, draft.depositPercent);
+  const formId = React.useId();
 
   const save = (): void => {
     const previous = state.settings;
@@ -67,6 +71,7 @@ export function SettingsView(): React.ReactElement {
   return (
     <Form
       className="flex flex-col gap-5"
+      id={formId}
       onSubmit={(event) => {
         event.preventDefault();
         if (dirty) save();
@@ -221,20 +226,41 @@ export function SettingsView(): React.ReactElement {
         </CardFooter>
       </Card>
 
-      <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/92 backdrop-blur" data-slot="settings-savebar">
-        <div className="flex w-full items-center justify-end gap-3 px-4 py-3">
-          <span aria-live="polite" className="me-auto text-muted-foreground text-sm">
-            {dirty ? "Unsaved changes" : "All changes saved"}
-          </span>
-          <Button disabled={!dirty} onClick={() => setDraft(state.settings)} variant="ghost">
-            Discard
-          </Button>
-          <Button disabled={!dirty} type="submit">
-            Save settings
-          </Button>
-        </div>
-      </div>
+      <DeskViewFooter>
+        <SaveBar dirty={dirty} formId={formId} onDiscard={() => setDraft(state.settings)} />
+      </DeskViewFooter>
     </Form>
+  );
+}
+
+/**
+ * Settings are a draft until saved, so the save bar is always in sight,
+ * anchored to the bottom of the desk: it says whether anything is unsaved,
+ * and Discard and Save are disabled until something is.
+ */
+function SaveBar({ dirty, formId, onDiscard }: { dirty: boolean; formId: string; onDiscard: () => void }): React.ReactElement {
+  const ref = useAnchoredBarHeight<HTMLElement>();
+  return (
+    <section aria-label="Save settings" className="border-t bg-background/94 pb-[env(safe-area-inset-bottom)] backdrop-blur-md" data-slot="settings-savebar" ref={ref}>
+      <div className="mx-auto flex w-full max-w-6xl items-center justify-end gap-2 px-4 py-3">
+        <span aria-live="polite" className="me-auto flex items-center gap-1.5 text-muted-foreground text-sm">
+          {dirty ? (
+            <Badge variant="warning">Unsaved changes</Badge>
+          ) : (
+            <>
+              <CircleCheckIcon aria-hidden="true" className="size-4" />
+              All changes saved
+            </>
+          )}
+        </span>
+        <Button disabled={!dirty} onClick={onDiscard} variant="ghost">
+          Discard
+        </Button>
+        <Button disabled={!dirty} form={formId} type="submit">
+          Save settings
+        </Button>
+      </div>
+    </section>
   );
 }
 

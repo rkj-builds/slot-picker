@@ -5,6 +5,7 @@ import * as React from "react";
 import { useBookingActions } from "@/app/desk/booking-actions";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { CustomerPreview } from "@/app/desk/customer-preview";
+import { DeskViewToolbar } from "@/app/desk/desk-toolbar";
 import { useDeskUi } from "@/app/desk/desk-ui";
 import { dayOf, timeRangeOf } from "@/app/format";
 import { useStore } from "@/app/store";
@@ -117,7 +118,8 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end gap-3">
+      <DeskViewToolbar inlineOnPhone>
+      <div className="flex flex-wrap items-center gap-2">
         <SearchField customers={state.customers} onChange={(value) => {
           setQuery(value);
           setPage(0);
@@ -206,6 +208,7 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
           </ToolbarGroup>
         </Toolbar>
       </div>
+      </DeskViewToolbar>
 
       <p aria-live="polite" className="text-muted-foreground text-sm">
         {rows.length === 0 ? "No bookings" : `Showing ${current * PAGE + 1}–${current * PAGE + visible.length} of ${rows.length} bookings`}
@@ -300,7 +303,7 @@ function SearchField({ customers, value, onChange }: { customers: readonly Custo
   );
   return (
     <Field className="min-w-56 flex-1">
-      <FieldLabel>Search</FieldLabel>
+      <FieldLabel className="sr-only">Search</FieldLabel>
       <Autocomplete
         items={groups}
         itemToStringValue={(item: unknown) => (item as Suggestion).value}

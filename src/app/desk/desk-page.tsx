@@ -10,7 +10,7 @@ import { DeskCommandPalette } from "@/app/desk/command-palette";
 import { DayView } from "@/app/desk/day-view";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
 import { type DeskSection, DeskSidebar } from "@/app/desk/desk-sidebar";
-import { type DeskUi, DeskUiContext, type NewBookingPrefill } from "@/app/desk/desk-ui";
+import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill } from "@/app/desk/desk-ui";
 import { InsightsView } from "@/app/desk/insights-view";
 import { NewBookingDialog } from "@/app/desk/new-booking-dialog";
 import { SettingsView } from "@/app/desk/settings-view";
@@ -56,6 +56,9 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
   const [searchOpen, setSearchOpen] = React.useState(false);
+  const [toolbarSlot, setToolbarSlot] = React.useState<HTMLElement | null>(null);
+  const [footerSlot, setFooterSlot] = React.useState<HTMLElement | null>(null);
+  const slots = React.useMemo(() => ({ toolbar: toolbarSlot, footer: footerSlot }), [toolbarSlot, footerSlot]);
 
   // A booking opened on one view should not follow the desk to another.
   const [sheetSection, setSheetSection] = React.useState(section);
@@ -100,9 +103,13 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <SidebarProvider className="min-h-0 flex-1">
         <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} />
         <SidebarInset className="min-w-0">
-          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 py-4 sm:py-6">
-            <header className="flex flex-col gap-3">
-              <div className="flex items-center gap-2">
+          {/*
+            The desk's toolbar, anchored under the demo bar: where you are and the search on the first row,
+            the view's own controls (date and actions, or the filters) on the second. The page scrolls under it.
+          */}
+          <header className="sticky top-[calc(3rem+1px)] z-20 border-b bg-background/94 backdrop-blur-md" data-desk-toolbar="">
+            <div className="mx-auto flex w-full max-w-6xl flex-col gap-2.5 px-4 py-2.5">
+              <div className="flex min-h-9 items-center gap-2">
                 <SidebarTrigger className="-ms-1" />
                 <Separator className="h-4" orientation="vertical" />
                 <Breadcrumb>
@@ -125,13 +132,17 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
                   </KbdGroup>
                 </Button>
               </div>
-              <div className="flex flex-col">
-                <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
-                <p className="text-muted-foreground text-sm">{line}</p>
-              </div>
-            </header>
-            {body}
+              <div className="empty:hidden" data-desk-toolbar-slot="" ref={setToolbarSlot} />
+            </div>
+          </header>
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pt-5 pb-6 sm:pt-6">
+            <div className="flex flex-col">
+              <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
+              <p className="text-muted-foreground text-sm">{line}</p>
+            </div>
+            <DeskSlotsContext.Provider value={slots}>{body}</DeskSlotsContext.Provider>
           </div>
+          <div className="sticky bottom-0 z-20 empty:hidden" data-desk-footer-slot="" ref={setFooterSlot} />
         </SidebarInset>
 
         <DeskCommandPalette date={date} now={now} onOpenChange={setSearchOpen} open={searchOpen} today={today} />

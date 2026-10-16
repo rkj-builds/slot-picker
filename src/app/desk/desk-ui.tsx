@@ -30,3 +30,15 @@ export function useDeskUi(): DeskUi {
   if (!value) throw new Error("useDeskUi must be used inside the desk");
   return value;
 }
+
+/**
+ * Where a desk view puts its anchored controls: the second row of the desk's
+ * sticky header (DeskViewToolbar), and a bar anchored to the bottom of the
+ * desk's main area (DeskViewFooter).
+ */
+export interface DeskSlots {
+  toolbar: HTMLElement | null;
+  footer: HTMLElement | null;
+}
+
+export const DeskSlotsContext = React.createContext<DeskSlots>({ toolbar: null, footer: null });

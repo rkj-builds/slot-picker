@@ -6,6 +6,7 @@ import { BookingContextMenu } from "@/app/desk/booking-context-menu";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { DayGrid } from "@/app/desk/day-grid";
 import { dayStats, describeBooking } from "@/app/desk/desk-model";
+import { DeskViewToolbar } from "@/app/desk/desk-toolbar";
 import { useDeskUi } from "@/app/desk/desk-ui";
 import { durationOf, LOCALE, timeRangeOf } from "@/app/format";
 import { navigate } from "@/app/router";
@@ -41,7 +42,8 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <DeskViewToolbar>
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <DayStepper
           locale={LOCALE}
           now={now}
@@ -66,6 +68,7 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
           </ToolbarGroup>
         </Toolbar>
       </div>
+      </DeskViewToolbar>
 
       <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-slot="day-stats">
         <Stat label="Booked" value={stats.minutesBooked === 0 ? "None" : durationOf(stats.minutesBooked, "short")} />
