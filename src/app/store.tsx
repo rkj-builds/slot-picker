@@ -13,6 +13,7 @@ import { attemptHold, attemptPay, type HoldRequest, type HoldResult, type PayRes
 import type { PayMode } from "@/lib/booking";
 import { todayIn } from "@/lib/plain-date";
 import { seedState } from "@/lib/seed";
+import { applyDemoOverlay, type DemoOverlay, NO_OVERLAY } from "@/lib/demo-overlay";
 import { type Action, type AppState, parseStoredState, reducer } from "@/lib/store";
 import { VENUE } from "@/lib/venue";
 
@@ -29,9 +30,27 @@ export interface Scenarios {
   slotRace: boolean;
   /** Holds last 30 seconds instead of the venue's setting. */
   shortHold: boolean;
+  /** Step 3 is filled with a trusted regular, who may pay at the venue even at the weekend. */
+  trusted: boolean;
+  /** The first correct WhatsApp code is refused as expired; a fresh one works. */
+  otpExpires: boolean;
+  /** Every round trip takes 2.5–4 seconds, so the skeletons stay up. */
+  slowNetwork: boolean;
 }
 
-export const NO_SCENARIOS: Scenarios = { weekend: false, flagged: false, paymentFails: false, slotRace: false, shortHold: false };
+export type DemoScenarios = Scenarios & DemoOverlay;
+
+export const NO_SCENARIOS: DemoScenarios = {
+  weekend: false,
+  flagged: false,
+  paymentFails: false,
+  slotRace: false,
+  shortHold: false,
+  trusted: false,
+  otpExpires: false,
+  slowNetwork: false,
+  ...NO_OVERLAY,
+};
 
 export type LoadStatus = "loading" | "ready" | "error";
 
@@ -44,9 +63,13 @@ interface StoreValue {
   /** Run a desk action after the simulated round trip. */
   commit: (action: Action) => Promise<void>;
   retryLoad: () => void;
+  /** Demo: make the next load fail, to show the error state and its retry. */
+  failNextLoad: () => void;
   reset: () => void;
-  scenarios: Scenarios;
-  setScenario: (key: keyof Scenarios, value: boolean) => void;
+  scenarios: DemoScenarios;
+  setScenario: (key: keyof DemoScenarios, value: boolean) => void;
+  /** Demo: turn every preset off. */
+  clearScenarios: () => void;
 }
 
 const StoreContext = React.createContext<StoreValue | null>(null);
@@ -60,7 +83,7 @@ export interface StoreProviderProps {
   /** Fail the first load, to show the error state (`?offline=1`). */
   failFirstLoad?: boolean;
   persist?: boolean;
-  initialScenarios?: Partial<Scenarios>;
+  initialScenarios?: Partial<DemoScenarios>;
 }
 
 function readStored(now: number): AppState {
@@ -86,7 +109,7 @@ export function StoreProvider({
   const { now } = useClock();
   const [state, dispatch] = React.useReducer(reducer, undefined, () => initialState ?? readStored(now()));
   const [status, setStatus] = React.useState<LoadStatus>(latency[1] === 0 && !failFirstLoad ? "ready" : "loading");
-  const [scenarios, setScenarios] = React.useState<Scenarios>({ ...NO_SCENARIOS, ...initialScenarios });
+  const [scenarios, setScenarios] = React.useState<DemoScenarios>({ ...NO_SCENARIOS, ...initialScenarios });
   // The async API reads the latest state and scenarios when its latency ends, not when it was called.
   const stateRef = React.useRef(state);
   const scenariosRef = React.useRef(scenarios);
@@ -99,7 +122,7 @@ export function StoreProvider({
   const failNext = React.useRef(failFirstLoad);
 
   const wait = React.useCallback((): Promise<void> => {
-    const [min, max] = latency;
+    const [min, max] = scenariosRef.current.slowNetwork ? [2500, 4000] : latency;
     const ms = min + Math.random() * (max - min);
     return ms <= 0 ? Promise.resolve() : new Promise((resolve) => window.setTimeout(resolve, ms));
   }, [latency]);
@@ -144,17 +167,20 @@ export function StoreProvider({
     return () => window.clearTimeout(id);
   }, [state.bookings, now]);
 
+  // What the app sees: the real state with any demo preset laid over it (never saved).
+  const view = React.useCallback((base: AppState): AppState => applyDemoOverlay(base, scenariosRef.current, now()), [now]);
+
   const holdSlot = React.useCallback(
     async (request: HoldRequest): Promise<HoldResult> => {
       await wait();
-      const result = attemptHold(stateRef.current, { ...request, holdSeconds: scenariosRef.current.shortHold ? 30 : undefined }, now());
+      const result = attemptHold(view(stateRef.current), { ...request, holdSeconds: scenariosRef.current.shortHold ? 30 : undefined }, now());
       if (result.ok) {
         stateRef.current = reducer(stateRef.current, result.action);
         dispatch(result.action);
       }
       return result;
     },
-    [now, wait],
+    [now, wait, view],
   );
 
   const pay = React.useCallback(
@@ -165,7 +191,7 @@ export function StoreProvider({
       const race = s.slotRace && !raced.current.has(bookingId);
       if (decline) declined.current.add(bookingId);
       if (race) raced.current.add(bookingId);
-      const result = attemptPay(stateRef.current, bookingId, mode, now(), { method, decline, race });
+      const result = attemptPay(view(stateRef.current), bookingId, mode, now(), { method, decline, race });
       const action = result.action;
       if (action) {
         stateRef.current = reducer(stateRef.current, action);
@@ -173,7 +199,7 @@ export function StoreProvider({
       }
       return result;
     },
-    [now, wait],
+    [now, wait, view],
   );
 
   const commit = React.useCallback(
@@ -191,13 +217,44 @@ export function StoreProvider({
     dispatch({ type: "reset", state: seedState(now()) });
   }, [now]);
 
-  const setScenario = React.useCallback((key: keyof Scenarios, value: boolean) => {
-    setScenarios((prev) => ({ ...prev, [key]: value }));
+  const setScenario = React.useCallback(
+    (key: keyof DemoScenarios, value: boolean) => {
+      setScenarios((prev) => ({ ...prev, [key]: value }));
+      // Calls made in the same event (a jump that holds a court) must already see the preset.
+      scenariosRef.current = { ...scenariosRef.current, [key]: value };
+      // A slow network shows itself straight away: reload, and the skeletons stay up.
+      if (key === "slowNetwork" && value) load();
+    },
+    [load],
+  );
+  const clearScenarios = React.useCallback(() => {
+    scenariosRef.current = NO_SCENARIOS;
+    setScenarios(NO_SCENARIOS);
   }, []);
+  const failNextLoad = React.useCallback(() => {
+    failNext.current = true;
+    load();
+  }, [load]);
+
+  const overlay: DemoOverlay = {
+    fullyBooked: scenarios.fullyBooked,
+    closedToday: scenarios.closedToday,
+    longNames: scenarios.longNames,
+    emptyVenue: scenarios.emptyVenue,
+    backToBack: scenarios.backToBack,
+  };
+  const overlayKey = JSON.stringify(overlay);
+  // The clock's day, not its second: the overlay only depends on which day it is.
+  const day = todayIn(VENUE.timeZone, now());
+  const shown = React.useMemo(
+    () => applyDemoOverlay(state, JSON.parse(overlayKey) as DemoOverlay, now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- recomputed per state, preset and day, not per tick
+    [state, overlayKey, day],
+  );
 
   const value = React.useMemo<StoreValue>(
-    () => ({ state, status, dispatch, holdSlot, pay, commit, retryLoad: load, reset, scenarios, setScenario }),
-    [state, status, holdSlot, pay, commit, load, reset, scenarios, setScenario],
+    () => ({ state: shown, status, dispatch, holdSlot, pay, commit, retryLoad: load, failNextLoad, reset, scenarios, setScenario, clearScenarios }),
+    [shown, status, holdSlot, pay, commit, load, failNextLoad, reset, scenarios, setScenario, clearScenarios],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

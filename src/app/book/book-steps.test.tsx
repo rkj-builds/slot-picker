@@ -31,7 +31,7 @@ describe("the WhatsApp code on the details step", () => {
     await toDetails(user);
     await user.click(screen.getByRole("button", { name: "Hold this court" }));
 
-    expect(await screen.findByText("Demo code: 123456")).toBeInTheDocument();
+    expect(await screen.findByText(/Demo: the code is/)).toHaveTextContent("Demo: the code is 123456");
     const first = await screen.findByRole("textbox", { name: "Code sent to +91 98000 00001" });
     await waitFor(() => expect(first).toHaveFocus());
     expect(screen.getAllByRole("textbox", { name: /^Character \d of 6$/ })).toHaveLength(5);

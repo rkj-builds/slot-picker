@@ -1,6 +1,6 @@
 "use client";
 
-import { HandCoinsIcon, MessageCircleIcon, ShieldCheckIcon, SmileIcon } from "lucide-react";
+import { FlaskConicalIcon, HandCoinsIcon, MessageCircleIcon, ShieldCheckIcon, SmileIcon } from "lucide-react";
 import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { useFlow } from "@/app/book/flow";
@@ -19,7 +19,6 @@ import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { OTPField, OTPFieldInput, OTPFieldSeparator } from "@/components/ui/otp-field";
 import { Textarea } from "@/components/ui/textarea";
-import { toastManager } from "@/components/ui/toast";
 import type { Alternative } from "@/lib/checkout";
 import { formatInr } from "@/lib/money";
 import { checkIndianPhone, describePhoneProblem, formatPhone } from "@/lib/phone";
@@ -28,6 +27,8 @@ import { courtName, priceFor } from "@/lib/venue";
 
 /** The demo's pay-first customer, used by the "Flagged customer" scenario. */
 const FLAGGED = { name: "Rohan Mehta", phone: "+919000000106" };
+/** The demo's trusted regular, used by the "Trusted regular" scenario: may pay at the venue even at the weekend. */
+const TRUSTED = { name: "Aarav Sharma", phone: "+919000000100" };
 
 /** The demo's one-time code. The real 831 sends a fresh one on WhatsApp. */
 export const DEMO_CODE = "123456";
@@ -51,12 +52,15 @@ export function YouStep(): React.ReactElement {
   const formId = React.useId();
 
   // The flagged scenario fills the form with a customer the venue asks to pay first.
-  const { flagged } = store.scenarios;
+  const { flagged, trusted, otpExpires } = store.scenarios;
   React.useEffect(() => {
-    if (flagged && draft.phone !== formatPhone(FLAGGED.phone)) update({ name: FLAGGED.name, phone: formatPhone(FLAGGED.phone) });
-    // Only when the scenario is switched on, not on every keystroke.
+    const who = flagged ? FLAGGED : trusted ? TRUSTED : null;
+    if (who && draft.phone !== formatPhone(who.phone)) update({ name: who.name, phone: formatPhone(who.phone) });
+    // Only when a scenario is switched on, not on every keystroke.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [flagged]);
+  }, [flagged, trusted]);
+  // The "code expired" scenario refuses the first right code once per visit.
+  const expiredOnce = React.useRef(false);
 
   const phone = checkIndianPhone(draft.phone).phone;
   const returning = phone ? customerByPhone(store.state, phone) : undefined;
@@ -93,18 +97,20 @@ export function YouStep(): React.ReactElement {
     setCodeSentTo(to);
     setCode("");
     setCodeError(null);
-    toastManager.add({
-      id: "demo-code",
-      title: `Demo code: ${DEMO_CODE}`,
-      description: `The real 831 sends this to ${formatPhone(to)} on WhatsApp.`,
-      type: "info",
-    });
+    // The demo code is shown inline beside the boxes (not in a toast that would sit over the page).
     // Focus the first box once it renders.
     window.setTimeout(() => codeRef.current?.querySelector("input")?.focus(), 0);
   };
 
   const checkCode = (value: string): void => {
     if (!phone) return;
+    if (value === DEMO_CODE && otpExpires && !expiredOnce.current) {
+      expiredOnce.current = true;
+      setCodeError("That code has expired. We have sent a new one: enter it again.");
+      setCode("");
+      codeRef.current?.querySelector("input")?.focus();
+      return;
+    }
     if (value === DEMO_CODE) {
       setCodeError(null);
       update({ verifiedPhone: phone });
@@ -267,6 +273,15 @@ export function YouStep(): React.ReactElement {
                   </Button>
                 </FieldDescription>
               </Field>
+            )}
+            {awaitingCode && (
+              <Alert data-slot="demo-code" variant="info">
+                <FlaskConicalIcon aria-hidden="true" />
+                <AlertTitle>
+                  Demo: the code is <span className="font-mono tracking-wider">{DEMO_CODE}</span>
+                </AlertTitle>
+                <AlertDescription>The real 831 sends it to {formatPhone(codeSentTo)} on WhatsApp.</AlertDescription>
+              </Alert>
             )}
           </Fieldset>
         </StepCard>

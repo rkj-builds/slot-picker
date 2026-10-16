@@ -1,6 +1,11 @@
 "use client";
 
+import { ChartNoAxesColumnIcon } from "lucide-react";
 import type * as React from "react";
+import { Anchor } from "@/app/anchor";
+import { hrefFor } from "@/app/router";
+import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { dayOf } from "@/app/format";
 import { useStore } from "@/app/store";
 import { Badge } from "@/components/ui/badge";
@@ -21,6 +26,25 @@ export function InsightsView({ today }: { today: PlainDate }): React.ReactElemen
   const { state } = useStore();
   const insights = computeInsights(state.bookings, today);
   const policyWeek = mondayOf(addDays(today, -28));
+
+  if (insights.finishedBookings === 0) {
+    return (
+      <Empty className="rounded-2xl border border-dashed" role="status">
+        <EmptyHeader>
+          <EmptyMedia variant="icon">
+            <ChartNoAxesColumnIcon aria-hidden="true" />
+          </EmptyMedia>
+          <EmptyTitle>No finished days yet</EmptyTitle>
+          <EmptyDescription>Insights count bookings once their day is over. Take bookings on the day view and come back tomorrow.</EmptyDescription>
+        </EmptyHeader>
+        <EmptyContent>
+          <Button render={<Anchor href={hrefFor("/desk")} />} variant="outline">
+            Go to the day
+          </Button>
+        </EmptyContent>
+      </Empty>
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">

@@ -57,7 +57,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
   const [repeatRef, setRepeatRef] = React.useState<RepeatRef | null>(null);
-  const [blockDate, setBlockDate] = React.useState<PlainDate | null>(null);
+  // ?block=1 opens Block courts for the day (the demo's jump to the Repeat editor).
+  const [blockDate, setBlockDate] = React.useState<PlainDate | null>(() => (route.query.get("block") === "1" ? date : null));
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [toolbarSlot, setToolbarSlot] = React.useState<HTMLElement | null>(null);
   const [footerSlot, setFooterSlot] = React.useState<HTMLElement | null>(null);

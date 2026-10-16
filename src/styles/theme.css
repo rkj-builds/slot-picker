@@ -234,6 +234,21 @@
             translate: 0 2px;
         }
     }
+    /* Step change: in from the side you are moving towards (see [data-direction] below). */
+    --animate-step-in: step-in 220ms var(--ease-out-quart) both;
+    @keyframes step-in {
+        from {
+            opacity: 0;
+            translate: var(--step-from, 12px) 0;
+        }
+    }
+    /* Hold urgency: one beat when the countdown turns amber, and again when it turns red. Never a loop. */
+    --animate-urgency: urgency 420ms var(--ease-out-quart) 1;
+    @keyframes urgency {
+        40% {
+            scale: 1.08;
+        }
+    }
 }
 
 /* Diagonal hatch for "held" slots: the texture carries the state, not a second colour. */
@@ -252,4 +267,77 @@
  */
 [data-slot="toast-viewport"][data-position*="bottom"] {
     bottom: calc(var(--toast-inset) + var(--anchored-bar-height, 0px));
+}
+
+/*
+ * A phone's toast stack sits above the action bar; while one shows, the
+ * booking column grows by the stack's height (--toast-clearance, from
+ * useToastClearance, which also scrolls the page up by it), so the toast
+ * covers only what the bar already covered, and keyboard focus scrolls into
+ * the space above both.
+ */
+html {
+    scroll-padding-bottom: calc(var(--anchored-bar-height, 0px) + var(--toast-clearance, 0px));
+}
+@media (width < 64rem) {
+    [data-slot="step-content"] {
+        padding-bottom: var(--toast-clearance, 0px);
+    }
+}
+
+/* Back slides in from the start edge; right-to-left mirrors both. */
+[data-slot="book-step"][data-direction="back"] {
+    --step-from: -12px;
+}
+[dir="rtl"] [data-slot="book-step"] {
+    --step-from: -12px;
+}
+[dir="rtl"] [data-slot="book-step"][data-direction="back"] {
+    --step-from: 12px;
+}
+
+/*
+ * #/primitives, the "bare" panes: the headless parts with the browser's own
+ * styles. `all: revert` rolls form controls back past Tailwind's preflight to
+ * the user agent's; the only author styles are the parts' data attributes.
+ */
+[data-bare] {
+    font-family: revert;
+    font-size: 15px;
+    line-height: 1.5;
+}
+[data-bare] :where(button, input, select, textarea, fieldset, legend, output, ol, p) {
+    all: revert;
+}
+[data-bare] :where(p) {
+    margin-block: 0.5em;
+}
+[data-bare] [data-selected] {
+    font-weight: bold;
+    outline: 2px solid Highlight;
+}
+[data-bare] [data-disabled] {
+    text-decoration: line-through;
+}
+[data-bare] [data-highlighted] {
+    outline: 2px dashed CanvasText;
+    outline-offset: 2px;
+}
+[data-bare-popup] {
+    background: Canvas;
+    color: CanvasText;
+    border: 1px solid GrayText;
+    font-family: revert;
+    font-size: 15px;
+    max-height: 16rem;
+    overflow: auto;
+    z-index: 50;
+}
+[data-bare-popup] [data-highlighted] {
+    background: Highlight;
+    color: HighlightText;
+}
+[data-bare-popup] [role="presentation"],
+[data-bare-popup] [id$="-label"] {
+    font-weight: bold;
 }

@@ -1,0 +1,145 @@
+"use client";
+
+import { FlaskConicalIcon } from "lucide-react";
+import * as React from "react";
+import { useJumpToState } from "@/app/demo-jump";
+import { DEMO_STATES, PRESET_GROUPS } from "@/app/demo-states";
+import { StatesIndex } from "@/app/states-index";
+import { useStore } from "@/app/store";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Popover, PopoverDescription, PopoverPopup, PopoverTitle, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
+import { toastManager } from "@/components/ui/toast";
+
+/**
+ * The demo control, not part of the product: anchored in the top bar on
+ * every page, a coss Popover with two tabs. "Presets" switches states on
+ * (grouped Booking, Payment, Desk, System); "Jump to state" puts the app in
+ * one state and opens its screen. Everything is off by default, labelled as
+ * a demo, and never saved: presets live in memory and lay their changes over
+ * the data instead of writing them.
+ */
+export function DemoControl(): React.ReactElement {
+  const { scenarios, setScenario, clearScenarios, failNextLoad, reset } = useStore();
+  const [open, setOpen] = React.useState(false);
+  useStateFromUrl();
+  const active = Object.values(scenarios).filter(Boolean).length;
+  return (
+    <Popover onOpenChange={setOpen} open={open}>
+      <PopoverTrigger
+        aria-label={`Demo scenarios${active > 0 ? `, ${active} on` : ""}`}
+        render={<Button className="shrink-0 max-sm:px-2" size="sm" variant="outline" />}
+      >
+        <FlaskConicalIcon aria-hidden="true" />
+        <span className="max-sm:sr-only">Demo</span>
+        {active > 0 && (
+          <Badge aria-hidden="true" className="-me-1">
+            {active}
+          </Badge>
+        )}
+      </PopoverTrigger>
+      <PopoverPopup align="end" aria-label="Demo scenarios" className="w-[min(22rem,calc(100vw-2rem))] [&_[data-slot=popover-viewport]]:py-0 [&_[data-slot=popover-viewport]]:[--viewport-inline-padding:0px]" side="bottom">
+        <div className="flex flex-col gap-1 px-4 pt-4">
+          <div className="flex items-center gap-2">
+            <PopoverTitle>Demo scenarios</PopoverTitle>
+            <Badge variant="warning">Demo control</Badge>
+          </div>
+          <PopoverDescription>Force a state to see how the product handles it. Off by default; never saved.</PopoverDescription>
+        </div>
+        <Tabs className="mt-3 gap-0" defaultValue="presets">
+          <TabsList className="mx-4">
+            <TabsTab value="presets">Presets{active > 0 ? ` (${active})` : ""}</TabsTab>
+            <TabsTab value="jump">Jump to state</TabsTab>
+          </TabsList>
+          <TabsPanel value="presets">
+            <ScrollArea className="max-h-[min(26rem,calc(100dvh-14rem))]" scrollFade>
+              <div className="flex flex-col gap-4 px-4 py-3">
+                {PRESET_GROUPS.map(({ group, items }) => (
+                  <section aria-label={group} className="flex flex-col gap-2.5" key={group}>
+                    <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">{group}</h3>
+                    <ul className="flex flex-col gap-3">
+                      {items.map((item) => (
+                        <li className="flex items-start justify-between gap-3" key={item.key}>
+                          <div className="flex flex-col">
+                            <Label htmlFor={`scenario-${item.key}`}>{item.label}</Label>
+                            <span className="text-muted-foreground text-xs" id={`scenario-${item.key}-line`}>
+                              {item.line}
+                            </span>
+                          </div>
+                          <Switch
+                            aria-describedby={`scenario-${item.key}-line`}
+                            checked={scenarios[item.key]}
+                            className="mt-0.5"
+                            id={`scenario-${item.key}`}
+                            onCheckedChange={(checked) => setScenario(item.key, checked)}
+                          />
+                        </li>
+                      ))}
+                    </ul>
+                  </section>
+                ))}
+                <Button
+                  className="self-start"
+                  onClick={() => {
+                    setOpen(false);
+                    failNextLoad();
+                  }}
+                  size="sm"
+                  variant="outline"
+                >
+                  Fail the next load
+                </Button>
+              </div>
+            </ScrollArea>
+          </TabsPanel>
+          <TabsPanel value="jump">
+            <ScrollArea className="max-h-[min(26rem,calc(100dvh-14rem))]" scrollFade>
+              <div className="px-2 py-3">
+                <StatesIndex compact onJump={() => setOpen(false)} />
+              </div>
+            </ScrollArea>
+          </TabsPanel>
+        </Tabs>
+        <Separator />
+        <div className="flex gap-2 p-2">
+          <Button className="flex-1" disabled={active === 0} onClick={clearScenarios} size="sm" variant="ghost">
+            Turn all off
+          </Button>
+          <Button
+            className="flex-1"
+            onClick={() => {
+              reset();
+              toastManager.add({ title: "Demo data reset", description: "Bookings and settings are back to the seed.", type: "info" });
+            }}
+            size="sm"
+            variant="ghost"
+          >
+            Reset demo data
+          </Button>
+        </div>
+      </PopoverPopup>
+    </Popover>
+  );
+}
+
+/**
+ * `?state=<id>` opens the app in that demo state (a link a reviewer can
+ * share, and how the screenshots are taken). Runs once, after the first load.
+ */
+function useStateFromUrl(): void {
+  const { status } = useStore();
+  const jump = useJumpToState();
+  const done = React.useRef(false);
+  React.useEffect(() => {
+    if (done.current || status !== "ready") return;
+    done.current = true;
+    const id = new URLSearchParams(window.location.search).get("state");
+    const target = DEMO_STATES.find((s) => s.id === id);
+    if (target) void jump(target);
+  }, [status, jump]);
+}

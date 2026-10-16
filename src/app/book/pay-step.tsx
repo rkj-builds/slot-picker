@@ -25,6 +25,7 @@ import { describeCountdown, formatCountdown, holdRemainingMs } from "@/lib/holds
 import { formatInr } from "@/lib/money";
 import { checkIndianPhone } from "@/lib/phone";
 import { decidePayment, describeDecision, type PaymentDecision } from "@/lib/policy";
+import { cn } from "@/lib/utils";
 import { courtName } from "@/lib/venue";
 
 export function PayStep(): React.ReactElement | null {
@@ -226,11 +227,19 @@ function HoldMeter({ booking, remaining }: { booking: Booking; remaining: number
           <MeterLabel>
             {courtName(booking.courtId)} is held for you
           </MeterLabel>
-          <span aria-hidden="true" className="font-semibold text-lg tabular-nums" data-slot="hold-countdown">
+          {/* Motion: keyed on the tone, so the number gives one beat as it turns amber and again at red. */}
+          <span
+            aria-hidden="true"
+            className={cn("inline-block font-semibold text-lg tabular-nums", tone !== "default" && "motion-safe:animate-urgency", tone === "warning" && "text-warning-foreground", tone === "destructive" && "text-destructive-foreground")}
+            data-slot="hold-countdown"
+            data-urgency={tone}
+            key={tone}
+          >
             {formatCountdown(remaining)}
           </span>
         </div>
         <MeterTrack className="rounded-full">
+          {/* Motion: coss's indicator already eases width and colour (transition-all 500ms), so a tone change never snaps. */}
           <MeterIndicator className={TONE_CLASS[tone]} />
         </MeterTrack>
       </Meter>

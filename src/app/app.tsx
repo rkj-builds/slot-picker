@@ -3,6 +3,7 @@
 import { MapPinOffIcon } from "lucide-react";
 import * as React from "react";
 import { Anchor } from "@/app/anchor";
+import { useToastClearance } from "@/app/anchored-bar";
 import { DemoBar, useFocusHeadingOnNavigate } from "@/app/app-shell";
 import { ClockProvider, pinnedNowFromUrl } from "@/app/clock";
 import { HomePage } from "@/app/home-page";
@@ -18,6 +19,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const BookPage = React.lazy(() => import("@/app/book/book-page").then((m) => ({ default: m.BookPage })));
 const DeskPage = React.lazy(() => import("@/app/desk/desk-page").then((m) => ({ default: m.DeskPage })));
 const GalleryPage = React.lazy(() => import("@/app/gallery/gallery-page").then((m) => ({ default: m.GalleryPage })));
+const PrimitivesPage = React.lazy(() => import("@/app/primitives/primitives-page").then((m) => ({ default: m.PrimitivesPage })));
 
 export function App(): React.ReactElement {
   const [start] = React.useState(pinnedNowFromUrl);
@@ -26,7 +28,8 @@ export function App(): React.ReactElement {
     <ClockProvider start={start}>
       <StoreProvider failFirstLoad={failFirstLoad}>
         <TooltipProvider delay={300}>
-          <ToastProvider>
+          {/* Toasts are for passing outcomes only (saved, paid, undo), so they leave on their own after four seconds. */}
+          <ToastProvider timeout={4000}>
             <Routes />
           </ToastProvider>
         </TooltipProvider>
@@ -39,6 +42,7 @@ export function Routes(): React.ReactElement {
   const route = useRoute();
   const section = route.segments[0] ?? "";
   useFocusHeadingOnNavigate(route.path);
+  useToastClearance();
   let page: React.ReactElement;
   switch (section) {
     case "":
@@ -52,6 +56,9 @@ export function Routes(): React.ReactElement {
       break;
     case "components":
       page = <GalleryPage />;
+      break;
+    case "primitives":
+      page = <PrimitivesPage />;
       break;
     default:
       page = <NotFound />;

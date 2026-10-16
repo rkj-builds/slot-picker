@@ -65,7 +65,8 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
   };
 
   return (
-    <div className={cn("flex flex-col gap-5", className)} data-slot="repeat-editor">
+    // A container query, not the viewport: the editor lives in a dialog, a narrow card or a wide page.
+    <div className={cn("@container flex flex-col gap-5", className)} data-slot="repeat-editor">
       {!timesOnly && (
       <Field invalid={r.problems.includes("no-weekdays")}>
         <FieldLabel id={`${id}-days`}>On</FieldLabel>
@@ -83,9 +84,9 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
       </Field>
       )}
 
-      <div className={cn("grid gap-4", timesOnly ? "sm:grid-cols-2" : "sm:grid-cols-[auto_1fr_1fr]")}>
+      <div className={cn("grid gap-4", timesOnly ? "grid-cols-2" : "grid-cols-2 @md:grid-cols-[auto_1fr_1fr]")}>
         {!timesOnly && (
-        <NumberField className="gap-2" id={`${id}-interval`} max={8} min={1} onValueChange={(v) => r.setInterval(v ?? 1)} value={rule.interval}>
+        <NumberField className="col-span-2 gap-2 @md:col-span-1" id={`${id}-interval`} max={8} min={1} onValueChange={(v) => r.setInterval(v ?? 1)} value={rule.interval}>
           <Label htmlFor={`${id}-interval`}>Every</Label>
           <div className="flex items-center gap-2">
             <NumberFieldGroup className="w-28">
@@ -182,6 +183,7 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
               <Radio value="count" />
               After
             </Label>
+            <span className="flex items-center gap-2">
             <NumberField
               aria-label="Number of times"
               disabled={rule.end.type !== "count"}
@@ -191,13 +193,14 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
               size="sm"
               value={rule.end.type === "count" ? rule.end.count : 8}
             >
-              <NumberFieldGroup className="w-24">
+              <NumberFieldGroup className="w-28">
                 <NumberFieldDecrement aria-label="Fewer times" />
                 <NumberFieldInput aria-label="Number of times" />
                 <NumberFieldIncrement aria-label="More times" />
               </NumberFieldGroup>
             </NumberField>
             <span className="text-muted-foreground text-sm">times</span>
+            </span>
           </div>
         </RadioGroup>
       </Fieldset>

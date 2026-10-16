@@ -19,9 +19,10 @@ function readTheme(): Theme {
   return "system";
 }
 
-export function useTheme(): [Theme, (theme: Theme) => void] {
+export function useTheme(enabled = true): [Theme, (theme: Theme) => void] {
   const [theme, setTheme] = React.useState<Theme>(readTheme);
   React.useEffect(() => {
+    if (!enabled) return;
     // coss themes with a `.dark` class on <html>; "system" follows the OS live.
     const root = document.documentElement;
     const media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -39,12 +40,15 @@ export function useTheme(): [Theme, (theme: Theme) => void] {
     return () => {
       media.removeEventListener("change", apply);
     };
-  }, [theme]);
+  }, [theme, enabled]);
   return [theme, setTheme];
 }
 
-export function ThemeToggle(): React.ReactElement {
-  const [theme, setTheme] = useTheme();
+/** The theme as a three-way segmented control. Pass `value` and `onValueChange` when the owner also shows it elsewhere. */
+export function ThemeToggle({ value, onValueChange }: { value?: Theme; onValueChange?: (theme: Theme) => void } = {}): React.ReactElement {
+  const [own, setOwn] = useTheme(value === undefined);
+  const theme = value ?? own;
+  const setTheme = onValueChange ?? setOwn;
   return (
     <SegmentedControl<Theme> aria-label="Theme" onValueChange={setTheme} size="sm" value={theme}>
       <SegmentedControlItem<Theme> aria-label="Light theme" value="light">

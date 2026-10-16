@@ -15,7 +15,7 @@ import { ANY_COURT, anyCourtReservations, reservationsFrom } from "@/lib/booking
 import { formatInr } from "@/lib/money";
 import { addDays, type PlainDate, todayIn, type Weekday, weekdayOf } from "@/lib/plain-date";
 import { bookingsWithBlocks } from "@/lib/recurring-blocks";
-import { localTimeZone } from "@/lib/time-zone";
+import { isValidTimeZone, localTimeZone } from "@/lib/time-zone";
 import { COURTS, courtName, priceFor, scheduleFromSettings, VENUE } from "@/lib/venue";
 
 const pad = (n: number): string => String(n).padStart(2, "0");
@@ -32,6 +32,7 @@ export function WhenStep(): React.ReactElement {
     draft.courtId === "any" ? anyCourtReservations(bookings, COURTS.map((c) => c.id), now) : reservationsFrom(bookings, now);
   const space = draft.courtId === "any" ? { id: ANY_COURT, name: "Any court" } : { id: draft.courtId, name: courtName(draft.courtId) };
   const [selection, setSelection] = React.useState<BookingSelection | null>(null);
+  const [viewerZone, setViewerZone] = useViewerZone();
 
   // The weekend scenario opens on the next Saturday (today, if it is one).
   const nextSaturday = nextWeekday(today, "sat");
@@ -110,7 +111,8 @@ export function WhenStep(): React.ReactElement {
             schedule={schedule}
             showSummary={false}
             spaces={[space]}
-            viewerTimeZone={localTimeZone()}
+            onViewerTimeZoneChange={setViewerZone}
+            viewerTimeZone={viewerZone}
           />
         </CardPanel>
       </Card>
@@ -129,4 +131,29 @@ function Dot(): React.ReactElement {
 function nextWeekday(from: PlainDate, day: Weekday): PlainDate {
   for (let i = 0; i < 7; i += 1) if (weekdayOf(addDays(from, i)) === day) return addDays(from, i);
   return from;
+}
+
+const ZONE_KEY = "slot-picker:viewer-zone";
+
+/** The zone the viewer's own times are shown in: theirs, until they pick another (remembered in this browser). */
+function useViewerZone(): [string, (zone: string) => void] {
+  const [zone, setZone] = React.useState<string>(() => {
+    try {
+      const saved = localStorage.getItem(ZONE_KEY);
+      if (saved && isValidTimeZone(saved)) return saved;
+    } catch {
+      /* storage may be blocked */
+    }
+    return localTimeZone();
+  });
+  const set = React.useCallback((next: string) => {
+    setZone(next);
+    try {
+      if (next === localTimeZone()) localStorage.removeItem(ZONE_KEY);
+      else localStorage.setItem(ZONE_KEY, next);
+    } catch {
+      /* storage may be blocked */
+    }
+  }, []);
+  return [zone, set];
 }

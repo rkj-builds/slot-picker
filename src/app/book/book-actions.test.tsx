@@ -89,11 +89,11 @@ describe("the booking page's actions", () => {
     expect(main.querySelector("[class*='fixed']")).toBeNull();
   });
 
-  it("the demo scenarios are a labelled button in the page header", async () => {
+  it("the demo scenarios are a labelled button in the top bar", async () => {
     const user = userEvent.setup();
     renderApp("#/book", { state: empty, now: NOW });
     const trigger = await screen.findByRole("button", { name: "Demo scenarios" });
-    expect(screen.getByRole("main")).toContainElement(trigger);
+    expect(screen.getByRole("banner")).toContainElement(trigger);
     await user.click(trigger);
     const popup = await screen.findByRole("dialog", { name: "Demo scenarios" });
     await user.click(within(popup).getByRole("switch", { name: "Weekend date" }));

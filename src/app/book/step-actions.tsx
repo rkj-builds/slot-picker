@@ -47,7 +47,9 @@ export const UNDER_STEPPER = "lg:top-[calc(6rem+2px+1.5rem)]";
 export function StepLayout({ children, actions }: { children: React.ReactNode; actions?: React.ReactNode }): React.ReactElement {
   return (
     <div className="flex flex-1 flex-col gap-6 lg:grid lg:grid-cols-[minmax(0,1fr)_20rem] lg:items-start lg:gap-8">
-      <div className="flex min-w-0 flex-col gap-5">{children}</div>
+      <div className="flex min-w-0 flex-col gap-5" data-slot="step-content">
+        {children}
+      </div>
       {actions}
     </div>
   );

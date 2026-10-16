@@ -6,7 +6,7 @@ import { act, render, type RenderResult, screen } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { Routes } from "@/app/app";
 import { ClockProvider } from "@/app/clock";
-import { type Scenarios, StoreProvider } from "@/app/store";
+import { type DemoScenarios, StoreProvider } from "@/app/store";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { AppState } from "@/lib/store";
@@ -18,7 +18,7 @@ export const TEST_NOW = instantAt("2026-10-15", 10 * 60, "Asia/Kolkata");
 
 export function renderApp(
   hash: string,
-  { state, scenarios, now = TEST_NOW }: { state?: AppState; scenarios?: Partial<Scenarios>; now?: number } = {},
+  { state, scenarios, now = TEST_NOW }: { state?: AppState; scenarios?: Partial<DemoScenarios>; now?: number } = {},
 ): RenderResult & { state: AppState } {
   window.location.hash = hash;
   const initial = state ?? seedState(now);

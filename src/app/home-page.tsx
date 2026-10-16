@@ -1,4 +1,4 @@
-import { ArrowRightIcon, BookOpenIcon, LayoutGridIcon, ShapesIcon } from "lucide-react";
+import { ArrowRightIcon, BlocksIcon, BookOpenIcon, LayoutGridIcon, ShapesIcon } from "lucide-react";
 import type * as React from "react";
 import { LogoMark } from "@/app/app-shell";
 import { Anchor } from "@/app/anchor";
@@ -23,7 +23,13 @@ const SURFACES = [
     href: "#/components",
     icon: ShapesIcon,
     title: "Components",
-    line: "Every primitive in every state, light and dark side by side.",
+    line: "Every coss component in every state, light and dark side by side.",
+  },
+  {
+    href: "#/primitives",
+    icon: BlocksIcon,
+    title: "Primitives",
+    line: "SlotGrid, Recurrence and TimeZone: headless, bare and in two skins.",
   },
 ] as const;
 
@@ -42,7 +48,7 @@ export function HomePage(): React.ReactElement {
           Built on Base UI in the coss ui style.
         </p>
       </div>
-      <ul className="grid gap-3 sm:grid-cols-3">
+      <ul className="grid gap-3 sm:grid-cols-2">
         {SURFACES.map(({ href, icon: Icon, title, line }) => (
           <li key={href}>
             <Card className="h-full transition-[border-color,box-shadow] duration-150 hover:border-ring/40 hover:shadow-md/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" render={<Anchor href={href} />}>

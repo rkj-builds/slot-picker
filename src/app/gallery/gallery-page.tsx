@@ -109,7 +109,12 @@ export function GalleryPage(): React.ReactElement {
             coss ui
           </Button>{" "}
           components ({COSS_COUNT} of them), installed from the coss registry with the shadcn CLI and left unmodified, shown the way this product uses them. Segmented control,
-          radio card, stepper and the booking blocks are this app&apos;s own compositions, built from coss parts. Each row shows light and dark at once.
+          radio card, stepper and the booking blocks are this app&apos;s own compositions, built from coss parts. Each row shows light and dark at once. The headless
+          primitives extracted from this product (SlotGrid, Recurrence, TimeZone) have their own page:{" "}
+          <Button className="h-auto px-0 py-0 align-baseline text-base underline sm:h-auto sm:text-base" render={<Anchor href="#/primitives" />} variant="link">
+            Primitives
+          </Button>
+          .
         </p>
         <nav aria-label="Sections">
           <ul className="flex flex-wrap gap-1.5">

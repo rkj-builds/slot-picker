@@ -5,6 +5,7 @@ import { DayStepper } from "@/components/booking/day-stepper";
 import { DurationPicker } from "@/components/booking/duration-picker";
 import { SlotGrid, type SlotGridStatus } from "@/components/booking/slot-grid";
 import { TimeZoneHint } from "@/components/booking/time-zone-hint";
+import { TimeZoneCombobox } from "@/components/compositions/time-zone-combobox";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
@@ -12,6 +13,7 @@ import { computeDaySlots, nextAvailableDate, type Reservation, type Slot, type V
 import { formatDuration } from "@/lib/duration";
 import { formatDay, formatTime } from "@/lib/format";
 import { addDays, isPlainDate, type PlainDate, todayIn } from "@/lib/plain-date";
+import { instantAt } from "@/lib/time-zone";
 import { cn } from "@/lib/utils";
 
 export interface Space {
@@ -31,6 +33,8 @@ export interface BookingSlotPickerProps {
   spaces: readonly Space[];
   reservations: readonly Reservation[];
   viewerTimeZone: string;
+  /** Let the viewer pick the zone their own times are shown in (the venue's stay as they are). */
+  onViewerTimeZoneChange?: (timeZone: string) => void;
   locale?: string;
   /** Epoch milliseconds; defaults to the real clock. */
   now?: number;
@@ -69,6 +73,7 @@ export function BookingSlotPicker({
   spaces,
   reservations,
   viewerTimeZone,
+  onViewerTimeZoneChange,
   locale,
   now: nowProp,
   status = "ready",
@@ -129,6 +134,7 @@ export function BookingSlotPicker({
   const headingId = React.useId();
   const durationId = React.useId();
   const timesId = React.useId();
+  const zoneId = React.useId();
 
   return (
     <section
@@ -149,6 +155,23 @@ export function BookingSlotPicker({
             timeZone={schedule.timeZone}
             viewerTimeZone={viewerTimeZone}
           />
+          {onViewerTimeZoneChange && (
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1" data-slot="viewer-zone">
+              <label className="text-muted-foreground text-xs" htmlFor={zoneId}>
+                Also show times in
+              </label>
+              <TimeZoneCombobox
+                // Offsets as they are on the day being looked at, so a DST change (1 Nov in New York) shows on the right day.
+                at={instantAt(date, 12 * 60, schedule.timeZone)}
+                className="w-56"
+                id={zoneId}
+                locale={locale}
+                onValueChange={onViewerTimeZoneChange}
+                size="sm"
+                value={viewerTimeZone}
+              />
+            </div>
+          )}
         </div>
         <DayStepper
           locale={locale}

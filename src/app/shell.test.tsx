@@ -9,7 +9,7 @@ describe("home, demo bar and not found", () => {
     expect(screen.getByRole("link", { name: /Book a court/ })).toHaveAttribute("href", "#/book");
     expect(screen.getByRole("link", { name: /Venue desk/ })).toHaveAttribute("href", "#/desk");
     const nav = screen.getByRole("navigation", { name: "Demo sections" });
-    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Book", "Desk", "Components"]);
+    expect(within(nav).getAllByRole("link").map((a) => a.textContent)).toEqual(["Book", "Desk", "Components", "Primitives"]);
     expect(await axeViolations()).toEqual([]);
   });
 

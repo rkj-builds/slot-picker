@@ -6,10 +6,10 @@ import { CourtStep } from "@/app/book/court-step";
 import { DoneStep } from "@/app/book/done-step";
 import { type Draft, FlowContext, furthestStep, isStepId, readDraft, type StepId, STEPS, stepIndex, writeDraft } from "@/app/book/flow";
 import { PayStep } from "@/app/book/pay-step";
-import { ScenariosPopover } from "@/app/book/scenarios-popover";
 import { WhenStep } from "@/app/book/when-step";
 import { YouStep } from "@/app/book/you-step";
 import { navigate, type Route } from "@/app/router";
+import { DRAFT_EVENT } from "@/app/demo-jump";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -43,6 +43,13 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
   }, []);
   const goTo = React.useCallback((next: StepId) => navigate(`/book/${next}`), []);
 
+  // A demo jump writes a draft from outside the flow; pick it up.
+  React.useEffect(() => {
+    const reload = (): void => setDraft(readDraft());
+    window.addEventListener(DRAFT_EVENT, reload);
+    return () => window.removeEventListener(DRAFT_EVENT, reload);
+  }, []);
+
   // The URL asked for a step the draft cannot reach yet: show the right one, without a history entry.
   React.useEffect(() => {
     if (route.segments[1] !== step) navigate(`/book/${step}`, undefined, { replace: true });
@@ -65,6 +72,10 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
     if (booking.status === "held" || booking.status === "expired") update({ bookingId: null });
   }, [booking, step, dispatch, update]);
 
+  // Which way the last step change went, for the step's entrance (forward slides in from the end, back from the start).
+  const [shown, setShown] = React.useState<{ step: StepId; direction: "forward" | "back" }>({ step, direction: "forward" });
+  if (shown.step !== step) setShown({ step, direction: stepIndex(step) >= stepIndex(shown.step) ? "forward" : "back" });
+
   const flow = React.useMemo(() => ({ draft, update, goTo, booking }), [draft, update, goTo, booking]);
   const current = stepIndex(step);
 
@@ -81,7 +92,6 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
               {VENUE.city} · 2 pickleball courts
             </span>
           </div>
-          <ScenariosPopover />
         </div>
 
         {/* The stepper stays under the demo bar; its backdrop runs edge to edge so it reads as part of the page chrome. */}
@@ -108,7 +118,8 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
         ) : store.status === "error" ? (
           <LoadError onRetry={store.retryLoad} />
         ) : (
-          <div className="flex flex-1 animate-fade-in flex-col" key={step}>
+          // Motion: the step slides 12px in the direction you moved, so forward and back feel different. Off under reduced motion.
+          <div className="flex flex-1 flex-col motion-safe:animate-step-in" data-direction={shown.direction} data-slot="book-step" key={step}>
             {step === "court" && <CourtStep />}
             {step === "when" && <WhenStep />}
             {step === "you" && <YouStep />}

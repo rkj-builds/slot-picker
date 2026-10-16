@@ -31,7 +31,8 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
   const { state } = useStore();
   const ui = useDeskUi();
   const wide = useMediaQuery("md");
-  const [showCancelled, setShowCancelled] = React.useState(false);
+  // ?cancelled=1 opens the day with cancelled bookings shown (a shareable view, and the demo's jump).
+  const [showCancelled, setShowCancelled] = React.useState(() => new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("cancelled") === "1");
   const hours = state.settings.hours[weekdayOf(date)];
 
   // The day's bookings plus any repeating block's occurrence on it (the weekend club hold).
