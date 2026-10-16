@@ -35,7 +35,7 @@ function booking(overrides: Partial<Booking>): Booking {
 }
 
 function stateWith(bookings: Booking[]): AppState {
-  return { version: STATE_VERSION, seededOn: "2026-10-15", settings: DEFAULT_SETTINGS, customers, bookings };
+  return { version: STATE_VERSION, seededOn: "2026-10-15", settings: DEFAULT_SETTINGS, customers, bookings, recurringBlocks: [] };
 }
 
 describe("desk day grid", () => {

@@ -7,6 +7,7 @@
 import { type Booking, type Customer, findConflict, firstFreeCourt, isHoldActive, makeId, type PayMode, reservationsFrom } from "@/lib/booking";
 import { computeDaySlots } from "@/lib/availability";
 import { holdExpiry } from "@/lib/holds";
+import { bookingsWithBlocks } from "@/lib/recurring-blocks";
 import type { Paise } from "@/lib/money";
 import type { PlainDate } from "@/lib/plain-date";
 import { decidePayment, type PolicyCustomer } from "@/lib/policy";
@@ -40,7 +41,8 @@ export type HoldResult =
 
 export function attemptHold(state: AppState, request: HoldRequest, now: number): HoldResult {
   const courtIds = request.courtId ? [request.courtId] : COURTS.map((c) => c.id);
-  const courtId = firstFreeCourt(state.bookings, courtIds, request, now);
+  // Repeating blocks (a club's weekend hold) take courts too.
+  const courtId = firstFreeCourt(bookingsWithBlocks(state, request.date), courtIds, request, now);
   if (!courtId) return { ok: false, reason: "slot-taken", alternatives: nextFreeStarts(state, request, now) };
 
   const existing = customerByPhone(state, request.phone);
@@ -110,7 +112,7 @@ export function attemptPay(state: AppState, bookingId: string, mode: PayMode, no
     return { ok: false, reason: "slot-taken", alternatives: nextFreeStarts(after, booking, now), action };
   }
   // A hold blocks everyone else, so a conflict here means the data is wrong; refuse rather than double-book.
-  if (findConflict(state.bookings, booking, now, bookingId)) {
+  if (findConflict(bookingsWithBlocks(state, booking.date), booking, now, bookingId)) {
     return { ok: false, reason: "slot-taken", alternatives: nextFreeStarts(state, booking, now, bookingId) };
   }
   if (mode === "venue") return { ok: true, amountPaise: 0, action: { type: "confirm-at-venue", bookingId } };
@@ -146,7 +148,7 @@ export function nextFreeStarts(
 ): Alternative[] {
   const schedule = scheduleFromSettings(state.settings);
   const reservations = reservationsFrom(
-    state.bookings.filter((b) => b.id !== ignoreId),
+    bookingsWithBlocks(state, around.date).filter((b) => b.id !== ignoreId),
     now,
   );
   const found: Alternative[] = [];

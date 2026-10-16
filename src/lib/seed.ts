@@ -13,7 +13,9 @@ import { splitPaise } from "@/lib/money";
 import { addDays, type PlainDate, todayIn, weekdayOf } from "@/lib/plain-date";
 import { decidePayment } from "@/lib/policy";
 import { STATE_VERSION, type AppState } from "@/lib/store";
+import { offScreenClubJuniors } from "@/lib/recurring-blocks";
 import { instantAt } from "@/lib/time-zone";
+import { occursOn } from "@/primitives/recurrence";
 import { type CourtId, DEFAULT_SETTINGS, priceFor, VENUE, type VenueSettings } from "@/lib/venue";
 
 const NAMES = [
@@ -206,6 +208,16 @@ export function seedState(now: number, settings: VenueSettings = DEFAULT_SETTING
     bookings.push(b);
   }
 
+  // --- The weekend hold: Off-Screen Club Juniors, both courts, from the first Saturday in the live window. ---
+  let oscStart = addDays(today, -3);
+  while (weekdayOf(oscStart) !== "sat") oscStart = addDays(oscStart, 1);
+  const osc = offScreenClubJuniors(oscStart, instantAt(addDays(today, -10), 10 * 60, VENUE.timeZone));
+  for (let d = -3; d <= 7; d += 1) {
+    const date = addDays(today, d);
+    if (!occursOn(osc.rule, date)) continue;
+    for (const court of osc.courtIds) occupancy.take(date, court, osc.rule.startMinute, osc.rule.endMinute - osc.rule.startMinute);
+  }
+
   // --- The live window: three days back to a week ahead. ---------------------------
   for (let d = -3; d <= 7; d += 1) {
     const date = addDays(today, d);
@@ -278,7 +290,7 @@ export function seedState(now: number, settings: VenueSettings = DEFAULT_SETTING
     bookings.push(b);
   }
 
-  return { version: STATE_VERSION, seededOn: today, settings, customers, bookings };
+  return { version: STATE_VERSION, seededOn: today, settings, customers, bookings, recurringBlocks: [osc] };
 }
 
 function firstFreeAfter(occupancy: Occupancy, today: PlainDate, now: number): { date: PlainDate; court: CourtId; start: number } | null {

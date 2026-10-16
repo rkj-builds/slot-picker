@@ -1,6 +1,6 @@
 "use client";
 
-import { CalendarOffIcon, EyeOffIcon, InfoIcon, PlusIcon } from "lucide-react";
+import { CalendarOffIcon, EyeOffIcon, InfoIcon, PlusIcon, RepeatIcon } from "lucide-react";
 import * as React from "react";
 import { BookingContextMenu } from "@/app/desk/booking-context-menu";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
@@ -23,6 +23,7 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { type Booking, deskState, duePaise, sortBookings } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
 import { type PlainDate, weekdayOf } from "@/lib/plain-date";
+import { bookingsWithBlocks, parseRecurringId } from "@/lib/recurring-blocks";
 import { cn } from "@/lib/utils";
 import { COURTS, VENUE, WEEKDAY_LABEL } from "@/lib/venue";
 
@@ -33,7 +34,8 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
   const [showCancelled, setShowCancelled] = React.useState(false);
   const hours = state.settings.hours[weekdayOf(date)];
 
-  const ofDay = state.bookings.filter((b) => b.date === date).sort(sortBookings);
+  // The day's bookings plus any repeating block's occurrence on it (the weekend club hold).
+  const ofDay = bookingsWithBlocks(state, date).filter((b) => b.date === date).sort(sortBookings);
   const live = ofDay.filter((b) => !["cancelled", "expired"].includes(deskState(b, now)));
   const gone = ofDay.filter((b) => ["cancelled", "expired"].includes(deskState(b, now)));
   const stats = dayStats(ofDay, now);
@@ -61,6 +63,10 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
           </ToolbarGroup>
           <ToolbarSeparator orientation="vertical" />
           <ToolbarGroup>
+            <ToolbarButton onClick={() => ui.blockCourts(date)} render={<Button variant="outline" />}>
+              <RepeatIcon aria-hidden="true" />
+              Block courts
+            </ToolbarButton>
             <ToolbarButton onClick={() => ui.newBooking(firstFree)} render={<Button />}>
               <PlusIcon aria-hidden="true" />
               New booking
@@ -144,7 +150,7 @@ function Stat({ label, value, emphasis = false }: { label: string; value: string
 }
 
 function Legend(): React.ReactElement {
-  const states = ["paid", "part-paid", "due", "held", "coaching", "no-show"] as const;
+  const states = ["paid", "part-paid", "due", "held", "coaching", "blocked", "no-show"] as const;
   return (
     <ul aria-label="Legend" className="flex flex-wrap items-center gap-1.5">
       {states.map((s) => {
@@ -186,13 +192,15 @@ function DayList({ bookings, now }: { bookings: readonly Booking[]; now: number 
                 {list.map((b) => {
                   const ds = deskState(b, now);
                   const Icon = STATE_META[ds].icon;
-                  return (
-                    <li key={b.id}>
-                      <BookingContextMenu booking={b} now={now}>
+                  const item = (
                         <Button
                           aria-label={`${court.name}, ${timeRangeOf(b)}, ${describeBooking(b, state.customers, ds, now)}`}
                           className={cn("h-auto w-full justify-start gap-3 rounded-xl px-3 py-2.5 text-start font-normal sm:h-auto", STATE_META[ds].block)}
-                          onClick={() => ui.openBooking(b.id)}
+                          onClick={() => {
+                            const recurring = parseRecurringId(b.id);
+                            if (recurring) ui.openRepeat(recurring);
+                            else ui.openBooking(b.id);
+                          }}
                           variant="outline"
                         >
                           <Icon aria-hidden="true" className="size-4 shrink-0" />
@@ -204,7 +212,16 @@ function DayList({ bookings, now }: { bookings: readonly Booking[]; now: number 
                           </span>
                           <Badge variant={STATE_META[ds].badge}>{ds === "due" || ds === "part-paid" ? `${formatInr(duePaise(b))} due` : stateLabel(ds)}</Badge>
                         </Button>
-                      </BookingContextMenu>
+                  );
+                  return (
+                    <li key={b.id}>
+                      {parseRecurringId(b.id) ? (
+                        item
+                      ) : (
+                        <BookingContextMenu booking={b} now={now}>
+                          {item}
+                        </BookingContextMenu>
+                      )}
                     </li>
                   );
                 })}

@@ -8,9 +8,10 @@ import { type Booking, type Customer, makeId, paidPaise, type PayMode } from "@/
 import { expireHolds } from "@/lib/holds";
 import type { Paise } from "@/lib/money";
 import type { PlainDate } from "@/lib/plain-date";
+import type { RecurringBlock } from "@/lib/recurring-blocks";
 import type { VenueSettings } from "@/lib/venue";
 
-export const STATE_VERSION = 3;
+export const STATE_VERSION = 4;
 
 export interface AppState {
   version: number;
@@ -19,6 +20,8 @@ export interface AppState {
   settings: VenueSettings;
   customers: Customer[];
   bookings: Booking[];
+  /** Courts held on a schedule; their dates are expanded on demand (see recurring-blocks.ts). */
+  recurringBlocks: RecurringBlock[];
 }
 
 export type CancelResolution = "credit" | "refund";
@@ -44,6 +47,9 @@ export type Action =
   | { type: "restore"; booking: Booking; customer?: Customer }
   | { type: "set-customer-flag"; customerId: string; flag: "payFirst" | "trusted"; value: boolean }
   | { type: "update-settings"; settings: VenueSettings }
+  /** A repeating block (courts held on a schedule), added, changed (a date skipped, the end set) or removed (undo). */
+  | { type: "put-recurring-block"; block: RecurringBlock }
+  | { type: "remove-recurring-block"; blockId: string }
   | { type: "reset"; state: AppState };
 
 export function reducer(state: AppState, action: Action): AppState {
@@ -144,6 +150,17 @@ export function reducer(state: AppState, action: Action): AppState {
     case "update-settings":
       return { ...state, settings: action.settings };
 
+    case "put-recurring-block":
+      return {
+        ...state,
+        recurringBlocks: state.recurringBlocks.some((b) => b.id === action.block.id)
+          ? state.recurringBlocks.map((b) => (b.id === action.block.id ? action.block : b))
+          : [...state.recurringBlocks, action.block],
+      };
+
+    case "remove-recurring-block":
+      return { ...state, recurringBlocks: state.recurringBlocks.filter((b) => b.id !== action.blockId) };
+
     case "reset":
       return action.state;
   }
@@ -180,7 +197,7 @@ export function parseStoredState(raw: string | null): AppState | null {
   if (!raw) return null;
   try {
     const value = JSON.parse(raw) as Partial<AppState> | null;
-    if (value?.version !== STATE_VERSION || !Array.isArray(value.bookings) || !Array.isArray(value.customers) || !value.settings) {
+    if (value?.version !== STATE_VERSION || !Array.isArray(value.bookings) || !Array.isArray(value.customers) || !Array.isArray(value.recurringBlocks) || !value.settings) {
       return null;
     }
     return value as AppState;

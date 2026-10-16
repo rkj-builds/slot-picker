@@ -22,6 +22,7 @@ import { type Booking, type Customer, findConflict, makeId } from "@/lib/booking
 import { formatInr } from "@/lib/money";
 import { checkIndianPhone, describePhoneProblem, formatPhone } from "@/lib/phone";
 import { weekdayOf } from "@/lib/plain-date";
+import { bookingsWithBlocks } from "@/lib/recurring-blocks";
 import { customerByPhone, newCustomer } from "@/lib/store";
 import { COURTS, type CourtId, DURATIONS_MINUTES, priceFor } from "@/lib/venue";
 
@@ -59,7 +60,7 @@ function NewBookingForm({ prefill, onDone }: { prefill: NewBookingPrefill; onDon
   const starts: number[] = [];
   for (let m = hours.open; m + 30 <= hours.close; m += 30) starts.push(m);
   const span = { courtId, date: prefill.date, startMinute, durationMinutes: duration };
-  const conflict = findConflict(state.bookings, span, now());
+  const conflict = findConflict(bookingsWithBlocks(state, prefill.date), span, now());
   const pastClose = startMinute + duration > hours.close;
   const price = priceFor(state.settings, prefill.date, startMinute, duration);
   const slotError = conflict ? `${COURTS.find((c) => c.id === courtId)?.name} is taken ${timeRangeOf(conflict)}.` : pastClose ? "That runs past closing time." : null;

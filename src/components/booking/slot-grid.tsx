@@ -9,6 +9,7 @@ import { describeSlotStatus, groupByPeriod, type Period, type Slot, type SlotSta
 import { formatTime } from "@/lib/format";
 import { sameWallClock } from "@/lib/time-zone";
 import { cn } from "@/lib/utils";
+import { SlotGrid as SlotGridPrimitive } from "@/primitives/slot-grid";
 
 export type SlotGridStatus = "ready" | "loading" | "error";
 
@@ -51,9 +52,12 @@ const SLOT_STYLE: Record<SlotStatus, string> = {
 };
 
 /**
- * A keyboard-navigable grid of start times, exposed as one radio group.
+ * The booking flow's start times: the SlotGrid primitive
+ * (src/primitives/slot-grid) in the booking skin. The primitive owns the
+ * semantics (one radio group, a radio per start time, periods as groups) and
+ * the keyboard model; this file owns the look, the loading, error and empty
+ * states, and what each cell says.
  *
- * The keyboard model:
  *   ← →            previous / next slot, wrapping within the day
  *   ↑ ↓            the slot above / below (measured from the rendered layout)
  *   Home / End     first / last slot of the day
@@ -80,114 +84,18 @@ export function SlotGrid({
   "aria-label": ariaLabel,
   "aria-labelledby": ariaLabelledBy,
 }: SlotGridProps): React.ReactElement {
-  const rootRef = React.useRef<HTMLDivElement>(null);
   const groups = React.useMemo(() => groupByPeriod(slots), [slots]);
   const order = React.useMemo(() => groups.flatMap((g) => g.slots), [groups]);
-
-  // Roving tabindex: the selected slot carries the tab stop, else the first available, else the first.
-  const [focusedId, setFocusedId] = React.useState<string | null>(null);
-  const tabStopId =
-    (focusedId && order.some((s) => s.id === focusedId) ? focusedId : null) ??
-    value ??
-    order.find((s) => s.status === "available")?.id ??
-    order[0]?.id ??
-    null;
 
   const showViewerTime = Boolean(
     viewerTimeZone && viewerTimeZone !== timeZone && order[0] && !sameWallClock(order[0].start, timeZone, viewerTimeZone),
   );
-
-  const focusSlot = React.useCallback(
-    (slot: Slot | undefined): void => {
-      if (!slot) return;
-      setFocusedId(slot.id);
-      const el = rootRef.current?.querySelector<HTMLElement>(`[data-slot-id="${slot.id}"]`);
-      el?.focus();
-      if (slot.status === "available" && slot.id !== value) onValueChange(slot.id, slot);
-    },
-    [onValueChange, value],
-  );
-
-  const measuredColumns = (slot: Slot): number => {
-    const group = groups.find((g) => g.slots.includes(slot));
-    const root = rootRef.current;
-    if (!group || !root) return columns;
-    const first = root.querySelector<HTMLElement>(`[data-slot-id="${group.slots[0]?.id}"]`);
-    if (!first || first.offsetWidth === 0) return columns;
-    let count = 0;
-    for (const s of group.slots) {
-      const el = root.querySelector<HTMLElement>(`[data-slot-id="${s.id}"]`);
-      if (el?.offsetTop === first.offsetTop) count += 1;
-      else break;
-    }
-    return Math.max(1, count);
-  };
-
-  const onKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>, slot: Slot): void => {
-    const index = order.indexOf(slot);
-    const groupIndex = groups.findIndex((g) => g.slots.includes(slot));
-    const group = groups[groupIndex];
-    if (!group) return;
-    const inGroup = group.slots.indexOf(slot);
-    const cols = measuredColumns(slot);
-
-    let target: Slot | undefined;
-    switch (event.key) {
-      case "ArrowRight":
-        target = order[(index + 1) % order.length];
-        break;
-      case "ArrowLeft":
-        target = order[(index - 1 + order.length) % order.length];
-        break;
-      case "ArrowDown": {
-        const next = inGroup + cols;
-        target = next < group.slots.length ? group.slots[next] : groups[groupIndex + 1]?.slots[Math.min(inGroup % cols, (groups[groupIndex + 1]?.slots.length ?? 1) - 1)];
-        break;
-      }
-      case "ArrowUp": {
-        const prev = inGroup - cols;
-        if (prev >= 0) target = group.slots[prev];
-        else {
-          const above = groups[groupIndex - 1];
-          const firstAbove = above?.slots[0];
-          if (above && firstAbove) {
-            const aboveCols = measuredColumns(firstAbove);
-            const lastRowStart = Math.floor((above.slots.length - 1) / aboveCols) * aboveCols;
-            target = above.slots[Math.min(lastRowStart + (inGroup % cols), above.slots.length - 1)];
-          }
-        }
-        break;
-      }
-      case "Home":
-        target = order[0];
-        break;
-      case "End":
-        target = order[order.length - 1];
-        break;
-      case "PageDown":
-        target = groups[groupIndex + 1]?.slots[0];
-        break;
-      case "PageUp":
-        target = groups[groupIndex - 1]?.slots[0];
-        break;
-      case " ":
-      case "Enter":
-        event.preventDefault();
-        if (slot.status === "available") onValueChange(slot.id, slot);
-        return;
-      default:
-        return;
-    }
-    event.preventDefault();
-    focusSlot(target);
-  };
 
   const groupProps = {
     "aria-label": ariaLabelledBy ? undefined : (ariaLabel ?? "Start time"),
     "aria-labelledby": ariaLabelledBy,
     className: cn("flex flex-col gap-5", className),
     "data-slot": "slot-grid",
-    ref: rootRef,
   } as const;
 
   if (status === "loading") {
@@ -256,58 +164,66 @@ export function SlotGrid({
     );
   }
 
+  const byId = new Map(order.map((s) => [s.id, s]));
   return (
-    <div {...groupProps} data-status="ready" role="radiogroup">
+    <SlotGridPrimitive.Root
+      {...groupProps}
+      columns={columns}
+      data-status="ready"
+      onValueChange={(id) => {
+        const slot = byId.get(id);
+        if (slot) onValueChange(id, slot);
+      }}
+      value={value}
+    >
       {groups.map(({ period, slots: periodSlots }) => (
-        <div className="flex flex-col gap-2" data-period={period} data-slot="slot-grid-period" key={period} role="group" aria-label={PERIOD_LABEL[period]}>
+        <SlotGridPrimitive.Group aria-label={PERIOD_LABEL[period]} className="flex flex-col gap-2" data-period={period} data-slot="slot-grid-period" key={period}>
           <div aria-hidden="true" className="flex items-baseline gap-2 text-muted-foreground text-xs">
             <span className="font-medium uppercase tracking-wide">{PERIOD_LABEL[period]}</span>
             <span className="tabular-nums">{periodSlots.filter((s) => s.status === "available").length} free</span>
           </div>
-          <div className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2" data-slot="slot-grid-row">
+          <SlotGridPrimitive.Row className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2" data-slot="slot-grid-row">
             {periodSlots.map((slot) => {
               const reason = describeSlotStatus(slot, locale);
               const time = formatTime(slot.start, { locale, timeZone });
               const viewerTime = showViewerTime && viewerTimeZone ? formatTime(slot.start, { locale, timeZone: viewerTimeZone }) : null;
-              const checked = slot.id === value;
               const available = slot.status === "available";
               return (
-                <Button
-                  aria-checked={checked}
-                  aria-disabled={available ? undefined : true}
-                  aria-label={reason ? `${time}, ${reason}` : time}
-                  className={cn(
-                    "h-auto min-h-10 flex-col gap-0 px-2 py-1.5 font-normal tabular-nums sm:h-auto",
-                    available ? "cursor-pointer" : "cursor-not-allowed",
-                    !checked && SLOT_STYLE[slot.status],
+                <SlotGridPrimitive.Cell
+                  disabled={!available}
+                  end={slot.end}
+                  key={slot.id}
+                  label={time}
+                  reason={reason ?? undefined}
+                  render={(props, state) => (
+                    <Button
+                      {...props}
+                      className={cn(
+                        "h-auto min-h-10 flex-col gap-0 px-2 py-1.5 font-normal tabular-nums sm:h-auto",
+                        available ? "cursor-pointer" : "cursor-not-allowed",
+                        !state.selected && SLOT_STYLE[slot.status],
+                        props.className,
+                      )}
+                      variant={state.selected ? "default" : available ? "outline" : "ghost"}
+                    />
                   )}
+                  start={slot.start}
+                  value={slot.id}
                   data-slot="slot"
                   data-slot-id={slot.id}
                   data-status={slot.status}
-                  key={slot.id}
-                  onClick={() => {
-                    setFocusedId(slot.id);
-                    if (available) onValueChange(slot.id, slot);
-                  }}
-                  onFocus={() => setFocusedId(slot.id)}
-                  onKeyDown={(event) => onKeyDown(event, slot)}
-                  role="radio"
-                  tabIndex={slot.id === tabStopId ? 0 : -1}
                   title={reason ? `${time} · ${reason}` : undefined}
-                  variant={checked ? "default" : available ? "outline" : "ghost"}
                 >
                   <span className={cn("font-medium", slot.status === "booked" && "line-through decoration-muted-foreground/40")}>{time}</span>
                   {viewerTime && (
-                    <span className={cn("text-[11px] leading-tight", checked ? "text-primary-foreground/72" : "text-muted-foreground/80")}>
-                      {viewerTime}
-                    </span>
+                    <span className="text-[11px] text-muted-foreground/80 leading-tight in-data-selected:text-primary-foreground/72">{viewerTime}</span>
                   )}
-                </Button>
+                </SlotGridPrimitive.Cell>
               );
             })}
-          </div>
-        </div>
+          </SlotGridPrimitive.Row>
+        </SlotGridPrimitive.Group>
       ))}
-    </div>
+    </SlotGridPrimitive.Root>
   );
 }

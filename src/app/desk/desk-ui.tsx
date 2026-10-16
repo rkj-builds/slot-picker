@@ -10,12 +10,22 @@ export interface NewBookingPrefill {
   startMinute: number;
 }
 
+/** One date of a repeating block, as clicked on the day grid. */
+export interface RepeatRef {
+  blockId: string;
+  date: PlainDate;
+}
+
 /** Which overlay is open on the desk. One host renders them all, so any screen can open any of them. */
 export interface DeskUi {
   openBooking: (id: string) => void;
   recordCash: (id: string) => void;
   cancel: (id: string) => void;
   newBooking: (prefill: NewBookingPrefill) => void;
+  /** A repeating block's schedule: skip a date, end it. */
+  openRepeat: (ref: RepeatRef) => void;
+  /** Block courts from a date: once, or on a repeating schedule. */
+  blockCourts: (date: PlainDate) => void;
   /** The booking whose Record cash / Cancel dialog is open, if any. */
   cashId: string | null;
   cancelId: string | null;

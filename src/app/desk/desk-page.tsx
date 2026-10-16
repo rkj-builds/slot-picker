@@ -10,7 +10,8 @@ import { DeskCommandPalette } from "@/app/desk/command-palette";
 import { DayView } from "@/app/desk/day-view";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
 import { type DeskSection, DeskSidebar } from "@/app/desk/desk-sidebar";
-import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill } from "@/app/desk/desk-ui";
+import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill, type RepeatRef } from "@/app/desk/desk-ui";
+import { BlockCourtsDialog, RepeatBlockDialog } from "@/app/desk/repeat-dialogs";
 import { InsightsView } from "@/app/desk/insights-view";
 import { NewBookingDialog } from "@/app/desk/new-booking-dialog";
 import { SettingsView } from "@/app/desk/settings-view";
@@ -55,6 +56,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const [cashId, setCashId] = React.useState<string | null>(null);
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
+  const [repeatRef, setRepeatRef] = React.useState<RepeatRef | null>(null);
+  const [blockDate, setBlockDate] = React.useState<PlainDate | null>(null);
   const [searchOpen, setSearchOpen] = React.useState(false);
   const [toolbarSlot, setToolbarSlot] = React.useState<HTMLElement | null>(null);
   const [footerSlot, setFooterSlot] = React.useState<HTMLElement | null>(null);
@@ -73,6 +76,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       recordCash: setCashId,
       cancel: setCancelId,
       newBooking: setPrefill,
+      openRepeat: setRepeatRef,
+      blockCourts: setBlockDate,
       cashId,
       cancelId,
       closeCash: () => setCashId(null),
@@ -151,6 +156,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <BookingSheet bookingId={sheetId} onClose={() => setSheetId(null)} />
       {sheetId === null && <DeskOverlays />}
       <NewBookingDialog onClose={() => setPrefill(null)} prefill={prefill} />
+      <BlockCourtsDialog date={blockDate} onClose={() => setBlockDate(null)} />
+      <RepeatBlockDialog onClose={() => setRepeatRef(null)} target={repeatRef} />
     </DeskUiContext.Provider>
   );
 }

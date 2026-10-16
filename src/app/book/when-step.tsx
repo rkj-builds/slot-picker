@@ -14,6 +14,7 @@ import { Card, CardPanel } from "@/components/ui/card";
 import { ANY_COURT, anyCourtReservations, reservationsFrom } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
 import { addDays, type PlainDate, todayIn, type Weekday, weekdayOf } from "@/lib/plain-date";
+import { bookingsWithBlocks } from "@/lib/recurring-blocks";
 import { localTimeZone } from "@/lib/time-zone";
 import { COURTS, courtName, priceFor, scheduleFromSettings, VENUE } from "@/lib/venue";
 
@@ -25,8 +26,10 @@ export function WhenStep(): React.ReactElement {
   const now = useNow(60_000);
   const today = todayIn(VENUE.timeZone, now);
   const schedule = React.useMemo(() => scheduleFromSettings(state.settings), [state.settings]);
+  // The fortnight a customer can book, with the repeating blocks (a club's weekend hold) laid out as bookings.
+  const bookings = React.useMemo(() => bookingsWithBlocks(state, today, addDays(today, 13)), [state, today]);
   const reservations =
-    draft.courtId === "any" ? anyCourtReservations(state.bookings, COURTS.map((c) => c.id), now) : reservationsFrom(state.bookings, now);
+    draft.courtId === "any" ? anyCourtReservations(bookings, COURTS.map((c) => c.id), now) : reservationsFrom(bookings, now);
   const space = draft.courtId === "any" ? { id: ANY_COURT, name: "Any court" } : { id: draft.courtId, name: courtName(draft.courtId) };
   const [selection, setSelection] = React.useState<BookingSelection | null>(null);
 

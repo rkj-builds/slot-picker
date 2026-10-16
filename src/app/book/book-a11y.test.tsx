@@ -8,7 +8,7 @@ import { instantAt } from "@/lib/time-zone";
 import { DEFAULT_SETTINGS } from "@/lib/venue";
 
 const NOW = instantAt("2026-10-15", 10 * 60, "Asia/Kolkata");
-const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [] };
+const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [], recurringBlocks: [] };
 
 describe("#/book accessibility", () => {
   it("every step, the checkout and the cancel dialog pass axe", async () => {

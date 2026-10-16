@@ -33,5 +33,5 @@ export function aCustomer(overrides: Partial<Customer> = {}): Customer {
 }
 
 export function aState(overrides: Partial<AppState> = {}): AppState {
-  return { version: STATE_VERSION, seededOn: "2026-10-15", settings: DEFAULT_SETTINGS, customers: [aCustomer()], bookings: [], ...overrides };
+  return { version: STATE_VERSION, seededOn: "2026-10-15", settings: DEFAULT_SETTINGS, customers: [aCustomer()], bookings: [], recurringBlocks: [], ...overrides };
 }

@@ -119,7 +119,7 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
   return (
     <div className="flex flex-col gap-4">
       <DeskViewToolbar inlineOnPhone>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-start gap-2" data-slot="bookings-filters">
         <SearchField customers={state.customers} onChange={(value) => {
           setQuery(value);
           setPage(0);
@@ -301,8 +301,10 @@ function SearchField({ customers, value, onChange }: { customers: readonly Custo
     ],
     [customers],
   );
+  // The coss Toolbar's own frame (border, p-1, rounded-xl) around a default-size input: the input is the
+  // same height as the Toolbar's default-size buttons, so the search and the filters share one outer height and baseline.
   return (
-    <Field className="min-w-56 flex-1">
+    <Field className="min-w-56 flex-1 rounded-xl border bg-card not-dark:bg-clip-padding p-1" data-slot="bookings-search">
       <FieldLabel className="sr-only">Search</FieldLabel>
       <Autocomplete
         items={groups}

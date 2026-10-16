@@ -6,7 +6,7 @@ import { seedCustomers } from "@/lib/seed";
 import { STATE_VERSION } from "@/lib/store";
 import { DEFAULT_SETTINGS } from "@/lib/venue";
 
-const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [] };
+const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [], recurringBlocks: [] };
 
 describe("#/desk/settings", () => {
   it("passes axe", async () => {

@@ -9,7 +9,7 @@ import { DEFAULT_SETTINGS } from "@/lib/venue";
 
 // Thursday 15 Oct 2026, 10:00 AM. An empty venue, so every time is free.
 const NOW = instantAt("2026-10-15", 10 * 60, "Asia/Kolkata");
-const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [] };
+const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, settings: DEFAULT_SETTINGS, customers: seedCustomers(0), bookings: [], recurringBlocks: [] };
 
 /** The step's summary and actions: a labelled region, the sticky Card beside the step or the bar under it. */
 function actions(name = "Your booking"): HTMLElement {

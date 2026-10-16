@@ -14,6 +14,8 @@ export default defineConfig(({ command, isPreview }) => ({
     environment: "jsdom",
     setupFiles: ["./vitest.setup.ts"],
     css: false,
+    // Whole-app flow tests with axe run 1–2 s alone; under a parallel run on a laptop they can pass 5 s.
+    testTimeout: 15_000,
     // Pin the process zone so "local time" in tests never depends on the laptop.
     env: { TZ: "UTC" },
   },
