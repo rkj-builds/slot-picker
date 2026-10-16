@@ -5,6 +5,7 @@ import * as React from "react";
 import { useAnchoredBarHeight } from "@/app/anchored-bar";
 import { DeskViewFooter } from "@/app/desk/desk-toolbar";
 import { useDeskActions } from "@/app/desk/desk-actions";
+import { takeUnsavedSettings } from "@/app/demo-jump";
 import { durationOf, minuteLabel } from "@/app/format";
 import { useStore } from "@/app/store";
 import {
@@ -48,7 +49,8 @@ const TIMES = Array.from({ length: 49 }, (_, i) => i * 30);
  */
 export function SettingsView(): React.ReactElement {
   const { state, dispatch } = useStore();
-  const [draft, setDraft] = React.useState<VenueSettings>(state.settings);
+  // A demo jump may hand over edits to open with, unsaved.
+  const [draft, setDraft] = React.useState<VenueSettings>(() => ({ ...state.settings, ...takeUnsavedSettings() }));
   const dirty = JSON.stringify(draft) !== JSON.stringify(state.settings);
   const set = <K extends keyof VenueSettings>(key: K, value: VenueSettings[K]): void => setDraft((d) => ({ ...d, [key]: value }));
   const example = splitPaise(draft.peakPricePaise, draft.depositPercent);

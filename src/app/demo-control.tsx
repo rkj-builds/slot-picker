@@ -2,7 +2,7 @@
 
 import { FlaskConicalIcon } from "lucide-react";
 import * as React from "react";
-import { useJumpToState } from "@/app/demo-jump";
+import { clearHandoffs, useJumpToState } from "@/app/demo-jump";
 import { DEMO_STATES, PRESET_GROUPS } from "@/app/demo-states";
 import { StatesIndex } from "@/app/states-index";
 import { useStore } from "@/app/store";
@@ -109,13 +109,23 @@ export function DemoControl(): React.ReactElement {
         </Tabs>
         <Separator className="shrink-0" />
         <div className="flex shrink-0 gap-2 p-2">
-          <Button className="flex-1" disabled={active === 0} onClick={clearScenarios} size="sm" variant="ghost">
+          <Button
+            className="flex-1"
+            disabled={active === 0}
+            onClick={() => {
+              clearScenarios();
+              clearHandoffs();
+            }}
+            size="sm"
+            variant="ghost"
+          >
             Turn all off
           </Button>
           <Button
             className="flex-1"
             onClick={() => {
               reset();
+              clearHandoffs();
               toastManager.add({ title: "Demo data reset", description: "Bookings and settings are back to the seed.", type: "info" });
             }}
             size="sm"

@@ -214,3 +214,64 @@ describe("payment outcomes open directly", () => {
     expect(await axeViolations()).toEqual([]);
   });
 });
+
+describe("form states open directly", () => {
+  it("Details with errors: step 3 shows each field's own error, with focus on the first", async () => {
+    const user = userEvent.setup();
+    await jump(user, "Details with errors");
+    expect(await screen.findByRole("heading", { level: 1, name: "Your details" })).toBeInTheDocument();
+    const name = await screen.findByRole("textbox", { name: "Name" });
+    const phone = screen.getByRole("textbox", { name: "Mobile number" });
+    expect(await screen.findByText("Tell us who is booking.")).toBeInTheDocument();
+    expect(screen.getByText("That is too short. A mobile number has 10 digits.")).toBeInTheDocument();
+    expect(phone).toHaveValue("98765");
+    await waitFor(() => expect(name).toHaveAttribute("aria-invalid", "true"));
+    expect(phone).toHaveAttribute("aria-invalid", "true");
+    await waitFor(() => expect(name).toHaveFocus());
+    expect(screen.getByRole("button", { name: "Hold this court" })).toBeInTheDocument();
+    expect(await axeViolations()).toEqual([]);
+    // Fixing the name clears its error; the form still stops on the short number.
+    await user.type(name, "Asha Rao");
+    await waitFor(() => expect(screen.queryByText("Tell us who is booking.")).toBeNull());
+    await user.click(screen.getByRole("button", { name: "Hold this court" }));
+    expect(await screen.findByText("That is too short. A mobile number has 10 digits.")).toBeInTheDocument();
+    await waitFor(() => expect(phone).toHaveFocus());
+  });
+
+  it("Settings with unsaved changes: the save bar says so, and Discard restores 50%", async () => {
+    const user = userEvent.setup();
+    await jump(user, "Settings with unsaved changes");
+    const bar = await screen.findByRole("region", { name: "Save settings" });
+    expect(await within(bar).findByText("Unsaved changes")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Deposit" })).toHaveValue("30%");
+    expect(await axeViolations()).toEqual([]);
+    await user.click(within(bar).getByRole("button", { name: "Discard" }));
+    expect(await within(bar).findByText("All changes saved")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Deposit" })).toHaveValue("50%");
+  });
+
+  it("Settings with unsaved changes: Save keeps 30%, and Reset demo data puts the seed back", async () => {
+    const user = userEvent.setup();
+    await jump(user, "Settings with unsaved changes");
+    const bar = await screen.findByRole("region", { name: "Save settings" });
+    await user.click(within(bar).getByRole("button", { name: "Save settings" }));
+    expect(await screen.findByText("Settings saved")).toBeInTheDocument();
+    expect(await within(screen.getByRole("region", { name: "Save settings" })).findByText("All changes saved")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Deposit" })).toHaveValue("30%");
+    await user.click(screen.getByRole("button", { name: "Demo scenarios" }));
+    await user.click(within(await screen.findByRole("dialog", { name: "Demo scenarios" })).getByRole("button", { name: "Reset demo data" }));
+    await waitFor(() => expect(screen.getByRole("textbox", { name: "Deposit" })).toHaveValue("50%"));
+  });
+
+  it("a jump onto the screen already open still lands on its state", async () => {
+    const user = userEvent.setup();
+    renderApp("#/desk/settings");
+    const bar = await screen.findByRole("region", { name: "Save settings" });
+    expect(within(bar).getByText("All changes saved")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Demo scenarios" }));
+    const popup = await screen.findByRole("dialog", { name: "Demo scenarios" });
+    await user.click(within(popup).getByRole("tab", { name: "Jump to state" }));
+    await user.click(await within(popup).findByRole("button", { name: /^Settings with unsaved changes/ }));
+    expect(await within(screen.getByRole("region", { name: "Save settings" })).findByText("Unsaved changes")).toBeInTheDocument();
+  });
+});

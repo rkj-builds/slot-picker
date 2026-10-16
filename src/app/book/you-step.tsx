@@ -5,6 +5,7 @@ import * as React from "react";
 import { StepHeading } from "@/app/book/book-page";
 import { useFlow } from "@/app/book/flow";
 import { SlotTakenNotice } from "@/app/book/slot-taken-notice";
+import { takeSubmittedDetails } from "@/app/demo-jump";
 import { StepActions, StepCard, StepLayout } from "@/app/book/step-actions";
 import { bookingRows } from "@/app/book/summary-rows";
 import { dayOf, durationOf, timeRangeOf, whenOf } from "@/app/format";
@@ -14,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldError, FieldLabel } from "@/components/ui/field";
 import { Fieldset, FieldsetLegend } from "@/components/ui/fieldset";
-import { Form } from "@/components/ui/form";
+import { Form, type FormPrimitive } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupText } from "@/components/ui/input-group";
 import { OTPField, OTPFieldInput, OTPFieldSeparator } from "@/components/ui/otp-field";
@@ -50,6 +51,23 @@ export function YouStep(): React.ReactElement {
   const [codeError, setCodeError] = React.useState<string | null>(null);
   const codeRef = React.useRef<HTMLDivElement>(null);
   const formId = React.useId();
+  const formRef = React.useRef<HTMLFormElement>(null);
+  const formActions = React.useRef<FormPrimitive.Actions | null>(null);
+
+  // A demo jump may open the step as if Hold was pressed once: run the form's own validation and
+  // focus the first problem, as a submit would. The Form's API, not a click, and nothing is held.
+  const [openSubmitted] = React.useState(takeSubmittedDetails);
+  React.useEffect(() => {
+    if (!openSubmitted) return;
+    formActions.current?.validate();
+    // After the navigation has put focus on the page heading.
+    const id = window.setTimeout(() => {
+      const first = formRef.current?.querySelector<HTMLInputElement | HTMLTextAreaElement>("input:invalid, textarea:invalid");
+      first?.focus();
+      first?.select();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [openSubmitted]);
 
   // The flagged scenario fills the form with a customer the venue asks to pay first.
   const { flagged, trusted, otpExpires } = store.scenarios;
@@ -168,12 +186,14 @@ export function YouStep(): React.ReactElement {
     >
       <StepHeading description={`${court} · ${whenOf(span)}`} title="Your details" />
       <Form
+        actionsRef={formActions}
         className="flex flex-col gap-5"
         id={formId}
         onSubmit={(event) => {
           event.preventDefault();
           submit();
         }}
+        ref={formRef}
       >
         {taken && (
           <SlotTakenNotice

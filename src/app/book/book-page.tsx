@@ -9,7 +9,7 @@ import { PayStep } from "@/app/book/pay-step";
 import { WhenStep } from "@/app/book/when-step";
 import { YouStep } from "@/app/book/you-step";
 import { navigate, type Route } from "@/app/router";
-import { DRAFT_EVENT } from "@/app/demo-jump";
+import { DRAFT_EVENT, JUMP_EVENT } from "@/app/demo-jump";
 import { useStore } from "@/app/store";
 import { Button } from "@/components/ui/button";
 import { Card, CardPanel } from "@/components/ui/card";
@@ -43,11 +43,17 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
   }, []);
   const goTo = React.useCallback((next: StepId) => navigate(`/book/${next}`), []);
 
-  // A demo jump writes a draft from outside the flow; pick it up.
+  // A demo jump writes a draft from outside the flow; pick it up, and start the open step over so it reads the jump's handoff.
+  const [jumps, setJumps] = React.useState(0);
   React.useEffect(() => {
     const reload = (): void => setDraft(readDraft());
+    const bump = (): void => setJumps((n) => n + 1);
     window.addEventListener(DRAFT_EVENT, reload);
-    return () => window.removeEventListener(DRAFT_EVENT, reload);
+    window.addEventListener(JUMP_EVENT, bump);
+    return () => {
+      window.removeEventListener(DRAFT_EVENT, reload);
+      window.removeEventListener(JUMP_EVENT, bump);
+    };
   }, []);
 
   // The URL asked for a step the draft cannot reach yet: show the right one, without a history entry.
@@ -119,7 +125,7 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
           <LoadError onRetry={store.retryLoad} />
         ) : (
           // Motion: the step slides 12px in the direction you moved, so forward and back feel different. Off under reduced motion.
-          <div className="flex flex-1 flex-col motion-safe:animate-step-in" data-direction={shown.direction} data-slot="book-step" key={step}>
+          <div className="flex flex-1 flex-col motion-safe:animate-step-in" data-direction={shown.direction} data-slot="book-step" key={`${step}:${jumps}`}>
             {step === "court" && <CourtStep />}
             {step === "when" && <WhenStep />}
             {step === "you" && <YouStep />}

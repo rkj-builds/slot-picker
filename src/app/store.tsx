@@ -66,6 +66,8 @@ interface StoreValue {
   /** Demo: make the next load fail, to show the error state and its retry. */
   failNextLoad: () => void;
   reset: () => void;
+  /** How many times the demo data has been reset: a screen holding its own draft starts over when it changes. */
+  resets: number;
   scenarios: DemoScenarios;
   setScenario: (key: keyof DemoScenarios, value: boolean) => void;
   /** Demo: turn every preset off. */
@@ -213,7 +215,9 @@ export function StoreProvider({
     [wait],
   );
 
+  const [resets, setResets] = React.useState(0);
   const reset = React.useCallback(() => {
+    setResets((n) => n + 1);
     declined.current.clear();
     raced.current.clear();
     dispatch({ type: "reset", state: seedState(now()) });
@@ -255,8 +259,8 @@ export function StoreProvider({
   );
 
   const value = React.useMemo<StoreValue>(
-    () => ({ state: shown, status, dispatch, holdSlot, pay, commit, retryLoad: load, failNextLoad, reset, scenarios, setScenario, clearScenarios }),
-    [shown, status, holdSlot, pay, commit, load, failNextLoad, reset, scenarios, setScenario, clearScenarios],
+    () => ({ state: shown, status, dispatch, holdSlot, pay, commit, retryLoad: load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios }),
+    [shown, status, holdSlot, pay, commit, load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

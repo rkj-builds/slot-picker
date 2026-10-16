@@ -12,10 +12,12 @@ import type { Alternative } from "@/lib/checkout";
 import type { AppState } from "@/lib/store";
 import { formatPhone } from "@/lib/phone";
 import { addDays, type PlainDate, todayIn, weekdayOf } from "@/lib/plain-date";
-import { COURTS, VENUE } from "@/lib/venue";
+import { COURTS, VENUE, type VenueSettings } from "@/lib/venue";
 
 /** The book page listens for this to pick up a draft written from outside the flow. */
 export const DRAFT_EVENT = "demo:draft";
+/** Every jump fires this just before it navigates: a screen already open starts over, so it reads its handoff. */
+export const JUMP_EVENT = "demo:jump";
 
 /** A payment outcome the jump already produced, for the pay step to open on. */
 export type PayOutcome = { kind: "declined" } | { kind: "race"; alternatives: Alternative[] };
@@ -27,6 +29,29 @@ export function takePayOutcome(bookingId: string): PayOutcome | null {
   const { outcome } = pendingOutcome;
   pendingOutcome = null;
   return outcome;
+}
+
+let pendingSubmitted = false;
+/** Whether the details step should open as if submitted once, once: the step reads it on mount. */
+export function takeSubmittedDetails(): boolean {
+  const submitted = pendingSubmitted;
+  pendingSubmitted = false;
+  return submitted;
+}
+
+let pendingSettings: Partial<VenueSettings> | null = null;
+/** Edits for the settings draft to open with, unsaved, once: the settings view reads them on mount. */
+export function takeUnsavedSettings(): Partial<VenueSettings> | null {
+  const edits = pendingSettings;
+  pendingSettings = null;
+  return edits;
+}
+
+/** Drop any handoff a screen has not picked up yet (Turn all off, Reset demo data, the next jump). */
+export function clearHandoffs(): void {
+  pendingOutcome = null;
+  pendingSubmitted = false;
+  pendingSettings = null;
 }
 
 const DEMO_CUSTOMER = { name: "Asha Rao", phone: "+919876543210" };
@@ -63,6 +88,9 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
   return React.useCallback(
     async (target: DemoState) => {
       clearScenarios();
+      clearHandoffs();
+      pendingSubmitted = target.opensSubmitted ?? false;
+      pendingSettings = target.unsavedSettings ?? null;
       for (const [key, value] of Object.entries(target.presets ?? {})) setScenario(key as keyof DemoScenarios, value);
       const today = todayIn(VENUE.timeZone, now());
       const saturday = nextSaturday(today);
@@ -72,7 +100,8 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
       if (target.hash.startsWith("#/book")) {
         let draft = { ...EMPTY_DRAFT };
         if (target.setup) {
-          draft = { ...draft, date, startMinute: freeStart(state, date, now()), durationMinutes: 60, name: DEMO_CUSTOMER.name, phone: formatPhone(DEMO_CUSTOMER.phone).replace(/^\+91 /, "") };
+          const { name, phone } = target.fill ?? { name: DEMO_CUSTOMER.name, phone: formatPhone(DEMO_CUSTOMER.phone).replace(/^\+91 /, "") };
+          draft = { ...draft, date, startMinute: freeStart(state, date, now()), durationMinutes: 60, name, phone };
         }
         if (target.setup && target.setup !== "draft") {
           let held = await holdSlot({ courtId: null, date, startMinute: draft.startMinute ?? 7 * 60, durationMinutes: 60, players: 4, name: DEMO_CUSTOMER.name, phone: DEMO_CUSTOMER.phone, notes: "" });
@@ -82,7 +111,6 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
           }
           if (held.ok) {
             draft = { ...draft, bookingId: held.booking.id, verifiedPhone: DEMO_CUSTOMER.phone, startMinute: held.booking.startMinute };
-            pendingOutcome = null;
             if (target.opensOutcome) {
               // The first attempt is the one the preset spoils: run it here so the screen opens on the result.
               const attempt = await pay(held.booking.id, "full", "upi");
@@ -100,6 +128,7 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
         writeDraft(draft);
         window.dispatchEvent(new Event(DRAFT_EVENT));
       }
+      window.dispatchEvent(new Event(JUMP_EVENT));
       navigate(hash.slice(1).split("?")[0] ?? "/", Object.fromEntries(new URLSearchParams(hash.split("?")[1] ?? "")));
       if (target.setup === "fail-load") failNextLoad();
     },

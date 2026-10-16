@@ -5,6 +5,7 @@
  * index on #/primitives both read this list.
  */
 import type { DemoScenarios } from "@/app/store";
+import type { VenueSettings } from "@/lib/venue";
 
 export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "System";
 
@@ -34,6 +35,12 @@ export interface DemoState {
   hash: string;
   /** Run the first payment during the jump, so the pay step opens on its outcome (declined, slot taken). */
   opensOutcome?: boolean;
+  /** What the details step's draft holds instead of the demo customer (a "draft" setup). */
+  fill?: { name: string; phone: string };
+  /** The details step opens as if submitted once: the form's own validation has run and its errors show. */
+  opensSubmitted?: boolean;
+  /** Settings open with these edits made but not saved. */
+  unsavedSettings?: Partial<VenueSettings>;
 }
 
 export const DEMO_STATES: readonly DemoState[] = [
@@ -42,6 +49,7 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "fully-booked", group: "Booking", label: "Fully booked day", shows: "No slots left today, with a button to the next free day.", presets: { fullyBooked: true }, hash: "#/book/when" },
   { id: "closed-today", group: "Booking", label: "Venue closed today", shows: "Step 2 says closed today and offers the next open day.", presets: { closedToday: true }, hash: "#/book/when" },
   { id: "details", group: "Booking", label: "Details and the WhatsApp code", shows: "Step 3 filled in; press Hold to see the code field and the demo code.", setup: "draft", hash: "#/book/you" },
+  { id: "details-errors", group: "Booking", label: "Details with errors", shows: "Step 3 after pressing Hold with no name and a short number: each field says what is wrong.", setup: "draft", fill: { name: "", phone: "98765" }, opensSubmitted: true, hash: "#/book/you" },
   { id: "otp-expired", group: "Booking", label: "Code expired on the first try", shows: "The right code is refused once as expired; the second try works.", presets: { otpExpires: true }, setup: "draft", hash: "#/book/you" },
   { id: "pay-first", group: "Booking", label: "Pay-first customer", shows: "A flagged number: the notice on step 3, full payment on step 4.", presets: { flagged: true }, setup: "draft", hash: "#/book/you" },
   { id: "trusted", group: "Booking", label: "Trusted regular", shows: "A known regular on step 3, who may pay at the venue even at the weekend.", presets: { trusted: true, weekend: true }, setup: "draft", day: "weekend", hash: "#/book/you" },
@@ -68,6 +76,7 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "no-results", group: "Desk", label: "No search results", shows: "A search that matches nobody.", hash: "#/desk/bookings?q=Nobody%20Here" },
   { id: "insights-empty", group: "Desk", label: "Insights with no data", shows: "Insights before any day has finished.", presets: { emptyVenue: true }, hash: "#/desk/insights" },
   { id: "settings", group: "Desk", label: "Settings", shows: "The rules: change one to see the unsaved bar, save, undo.", hash: "#/desk/settings" },
+  { id: "settings-unsaved", group: "Desk", label: "Settings with unsaved changes", shows: "The deposit changed from 50% to 30% and not saved yet: the save bar offers Save and Discard.", unsavedSettings: { depositPercent: 30 }, hash: "#/desk/settings" },
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },

@@ -4,6 +4,7 @@ import { SearchIcon } from "lucide-react";
 import * as React from "react";
 import { LoadError } from "@/app/book/book-page";
 import { useNow } from "@/app/clock";
+import { JUMP_EVENT } from "@/app/demo-jump";
 import { BookingSheet } from "@/app/desk/booking-sheet";
 import { BookingsView } from "@/app/desk/bookings-view";
 import { DeskCommandPalette } from "@/app/desk/command-palette";
@@ -53,6 +54,13 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const date: PlainDate = isPlainDate(dateParam) ? dateParam : today;
 
   const [sheetId, setSheetId] = React.useState<string | null>(null);
+  // A demo jump starts the open view over, so settings already on screen pick up the jump's unsaved edits.
+  const [jumps, setJumps] = React.useState(0);
+  React.useEffect(() => {
+    const bump = (): void => setJumps((n) => n + 1);
+    window.addEventListener(JUMP_EVENT, bump);
+    return () => window.removeEventListener(JUMP_EVENT, bump);
+  }, []);
   const [cashId, setCashId] = React.useState<string | null>(null);
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
@@ -94,7 +102,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
     ) : store.status === "error" ? (
       <LoadError onRetry={store.retryLoad} />
     ) : section === "settings" ? (
-      <SettingsView key={JSON.stringify(store.state.settings)} />
+      // Saved settings, a reset or a demo jump each start the draft over.
+      <SettingsView key={`${jumps}:${store.resets}:${JSON.stringify(store.state.settings)}`} />
     ) : section === "day" ? (
       <DayView date={date} now={now} today={today} />
     ) : section === "bookings" ? (
