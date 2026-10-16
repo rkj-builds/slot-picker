@@ -341,3 +341,20 @@ html {
 [data-bare-popup] [id$="-label"] {
     font-weight: bold;
 }
+
+/*
+ * App addition: a switch that's off must still read as a control.
+ * coss's switch uses --input (8–10% tint) when unchecked, about 1.25:1 against
+ * the surface. WCAG 1.4.11 wants 3:1 for the parts that show a control's state,
+ * so the off track gets its own token here; coss's file stays untouched.
+ */
+:root,
+.light {
+    --switch-off: rgb(0 0 0 / 0.44);
+}
+.dark {
+    --switch-off: rgb(255 255 255 / 0.36);
+}
+[data-slot="switch"][data-unchecked] {
+    background-color: var(--switch-off);
+}

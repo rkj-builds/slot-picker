@@ -43,21 +43,23 @@ export function DemoControl(): React.ReactElement {
           </Badge>
         )}
       </PopoverTrigger>
-      <PopoverPopup align="end" aria-label="Demo scenarios" className="w-[min(22rem,calc(100vw-2rem))] [&_[data-slot=popover-viewport]]:py-0 [&_[data-slot=popover-viewport]]:[--viewport-inline-padding:0px]" side="bottom">
-        <div className="flex flex-col gap-1 px-4 pt-4">
+      <PopoverPopup align="end" aria-label="Demo scenarios" className="w-[min(22rem,calc(100vw-2rem))] [&_[data-slot=popover-viewport]]:overflow-hidden [&_[data-slot=popover-viewport]]:py-0 [&_[data-slot=popover-viewport]]:[--viewport-inline-padding:0px]" side="bottom">
+        {/* One column sized to the space the popover has: header and footer stay put, only the list scrolls. */}
+        <div className="flex max-h-[min(36rem,var(--available-height))] flex-col">
+        <div className="flex shrink-0 flex-col gap-1 px-4 pt-4">
           <div className="flex items-center gap-2">
             <PopoverTitle>Demo scenarios</PopoverTitle>
             <Badge variant="warning">Demo control</Badge>
           </div>
           <PopoverDescription>Force a state to see how the product handles it. Off by default; never saved.</PopoverDescription>
         </div>
-        <Tabs className="mt-3 gap-0" defaultValue="presets">
-          <TabsList className="mx-4">
+        <Tabs className="mt-3 flex min-h-0 flex-1 flex-col gap-0" defaultValue="presets">
+          <TabsList className="mx-4 shrink-0">
             <TabsTab value="presets">Presets{active > 0 ? ` (${active})` : ""}</TabsTab>
             <TabsTab value="jump">Jump to state</TabsTab>
           </TabsList>
-          <TabsPanel value="presets">
-            <ScrollArea className="max-h-[min(26rem,calc(100dvh-14rem))]" scrollFade>
+          <TabsPanel className="flex min-h-0 flex-1 flex-col" value="presets">
+            <ScrollArea className="flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-viewport]]:min-h-0 [&_[data-slot=scroll-area-viewport]]:flex-1" scrollFade>
               <div className="flex flex-col gap-4 px-4 py-3">
                 {PRESET_GROUPS.map(({ group, items }) => (
                   <section aria-label={group} className="flex flex-col gap-2.5" key={group}>
@@ -97,16 +99,16 @@ export function DemoControl(): React.ReactElement {
               </div>
             </ScrollArea>
           </TabsPanel>
-          <TabsPanel value="jump">
-            <ScrollArea className="max-h-[min(26rem,calc(100dvh-14rem))]" scrollFade>
+          <TabsPanel className="flex min-h-0 flex-1 flex-col" value="jump">
+            <ScrollArea className="flex min-h-0 flex-1 flex-col [&_[data-slot=scroll-area-viewport]]:min-h-0 [&_[data-slot=scroll-area-viewport]]:flex-1" scrollFade>
               <div className="px-2 py-3">
                 <StatesIndex compact onJump={() => setOpen(false)} />
               </div>
             </ScrollArea>
           </TabsPanel>
         </Tabs>
-        <Separator />
-        <div className="flex gap-2 p-2">
+        <Separator className="shrink-0" />
+        <div className="flex shrink-0 gap-2 p-2">
           <Button className="flex-1" disabled={active === 0} onClick={clearScenarios} size="sm" variant="ghost">
             Turn all off
           </Button>
@@ -121,6 +123,7 @@ export function DemoControl(): React.ReactElement {
           >
             Reset demo data
           </Button>
+        </div>
         </div>
       </PopoverPopup>
     </Popover>
