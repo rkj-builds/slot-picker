@@ -187,7 +187,8 @@ export function SettingsView(): React.ReactElement {
             </Field>
             </div>
           </Fieldset>
-          <Fieldset className="flex flex-col gap-3">
+          {/* min-w-0: a fieldset is min-content wide by default, which would push the hours table past a phone's edge instead of letting it scroll. */}
+          <Fieldset className="flex min-w-0 flex-col gap-3">
             <FieldsetLegend className="font-medium text-sm">Opening hours</FieldsetLegend>
           <Table aria-label="Opening hours">
             <TableHeader>

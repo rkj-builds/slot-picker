@@ -57,20 +57,27 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
         />
         <Toolbar aria-label="Day actions">
           <ToolbarGroup>
-            <ToolbarButton render={<Toggle onPressedChange={setShowCancelled} pressed={showCancelled} />}>
+            <ToolbarButton
+              aria-label={`Show cancelled${gone.length > 0 ? ` (${gone.length})` : ""}`}
+              render={<Toggle onPressedChange={setShowCancelled} pressed={showCancelled} />}
+            >
               <EyeOffIcon aria-hidden="true" />
-              Show cancelled{gone.length > 0 ? ` (${gone.length})` : ""}
+              <span aria-hidden="true">
+                <span className="max-sm:hidden">Show cancelled</span>
+                <span className="sm:hidden">Cancelled</span>
+                {gone.length > 0 ? ` (${gone.length})` : ""}
+              </span>
             </ToolbarButton>
           </ToolbarGroup>
           <ToolbarSeparator orientation="vertical" />
           <ToolbarGroup>
-            <ToolbarButton onClick={() => ui.blockCourts(date)} render={<Button variant="outline" />}>
+            <ToolbarButton aria-label="Block courts" onClick={() => ui.blockCourts(date)} render={<Button variant="outline" />}>
               <RepeatIcon aria-hidden="true" />
-              Block courts
+              <span className="max-sm:hidden">Block courts</span>
             </ToolbarButton>
-            <ToolbarButton onClick={() => ui.newBooking(firstFree)} render={<Button />}>
+            <ToolbarButton aria-label="New booking" onClick={() => ui.newBooking(firstFree)} render={<Button />}>
               <PlusIcon aria-hidden="true" />
-              New booking
+              New<span className="max-sm:sr-only"> booking</span>
             </ToolbarButton>
           </ToolbarGroup>
         </Toolbar>

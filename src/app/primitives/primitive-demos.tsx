@@ -197,10 +197,12 @@ export function BareRecurrence(): React.ReactElement {
       <fieldset>
         <legend>On</legend>
         {WEEK.map((d) => (
-          <label key={d} style={{ whiteSpace: "nowrap" }}>
-            <input {...r.getWeekdayProps(d)} />
-            {weekdayName(d, "en-IN")}{" "}
-          </label>
+          <React.Fragment key={d}>
+            <label style={{ whiteSpace: "nowrap" }}>
+              <input {...r.getWeekdayProps(d)} />
+              {weekdayName(d, "en-IN")}
+            </label>{" "}
+          </React.Fragment>
         ))}
       </fieldset>
       <p>

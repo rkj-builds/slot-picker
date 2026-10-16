@@ -58,7 +58,7 @@ export function StatesIndex({ compact = false, onJump }: { compact?: boolean; on
               {DEMO_STATES.filter((s) => s.group === group).map((s) => (
                 <li key={s.id}>
                   <Button className="h-auto w-full justify-between gap-3 py-2 text-start font-normal sm:h-auto" loading={busy === s.id} onClick={() => void go(s)} variant="ghost">
-                    <span className="flex min-w-0 flex-col">
+                    <span className="flex min-w-0 flex-col whitespace-normal">
                       <span className="font-medium">{s.label}</span>
                       <span className="whitespace-normal text-muted-foreground text-xs">{s.shows}</span>
                     </span>

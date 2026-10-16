@@ -21,9 +21,11 @@ At [Project 831](https://project831.in) in Jamshedpur, self-serve bookings with 
 
 ## What's in it
 
-- **Book** (`#/book`, phone first). Five steps with their own URLs: court, time (with a calendar), details (the number confirmed once with a 6-digit code; the demo shows it in a toast, the real 831 sends it on WhatsApp), hold and pay, done. The payment step offers what the policy decides (pay at the venue or now on a weekday; 50% or full at the weekend; full for a pay-first customer), holds the court with a visible countdown, and handles a declined payment, an expired hold and a slot taken mid-payment. Done has the paid and due split, an `.ics`, a WhatsApp share and cancellation with credit or refund. A **Scenarios** popover forces each of those states in seconds.
+- **Book** (`#/book`, phone first). Five steps with their own URLs: court, time (with a calendar), details (the number confirmed once with a 6-digit code; the demo shows it beside the code boxes, the real 831 sends it on WhatsApp), hold and pay, done. The payment step offers what the policy decides (pay at the venue or now on a weekday; 50% or full at the weekend; full for a pay-first customer), holds the court with a visible countdown, and handles a declined payment, an expired hold and a slot taken mid-payment. Done has the paid and due split, an `.ics`, a WhatsApp share and cancellation with credit or refund. Times show in the venue's zone, and a viewer can add their own (a time-zone combobox).
 - **Desk** (`#/desk`, desktop and tablet first; phones get a list). A sidebar for the views and a **⌘K / Ctrl+K palette** (jump to a date, find a customer or booking, new booking). The day as courts by half hours, with a date picker; every booking's ledger in a side sheet (a drawer on a phone) with a WhatsApp message box; right-click a booking for its actions; record cash, mark no-show, cancel, flag pay-first, copy a payment link, each with a toast and an Undo. Plus a bookings table with search suggestions, status and date filters, customer previews on hover and CSV export, and **Insights** charts drawn from the same store.
 - **Settings** (`#/desk/settings`). Deposit, prepay days, hold length, pay-first list, hours and prices. Save a 30% deposit and the next customer on `#/book` is asked for 30%.
+- **Demo** (top bar, every page). Presets grouped Booking, Payment, Desk and System (weekend, pay-first, trusted regular, code expires, fully booked, closed today, payment fails, slot race, short hold, back-to-back, long names, empty venue, slow network, fail the next load) and **Jump to state**: 30 states, each one click from its screen. Presets are off by default, labelled as a demo, and laid over the data, never saved; `?state=<id>` links to one.
+- **Primitives** (`#/primitives`). SlotGrid, Recurrence and TimeZone, each bare, in the booking skin and in the desk skin, with keyboard maps, semantics and motion notes, plus a States index.
 - **Components** (`#/components`). All 55 coss ui components, in their states and as the product uses them, light and dark side by side, with the app's own compositions labelled.
 
 ## What I obsessed over
@@ -35,6 +37,18 @@ At [Project 831](https://project831.in) in Jamshedpur, self-serve bookings with 
 - **One tab stop per grid.** The slot grid and the desk grid both use roving focus; desk cells read "Court 2, 7:00 pm, empty, ₹800 an hour". Their cells are coss Buttons inside a hand-built grid, because coss's Radio Group and Toggle Group have no Page Up/Down between periods, no geometry-aware Up/Down, and skip disabled items that must stay focusable to say why they are taken.
 - **Durations are never decimal and times keep their zone.** "1 hour 30 minutes", Asia/Kolkata everywhere, `Intl` only, no date library.
 - **Nothing is faked to look finished.** 300–600 ms of latency in the store makes every skeleton real; `?offline=1` shows the error states.
+
+## Primitives
+
+Three headless primitives came out of this product once a second screen needed the same behaviour in a different skin (`src/primitives`, shown at `#/primitives`). They follow Base UI's conventions: dot-namespaced parts, a `render` prop on every part, `className` as a string or a function of state, state as `data-*` attributes, controlled or uncontrolled values.
+
+| Primitive | What it owns | API sketch | Used in |
+| --- | --- | --- | --- |
+| **SlotGrid** | One tab stop, ←→↑↓ / Home / End / Page Up/Down, selection that follows focus, unavailable cells that stay focusable and say why | `<SlotGrid.Root value onValueChange selectionMode="single"\|"none" orientation>` › `.Group` › `.Row` › `.Cell value disabled reason render className={(s) => …}`; `data-selected`, `data-disabled`, `data-highlighted`, `data-unavailable-reason` | Book: start times (a radiogroup). Desk: the day grid (a group of buttons, one column per court) |
+| **Recurrence** | Weekly rules (days, interval, hours, until or count, skipped dates) expanded in the venue's zone, DST-correct; one-line summaries from `Intl` | `useRecurrence({ value, onValueChange, locale })`, `expandRecurrence(rule, { from, to })`, `summarizeRecurrence(rule, "fr")` → "Chaque samedi et dimanche, 16:00 – 17:00, jusqu’au 30 nov." | Desk: Block courts (the Repeat editor); every availability and conflict check, so the Off-Screen Club Juniors weekend hold blocks online booking |
+| **TimeZone** | Every IANA zone (`Intl.supportedValuesOf`, with a fallback list), city and region, the offset at a given instant, search by city, long name or offset | `useTimeZoneCombobox({ value, onValueChange, at, locale })` → `rootProps` for any Base UI Combobox; `describeZone(id, at)` | Book: "Also show times in", which follows New York across 1 Nov |
+
+Why primitives: each owns behaviour and semantics, not looks; the booking and desk skins share none of their markup. SlotGrid is a radiogroup rather than an ARIA grid because one value is chosen and a grid would announce row and column numbers that change with the window. Motion is only where it says something (the step change slides the way you moved; the hold countdown gives one beat as it turns amber and red), and all of it stops under `prefers-reduced-motion`.
 
 ## Components
 
@@ -53,7 +67,7 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | coss component | Where the product uses it |
 | --- | --- |
 | accordion | Done step: cancellation policy, on the day, why money up front |
-| alert | Details step (welcome back, pay first), slot taken, declined payment, slot clash in New booking, what happened to the money on Done, empty day hint |
+| alert | Details step (welcome back, pay first, the demo code), slot taken, declined payment, slot clash in New booking, what happened to the money on Done, empty day hint |
 | alert-dialog | Cancel booking (desk and customer), Reset demo data |
 | autocomplete | Bookings search with grouped suggestions (customers, phone numbers); the engine under Command |
 | avatar | Booking panel and customer preview |
@@ -65,7 +79,7 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | checkbox | Opening days, weekend peak, status filter, prepay days |
 | checkbox-group | Bookings status filter (in a Popover), Settings prepay days (a form value, per coss) |
 | collapsible | Payment history in the booking panel |
-| combobox | New booking customer, Settings add pay-first customer |
+| combobox | New booking customer, Settings add pay-first customer, the time-zone picker |
 | command | ⌘K / Ctrl+K desk palette |
 | composer | "Message on WhatsApp" in the booking panel (demo: toast "Message queued (demo)") |
 | context-menu | Right-click (long-press) a booking on the day grid or the phone list |
@@ -80,13 +94,13 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | input | Names, UPI ID |
 | input-group | Mobile number with its +91 addon |
 | kbd | ⌘K hints, palette footer |
-| label | Number fields, switches in the Scenarios popover, radio cards |
-| menu | Bookings row actions, sidebar venue switcher |
+| label | Number fields, switches in the Demo control, radio cards |
+| menu | Bookings row actions, sidebar venue switcher, the top bar's More menu on narrow screens |
 | meter | Hold countdown |
 | number-field | Players, deposit, prices, cash received |
 | otp-field | 6-digit WhatsApp code on the details step |
 | pagination | Bookings table |
-| popover | Date pickers, status filter, Scenarios |
+| popover | Date pickers, status filter, the Demo control |
 | preview-card | Hover a customer's name in Bookings: bookings, paid ahead, unpaid, no-shows, cancelled, pay-first, last and next visit |
 | progress | Checkout "Waiting for the bank…" |
 | radio-group | Court, pay mode, credit or refund, segmented controls |
@@ -102,10 +116,10 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | table | Bookings, opening hours, pay-first list, payment history, insights tables for screen readers |
 | tabs | Checkout: UPI or card |
 | textarea | Booking notes |
-| toast | Every desk action with Undo, demo code, payments, messages |
+| toast | Every desk action with Undo, payments, messages; four seconds, and on a phone the page makes room above the action bar |
 | toggle | "Show cancelled" in the day toolbar |
-| toggle-group | Bookings quick dates (Last 7 days / Today / Next 7 days), clearable |
-| toolbar | Day actions; bookings filters and export |
+| toggle-group | Bookings quick dates (Last 7 days / Today / Next 7 days), clearable; the Repeat editor's days |
+| toolbar | Day actions (Block courts, New booking); bookings filters and export, the search framed to the same height |
 | tooltip | Empty grid cells, day-stepper buttons, time-zone hint, collapsed sidebar |
 
 Only two project settings bend around the vendored code, and neither touches a coss file: ESLint skips the coss files (they are linted upstream under different rules), and `tsconfig.json` sets `noUnusedLocals: false` because `src/lib/composer-editor.ts` has one unused type import upstream. typescript-eslint's `no-unused-vars` still checks all app code.
@@ -118,7 +132,8 @@ What coss does not ship is built from coss parts, outside `src/components/ui`:
 - `src/components/compositions/radio-card.tsx`: coss's card-radio pattern, a `Label` wrapping a `Radio`.
 - `src/components/compositions/stepper.tsx`: the booking flow's numbered steps.
 - `src/components/booking/`: `BookingSlotPicker`, `SlotGrid`, `DayStepper`, `DurationPicker`, `TimeZoneHint`, still exported from `src/index.ts`. `DayStepper` is a coss Group around coss's date-picker particle (Popover + Calendar).
-- The slot grid and the desk grid keep a hand-built roving focus, because coss's Radio Group and Toggle Group have no Page Up/Down between periods, no geometry-aware Up/Down and skip disabled items that must stay focusable; every cell inside is a coss Button.
+- `src/components/compositions/repeat-editor.tsx` and `time-zone-combobox.tsx`: the Recurrence and TimeZone primitives in coss parts.
+- The slot grid and the desk grid both run on the SlotGrid primitive, because coss's Radio Group and Toggle Group have no Page Up/Down between periods, no geometry-aware Up/Down and skip disabled items that must stay focusable; every cell inside is a coss Button.
 - `src/app/anchor.tsx`: the one plain `<a>`, for coss parts that render as links (`render={<Anchor href="…" />}`) and coss's segmented navigation links.
 - The charts in `src/app/desk/insights-view.tsx` are inline SVG inside coss Cards (coss has no chart), each with a coss Table for screen readers.
 
@@ -126,7 +141,7 @@ What coss does not ship is built from coss parts, outside `src/components/ui`:
 
 ```sh
 npm install
-npm run dev          # http://localhost:5173 — then #/book, #/desk, #/components
+npm run dev          # http://localhost:5173 — then #/book, #/desk, #/primitives, #/components
 npm test             # Vitest + Testing Library + axe (flows, policy, holds, reducer)
 npm run typecheck    # tsc, strict
 npm run lint         # ESLint with jsx-a11y and react-hooks
@@ -134,7 +149,7 @@ npm run build        # tsc + vite build, served from /slot-picker/
 npm run screenshots  # headless Chrome → docs/{book,desk,insights}-{light,dark}.png
 ```
 
-URL switches: `?theme=light|dark`, `?now=2026-10-17T05:30:00Z` to pin the clock, `?offline=1` for the error states. **Reset demo data** lives in the Scenarios popover and in Settings.
+URL switches: `?theme=light|dark`, `?now=2026-10-17T05:30:00Z` to pin the clock, `?offline=1` for the error states, `?state=<id>` for any demo state (ids in `src/app/demo-states.ts`). **Reset demo data** lives in the Demo control and in Settings.
 
 ## Stack
 

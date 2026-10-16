@@ -8,3 +8,8 @@ export * from "@/lib/duration";
 export * from "@/lib/format";
 export * from "@/lib/plain-date";
 export * from "@/lib/time-zone";
+export { SlotGrid as SlotGridPrimitive } from "@/primitives/slot-grid";
+export * from "@/primitives/recurrence";
+export * from "@/primitives/time-zone";
+export { RepeatEditor, type RepeatEditorProps } from "@/components/compositions/repeat-editor";
+export { TimeZoneCombobox, type TimeZoneComboboxProps } from "@/components/compositions/time-zone-combobox";

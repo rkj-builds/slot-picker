@@ -127,16 +127,18 @@ export function StoreProvider({
     return ms <= 0 ? Promise.resolve() : new Promise((resolve) => window.setTimeout(resolve, ms));
   }, [latency]);
 
-  const finishLoad = React.useCallback(
-    (): Promise<void> =>
-      wait().then(() => {
-        if (failNext.current) {
-          failNext.current = false;
-          setStatus("error");
-        } else setStatus("ready");
-      }),
-    [wait],
-  );
+  // Only the latest load settles the status: an older one still in flight (StrictMode's double mount, a retry) is ignored.
+  const loadSeq = React.useRef(0);
+  const finishLoad = React.useCallback((): Promise<void> => {
+    const seq = (loadSeq.current += 1);
+    return wait().then(() => {
+      if (seq !== loadSeq.current) return;
+      if (failNext.current) {
+        failNext.current = false;
+        setStatus("error");
+      } else setStatus("ready");
+    });
+  }, [wait]);
 
   const load = React.useCallback(() => {
     setStatus("loading");

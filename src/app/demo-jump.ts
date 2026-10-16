@@ -27,6 +27,11 @@ function freeStart(state: AppState, date: PlainDate, now: number): number {
   return 7 * 60;
 }
 
+function nextWeekday(from: PlainDate): PlainDate {
+  for (let i = 1; i <= 7; i += 1) if (!["sat", "sun"].includes(weekdayOf(addDays(from, i)))) return addDays(from, i);
+  return addDays(from, 1);
+}
+
 function nextSaturday(from: PlainDate): PlainDate {
   for (let i = 1; i <= 7; i += 1) if (weekdayOf(addDays(from, i)) === "sat") return addDays(from, i);
   return from;
@@ -48,7 +53,7 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
       for (const [key, value] of Object.entries(target.presets ?? {})) setScenario(key as keyof DemoScenarios, value);
       const today = todayIn(VENUE.timeZone, now());
       const saturday = nextSaturday(today);
-      const date = target.day === "weekend" ? saturday : addDays(today, 1);
+      const date = target.day === "weekend" ? saturday : target.day === "weekday" ? nextWeekday(today) : addDays(today, 1);
       const hash = target.hash.replace("{saturday}", saturday);
 
       if (target.hash.startsWith("#/book")) {

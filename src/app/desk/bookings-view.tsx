@@ -125,7 +125,7 @@ export function BookingsView({ today, now, initialQuery = "" }: { today: PlainDa
           setPage(0);
         }} value={query} />
         <Toolbar aria-label="Filters and export" className="flex-wrap">
-          <ToolbarGroup>
+          <ToolbarGroup className="flex-wrap">
             <Popover>
               <ToolbarButton render={<PopoverTrigger render={<Button variant="ghost" />} />}>
                 <ListFilterIcon aria-hidden="true" />

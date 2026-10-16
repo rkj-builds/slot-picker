@@ -28,8 +28,8 @@ export interface DemoState {
   shows: string;
   presets?: Partial<DemoScenarios>;
   setup?: StateSetup;
-  /** Where the held or drafted booking falls: "weekend" for the next Saturday, else tomorrow. */
-  day?: "tomorrow" | "weekend";
+  /** Where the held or drafted booking falls: the next Saturday, the next Monday to Friday, else tomorrow. */
+  day?: "tomorrow" | "weekday" | "weekend";
   /** The screen, as a hash; "{saturday}" is filled with the next Saturday's date. */
   hash: string;
 }
@@ -44,7 +44,7 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "pay-first", group: "Booking", label: "Pay-first customer", shows: "A flagged number: the notice on step 3, full payment on step 4.", presets: { flagged: true }, setup: "draft", hash: "#/book/you" },
   { id: "trusted", group: "Booking", label: "Trusted regular", shows: "A known regular on step 3, who may pay at the venue even at the weekend.", presets: { trusted: true, weekend: true }, setup: "draft", day: "weekend", hash: "#/book/you" },
 
-  { id: "pay-weekday", group: "Payment", label: "Hold and pay, weekday", shows: "Step 4 with the countdown: pay at the venue or now.", setup: "hold", hash: "#/book/pay" },
+  { id: "pay-weekday", group: "Payment", label: "Hold and pay, weekday", shows: "Step 4 with the countdown: pay at the venue or now.", setup: "hold", day: "weekday", hash: "#/book/pay" },
   { id: "pay-weekend", group: "Payment", label: "Weekend: 50% or full", shows: "Step 4 at the weekend: a deposit or the full amount.", setup: "hold", day: "weekend", hash: "#/book/pay" },
   { id: "declined", group: "Payment", label: "Payment declined, then retry", shows: "The first payment fails inside checkout; a retry goes through.", presets: { paymentFails: true }, setup: "hold", hash: "#/book/pay" },
   { id: "race", group: "Payment", label: "Slot taken mid-payment", shows: "Someone else gets the court while you pay; nearby times are offered.", presets: { slotRace: true }, setup: "hold", hash: "#/book/pay" },

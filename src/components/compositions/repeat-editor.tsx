@@ -70,12 +70,18 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
       {!timesOnly && (
       <Field invalid={r.problems.includes("no-weekdays")}>
         <FieldLabel id={`${id}-days`}>On</FieldLabel>
-        <ToggleGroup aria-labelledby={`${id}-days`} multiple onValueChange={(days) => r.setRule({ weekdays: WEEK.filter((d) => days.includes(d)) })} size="sm" value={[...rule.weekdays]} variant="outline">
+        <ToggleGroup aria-labelledby={`${id}-days`} className="w-full @sm:w-fit" multiple onValueChange={(days) => r.setRule({ weekdays: WEEK.filter((d) => days.includes(d)) })} size="sm" value={[...rule.weekdays]} variant="outline">
           {WEEK.map((day, i) => (
             <React.Fragment key={day}>
               {i > 0 && <ToggleGroupSeparator />}
-              <ToggleGroupItem aria-label={weekdayName(day, locale, "long")} className="min-w-10 flex-1" value={day}>
-                {weekdayName(day, locale, "short")}
+              <ToggleGroupItem aria-label={weekdayName(day, locale, "long")} className="min-w-0 flex-1 px-0 @sm:min-w-10 @sm:px-2" value={day}>
+                {/* Narrow containers get one-letter names; the accessible name is always the full day. */}
+                <span aria-hidden="true" className="@sm:hidden">
+                  {weekdayName(day, locale, "narrow")}
+                </span>
+                <span aria-hidden="true" className="hidden @sm:inline">
+                  {weekdayName(day, locale, "short")}
+                </span>
               </ToggleGroupItem>
             </React.Fragment>
           ))}
