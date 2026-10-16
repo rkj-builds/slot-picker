@@ -99,7 +99,7 @@ export function SettingsView(): React.ReactElement {
                 value={draft.depositPercent / 100}
               >
                 <Label htmlFor="deposit">Deposit</Label>
-                <NumberFieldGroup className="w-32">
+                <NumberFieldGroup className="w-36">
                   <NumberFieldDecrement aria-label="Lower deposit" />
                   <NumberFieldInput />
                   <NumberFieldIncrement aria-label="Raise deposit" />
