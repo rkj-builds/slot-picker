@@ -1,26 +1,24 @@
 "use client";
 
-import { ConstructionIcon } from "lucide-react";
 import type * as React from "react";
-import { sectionById } from "@/app/desk/sections";
-import { PageHeader, Screen } from "@/app/screens/screen-kit";
-import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import type { ScreenProps } from "@/app/desk/sections";
+import { ProgrammePage, type ProgrammeTab } from "@/app/screens/programmes/programme-page";
+import { ProgrammesList } from "@/app/screens/programmes/programmes-list";
+import { RegisterPage } from "@/app/screens/programmes/register";
 
-/** Placeholder until this screen is built. */
-export function ProgrammesScreen(): React.ReactElement {
-  const section = sectionById("programmes");
-  return (
-    <Screen>
-      <PageHeader description={section.line} title={section.label} />
-      <Empty>
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <ConstructionIcon aria-hidden="true" />
-          </EmptyMedia>
-          <EmptyTitle>Being built</EmptyTitle>
-          <EmptyDescription>{section.label} lands on this branch next.</EmptyDescription>
-        </EmptyHeader>
-      </Empty>
-    </Screen>
-  );
+const TABS: readonly ProgrammeTab[] = ["overview", "sessions", "enrolled", "settings"];
+
+/**
+ * Programmes, by URL:
+ * - `#/desk/programmes` the list (`?show=open|drafts|finished`, `?q=`, `?new=1` opens New programme)
+ * - `#/desk/programmes/<id>` a programme's overview; `/sessions`, `/enrolled`, `/settings` its other tabs
+ * - `#/desk/programmes/<id>/sessions/<sessionId>` the register for one session
+ *   (`latest` is the session to take today, `next` the next one to come)
+ */
+export function ProgrammesScreen({ route, sub, today }: ScreenProps): React.ReactElement {
+  const [id, tab, sessionId] = sub;
+  if (!id) return <ProgrammesList route={route} today={today} />;
+  if (tab === "sessions" && sessionId) return <RegisterPage key={`${id}/${sessionId}`} programmeId={id} sessionRef={sessionId} today={today} />;
+  const current = TABS.find((t) => t === tab) ?? "overview";
+  return <ProgrammePage id={id} route={route} tab={current} today={today} />;
 }
