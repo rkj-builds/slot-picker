@@ -30,7 +30,8 @@ import type {
   VenueProfile,
 } from "@/data/types";
 
-export const DB_VERSION = 1;
+/** Bump whenever the seed or a table changes shape: a stored copy from an older version is thrown away and reseeded. */
+export const DB_VERSION = 2;
 
 export interface Tables {
   version: number;
