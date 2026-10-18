@@ -243,9 +243,12 @@ export interface Membership {
 /* ── Money ──────────────────────────────────────────────────────────── */
 
 export interface MoneySubject {
-  type: "booking" | "enrolment" | "membership";
+  /** "credit": credit moved by hand on the customer, outside any booking or enrolment (then `id` is the customer's). */
+  type: "booking" | "enrolment" | "membership" | "credit";
   id: string;
   label: string;
+  /** For an enrolment: its programme, so a screen can link to it. */
+  programmeId?: string;
 }
 
 /** One line of money, drawn from every ledger: what came in, went back or became credit. */

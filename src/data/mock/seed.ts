@@ -195,7 +195,8 @@ export function seedTables(now: number): Tables {
     followUp: null,
     createdAt: at(addDays(today, -30), 17 * 60),
   });
-  [16, 18, 20, 22, 24].forEach((c, i) => {
+  // The last one (unpaid) is cus_12, who also owes for two court bookings: one person owing in two places.
+  [16, 18, 20, 22, 12].forEach((c, i) => {
     enrolments.push({
       id: `enr_b${i + 1}`,
       programmeId: beginners.id,
@@ -366,7 +367,8 @@ export function seedTables(now: number): Tables {
     team,
     access: {
       manager: ["bookings", "availability", "programmes", "customers", "members", "payments", "inbox", "team"],
-      staff: ["bookings", "customers", "inbox"],
+      // The front desk takes cash, so it sees Payments; approving and moving credit stay with managers.
+      staff: ["bookings", "customers", "payments", "inbox"],
       coach: ["programmes"],
     },
     deviceSessions: [
