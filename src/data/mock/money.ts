@@ -1,6 +1,8 @@
-import { type Booking, customerById, duePaise } from "@/lib/booking";
+import { type Booking, bookingStart, customerById, duePaise } from "@/lib/booking";
+import { formatDay, formatTime } from "@/lib/format";
 import { makeId } from "@/lib/booking";
-import { compareDates, todayIn } from "@/lib/plain-date";
+import { addDays, compareDates, todayIn } from "@/lib/plain-date";
+import { instantAt } from "@/lib/time-zone";
 import { COURTS, VENUE } from "@/lib/venue";
 import type { InboxApi, MoneyApi, SettingsApi, TeamApi } from "@/data/client";
 import { DataError } from "@/data/errors";
@@ -12,7 +14,9 @@ import type { Conversation, CreditLine, Due, Message, Payment, Role } from "@/da
 const PAGE = 30;
 
 export function mockMoney(ctx: MockContext): MoneyApi {
-  const bookingLabel = (b: Booking): string => `${COURTS.find((c) => c.id === b.courtId)?.name ?? "Court"} · ${b.date}`;
+  // "Court 2 · Thu, 15 Oct, 7:00 pm": a person reads it in a list, so it is written the way the desk says it.
+  const bookingLabel = (b: Booking): string =>
+    `${COURTS.find((c) => c.id === b.courtId)?.name ?? "Court"} · ${formatDay(b.date, "en-IN")}, ${formatTime(bookingStart(b), { locale: "en-IN", timeZone: VENUE.timeZone })}`;
 
   /** Every ledger line in the venue, newest first. */
   const allPayments = (): Payment[] => {
@@ -20,16 +24,21 @@ export function mockMoney(ctx: MockContext): MoneyApi {
     const approved = new Set(tables.approvedPayments);
     const programmes = new Map(tables.programmes.map((p) => [p.id, p.name]));
     const plans = new Map(tables.membershipPlans.map((p) => [p.id, p.name]));
+    // Approval is a manager confirming the desk's cash reached the drawer. Online money is confirmed by
+    // the gateway, and credit moves and payouts are made by people who may approve, so only cash waits.
+    // Cash from before the last two days was checked before the demo's history begins.
+    const settledBefore = instantAt(addDays(tables.seededOn, -2), 0, VENUE.timeZone);
+    const isApproved = (e: { id: string; kind: Payment["kind"]; at: number }): boolean => approved.has(e.id) || e.kind !== "cash" || e.at < settledBefore;
     const out: Payment[] = [];
     for (const b of ctx.bridge.read().bookings) {
-      for (const e of b.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: b.customerId, subject: { type: "booking", id: b.id, label: bookingLabel(b) }, note: e.note, approved: approved.has(e.id) || e.kind === "online" });
+      for (const e of b.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: b.customerId, subject: { type: "booking", id: b.id, label: bookingLabel(b) }, note: e.note, approved: isApproved(e) });
     }
     for (const en of tables.enrolments) {
       const label = `${programmes.get(en.programmeId) ?? "Programme"}${en.participantName ? ` · ${en.participantName}` : ""}`;
-      for (const e of en.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: en.customerId, subject: { type: "enrolment", id: en.id, label }, note: e.note, approved: approved.has(e.id) || e.kind === "online" });
+      for (const e of en.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: en.customerId, subject: { type: "enrolment", id: en.id, label, programmeId: en.programmeId }, note: e.note, approved: isApproved(e) });
     }
     for (const m of tables.memberships) {
-      for (const e of m.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: m.customerId, subject: { type: "membership", id: m.id, label: plans.get(m.planId) ?? "Membership" }, note: e.note, approved: approved.has(e.id) || e.kind === "online" });
+      for (const e of m.ledger) out.push({ id: e.id, at: e.at, kind: e.kind, amountPaise: e.amountPaise, customerId: m.customerId, subject: { type: "membership", id: m.id, label: plans.get(m.planId) ?? "Membership" }, note: e.note, approved: isApproved(e) });
     }
     for (const a of tables.creditAdjustments) out.push({ ...a, approved: approved.has(a.id) || a.approved });
     return out.sort((a, b) => b.at - a.at);
@@ -68,7 +77,7 @@ export function mockMoney(ctx: MockContext): MoneyApi {
           .map((b): Due => ({ subject: { type: "booking", id: b.id, label: bookingLabel(b) }, customerId: b.customerId, duePaise: duePaise(b), since: b.date })),
         ...tables.enrolments
           .filter((e) => enrolmentDue(e) > 0)
-          .map((e): Due => ({ subject: { type: "enrolment", id: e.id, label: `${programmes.get(e.programmeId) ?? "Programme"}${e.participantName ? ` · ${e.participantName}` : ""}` }, customerId: e.customerId, duePaise: enrolmentDue(e), since: e.startsOn })),
+          .map((e): Due => ({ subject: { type: "enrolment", id: e.id, label: `${programmes.get(e.programmeId) ?? "Programme"}${e.participantName ? ` · ${e.participantName}` : ""}`, programmeId: e.programmeId }, customerId: e.customerId, duePaise: enrolmentDue(e), since: e.startsOn })),
         ...tables.memberships
           .filter((m) => membershipDue(m) > 0)
           .map((m): Due => ({ subject: { type: "membership", id: m.id, label: plans.get(m.planId) ?? "Membership" }, customerId: m.customerId, duePaise: membershipDue(m), since: m.startsOn })),
@@ -83,7 +92,7 @@ export function mockMoney(ctx: MockContext): MoneyApi {
       const payments = allPayments();
       const credits: CreditLine[] = customers
         .filter((c) => c.creditPaise > 0 || payments.some((p) => p.customerId === c.id && (p.kind === "credit-issued" || p.kind === "credit-applied")))
-        .map((c) => ({ customerId: c.id, creditPaise: c.creditPaise, history: payments.filter((p) => p.customerId === c.id && (p.kind === "credit-issued" || p.kind === "credit-applied" || p.subject.id === `credit:${c.id}`)) }))
+        .map((c) => ({ customerId: c.id, creditPaise: c.creditPaise, history: payments.filter((p) => p.customerId === c.id && (p.kind === "credit-issued" || p.kind === "credit-applied" || p.subject.type === "credit")) }))
         .sort((a, b) => b.creditPaise - a.creditPaise);
       return { credits, customers };
     },
@@ -93,11 +102,12 @@ export function mockMoney(ctx: MockContext): MoneyApi {
       ctx.require("refund");
       const customer = customerById(ctx.bridge.read().customers, customerId);
       if (!customer) throw new DataError("not-found", "This customer no longer exists.");
+      if (!Number.isSafeInteger(amountPaise) || amountPaise <= 0) throw new DataError("validation", "Enter an amount above ₹0.", { fields: { amount: "Above ₹0" } });
       if (!reason.trim()) throw new DataError("validation", "Say why, for the accounts.", { fields: { reason: "Required" } });
       const delta = kind === "credit-issued" ? Math.abs(amountPaise) : -Math.abs(amountPaise);
       if (delta < 0 && -delta > customer.creditPaise) throw new DataError("validation", `${customer.name} only has ${ctx.inr(customer.creditPaise)} of credit.`, { fields: { amount: "Too much" } });
       ctx.bridge.apply({ type: "adjust-credit", customerId, amountPaise: delta });
-      const line: Payment = { id: makeId("adj"), at: ctx.now(), kind, amountPaise: Math.abs(amountPaise), customerId, subject: { type: "booking", id: `credit:${customerId}`, label: "Credit adjustment" }, note: reason.trim(), approved: true };
+      const line: Payment = { id: makeId("adj"), at: ctx.now(), kind, amountPaise: Math.abs(amountPaise), customerId, subject: { type: "credit", id: customerId, label: kind === "credit-issued" ? "Credit added" : "Credit paid out" }, note: reason.trim(), approved: true };
       ctx.db.write((t) => ({ ...t, creditAdjustments: [line, ...t.creditAdjustments] }));
       ctx.log(`${delta > 0 ? "Added" : "Paid out"} ${ctx.inr(Math.abs(amountPaise))} credit · ${reason.trim()}`, { type: "customer", id: customerId });
       const next = customerById(ctx.bridge.read().customers, customerId);
