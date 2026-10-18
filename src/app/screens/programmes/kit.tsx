@@ -78,14 +78,15 @@ export interface LinkTab {
 /**
  * Tabs that are URLs (coss's segmented navigation, particle p-navigation-1):
  * links with aria-current, so Back, reload and a shared link all land on the
- * same tab. Scrolls sideways on a phone rather than wrapping.
+ * same tab. Scrolls sideways on a phone rather than wrapping. Unselected
+ * tabs use the full muted colour (not coss's 72%) so they keep text contrast.
  */
 export function LinkTabs({ label, tabs, className }: { label: string; tabs: readonly LinkTab[]; className?: string }): React.ReactElement {
   return (
     <nav aria-label={label} className={cn("-mx-1 max-w-full overflow-x-auto px-1 pb-1", className)}>
       <div className={segmentedControlRootClassName}>
         {tabs.map((tab) => (
-          <Anchor aria-current={tab.current ? "page" : undefined} className={segmentedControlItemVariants({ state: "current" })} href={tab.href} key={tab.href}>
+          <Anchor aria-current={tab.current ? "page" : undefined} className={cn(segmentedControlItemVariants({ state: "current" }), "text-muted-foreground hover:text-foreground")} href={tab.href} key={tab.href}>
             {tab.label}
             {tab.count !== undefined && (
               <Badge className="tabular-nums" size="sm" variant={tab.current ? "secondary" : "outline"}>

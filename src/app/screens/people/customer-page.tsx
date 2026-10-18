@@ -25,6 +25,7 @@ import { toastManager } from "@/components/ui/toast";
 import { errorMessage } from "@/data/errors";
 import { enrolmentDue, membershipDue } from "@/data/money";
 import { useRead, useWrite } from "@/data/provider";
+import { useMediaQuery } from "@/hooks/use-media-query";
 import type { Booking, CustomerSummary, Enrolment, Membership } from "@/data/types";
 import { deskState, duePaise } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
@@ -170,17 +171,56 @@ function None({ children }: { children: React.ReactNode }): React.ReactElement {
   return <p className="rounded-xl border border-dashed p-4 text-muted-foreground text-sm">{children}</p>;
 }
 
-function Rows({ children }: { children: React.ReactNode }): React.ReactElement {
+function Rows({ children, label }: { children: React.ReactNode; label?: string }): React.ReactElement {
   return (
     <Frame>
-      <ul className="flex flex-col divide-y rounded-xl border bg-card">{children}</ul>
+      <ul aria-label={label} className="flex flex-col divide-y rounded-xl border bg-card">
+        {children}
+      </ul>
     </Frame>
   );
 }
 
 function BookingsTable({ bookings, now }: { bookings: readonly Booking[]; now: number }): React.ReactElement {
   const [all, setAll] = React.useState(false);
+  const phone = useMediaQuery("max-md");
   const shown = all ? bookings : bookings.slice(0, FIRST_BOOKINGS);
+  const more = bookings.length > shown.length && (
+    <Button className="self-start" onClick={() => setAll(true)} size="sm" variant="ghost">
+      Show all {bookings.length} bookings
+    </Button>
+  );
+  if (phone) {
+    return (
+      <>
+        <Rows label="Their bookings">
+          {shown.map((b) => {
+            const state = deskState(b, now);
+            const Icon = STATE_META[state].icon;
+            const due = duePaise(b);
+            return (
+              <li className="flex flex-wrap items-center gap-2 p-3" key={b.id}>
+                <span className="flex min-w-0 flex-1 flex-col">
+                  <span className="font-medium text-sm">
+                    {dayOf(b.date)} · {courtName(b.courtId)}
+                  </span>
+                  <span className="text-muted-foreground text-xs">
+                    {timeRangeOf(b)} · {formatInr(b.pricePaise)}
+                    {due > 0 ? ` · ${formatInr(due)} due` : ""}
+                  </span>
+                </span>
+                <Badge variant={STATE_META[state].badge}>
+                  <Icon aria-hidden="true" />
+                  {stateLabel(state)}
+                </Badge>
+              </li>
+            );
+          })}
+        </Rows>
+        {more}
+      </>
+    );
+  }
   return (
     <>
       <Frame>
@@ -222,11 +262,7 @@ function BookingsTable({ bookings, now }: { bookings: readonly Booking[]; now: n
           </TableBody>
         </Table>
       </Frame>
-      {bookings.length > shown.length && (
-        <Button className="self-start" onClick={() => setAll(true)} size="sm" variant="ghost">
-          Show all {bookings.length} bookings
-        </Button>
-      )}
+      {more}
     </>
   );
 }
