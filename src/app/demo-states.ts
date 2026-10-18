@@ -88,7 +88,7 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "money-dues-mixed", group: "Money", label: "One customer owing in two places", shows: "Dues with a customer opened who owes for court bookings and a programme; take payment for either.", hash: "#/desk/money/dues?open=mixed" },
   { id: "money-credit-payout", group: "Money", label: "Paying out more credit than they hold", shows: "The Adjust credit dialog set to pay out ₹50,000: the amount field says how much they really have.", hash: "#/desk/money/credits?adjust=largest&payout=50000" },
   { id: "money-staff", group: "Money", label: "Front desk: can't approve", shows: "Signed in as the front desk: payments and dues work, but approving and moving credit say who can.", signInAs: TEAM_IDS.desk, hash: "#/desk/money?approval=waiting" },
-  { id: "money-fails", group: "Money", label: "Payments fail to load", shows: "The next request fails: the list offers Try again, which works.", setup: "fail-request", hash: "#/desk/money" },
+  { id: "money-fails", group: "Money", label: "A money read fails", shows: "The next request fails: the list or the tile it was for says it couldn't load and offers Try again, which works.", setup: "fail-request", hash: "#/desk/money" },
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },

@@ -107,7 +107,7 @@ describe("#/desk/money: payments", () => {
   it("shows a failed read with Try again, which works", async () => {
     const user = userEvent.setup();
     renderApp("#/primitives");
-    await user.click(await screen.findByRole("button", { name: /^Payments fail to load/ }));
+    await user.click(await screen.findByRole("button", { name: /^A money read fails/ }));
     expect(await screen.findByText("Couldn't load payments")).toBeInTheDocument();
     expect(await axeViolations()).toEqual([]);
     await user.click(screen.getAllByRole("button", { name: "Try again" })[0]!);
