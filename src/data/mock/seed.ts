@@ -308,6 +308,11 @@ export function seedTables(now: number): Tables {
   thread(
     { id: "cnv_4", name: "Diya Patel", phone: "+919000000101", customerId: cus(2), tab: "customers", waitingSince: null, assignedTo: null, manual: false, status: "open" },
     [
+      // A regular's long history, so the chat has older messages to load.
+      ...Array.from({ length: 18 }, (_, week) => [
+        { dir: "in" as const, ago: (60 - week * 3) * DAY + 2 * HOUR, body: week % 3 === 0 ? "Hi, is Court 2 free on Saturday evening?" : "Same time as last week please." },
+        { dir: "out" as const, ago: (60 - week * 3) * DAY + 2 * HOUR - 3 * MINUTE, body: "Done. Booked Court 2, 7:00 – 8:00 PM. See you there!", author: null },
+      ]).flat(),
       { dir: "out", ago: 26 * HOUR, body: "Your booking is confirmed: Court 2, today 7:00 – 8:00 PM.", author: null },
       { dir: "in", ago: 25 * HOUR, body: "Thanks! See you there." },
     ],
@@ -375,7 +380,14 @@ export function seedTables(now: number): Tables {
       { id: "dev_3", memberId: TEAM_IDS.desk, device: "Chrome on Android", city: "Jamshedpur", lastSeenAt: now - 15 * MINUTE, current: false },
       { id: "dev_4", memberId: TEAM_IDS.manager, device: "Edge on Windows", city: "Ranchi", lastSeenAt: now - 3 * DAY, current: false },
     ],
-    activity: [],
+    // A few things the team did recently, newest first, so Settings › Activity has a history.
+    activity: [
+      { id: "act_s1", at: now - 18 * MINUTE, text: "Replied to Sameer Joshi on WhatsApp", actor: "Sunil Tudu", subject: { type: "conversation", id: "cnv_3" } },
+      { id: "act_s2", at: now - 2 * HOUR - 50 * MINUTE, text: "Took over the chat with Ishaan Verma", actor: "Vikram Das", subject: { type: "conversation", id: "cnv_5" } },
+      { id: "act_s3", at: now - 20 * HOUR, text: "Saved attendance for Off-Screen Club Juniors", actor: "Neha Rawat", subject: { type: "programme", id: juniors.id } },
+      { id: "act_s4", at: now - 2 * DAY, text: "Invited Farhan Ali", actor: "Asha Kumar", subject: { type: "customer", id: TEAM_IDS.invited } },
+      { id: "act_s5", at: now - 4 * DAY + 30 * MINUTE, text: "Kabir Singh came in person · Collected the water bottle", actor: "Sunil Tudu", subject: { type: "conversation", id: "cnv_7" } },
+    ],
     creditAdjustments: [],
     approvedPayments: [],
     reminders: {},

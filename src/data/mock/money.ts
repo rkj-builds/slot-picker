@@ -118,6 +118,8 @@ export function mockInbox(ctx: MockContext): InboxApi {
     ctx.db.write((t) => ({ ...t, conversations: patchRow(t.conversations, id, () => next) }));
     return next;
   };
+  /** The assignee's name rides along, so a front-desk role (no Team access) still sees who has a chat. */
+  const named = (c: Conversation): Conversation => ({ ...c, assigneeName: c.assignedTo ? (ctx.db.read().team.find((m) => m.id === c.assignedTo)?.name ?? null) : null });
   const setDelivery = (messageId: string, delivery: Message["delivery"]): void => {
     if (!ctx.db.read().messages.some((m) => m.id === messageId)) return;
     ctx.db.write((t) => ({ ...t, messages: patchRow(t.messages, messageId, (m) => ({ ...m, delivery })) }));
@@ -137,7 +139,14 @@ export function mockInbox(ctx: MockContext): InboxApi {
           // Leads: whoever has waited longest comes first; everything else by latest message.
           if (tab === "leads" && (a.waitingSince ?? Infinity) !== (b.waitingSince ?? Infinity)) return (a.waitingSince ?? Infinity) - (b.waitingSince ?? Infinity);
           return b.lastMessageAt - a.lastMessageAt;
-        });
+        })
+        .map(named);
+    },
+
+    async get(conversationId) {
+      await ctx.trip();
+      ctx.requireFeature("inbox");
+      return named(find(conversationId));
     },
 
     async messages(conversationId, before) {
@@ -175,7 +184,7 @@ export function mockInbox(ctx: MockContext): InboxApi {
       if (role !== "admin" && role !== "manager" && role !== "staff") throw new DataError("forbidden", "Only the desk can take a chat over from the bot.");
       const next = save(conversationId, (c) => ({ ...c, manual }));
       ctx.log(manual ? `Took over the chat with ${next.name}` : `Handed ${next.name} back to the bot`, { type: "conversation", id: conversationId });
-      return next;
+      return named(next);
     },
 
     async claim(conversationId, claim) {
@@ -186,20 +195,30 @@ export function mockInbox(ctx: MockContext): InboxApi {
         const owner = ctx.db.read().team.find((m) => m.id === c.assignedTo)?.name ?? "someone else";
         throw new DataError("conflict", `${owner} already has this one.`);
       }
-      return save(conversationId, (x) => ({ ...x, assignedTo: claim ? viewer.memberId : null }));
+      const next = save(conversationId, (x) => ({ ...x, assignedTo: claim ? viewer.memberId : null }));
+      ctx.log(claim ? `Took the chat with ${next.name}` : `Released the chat with ${next.name}`, { type: "conversation", id: conversationId });
+      return named(next);
     },
 
     async logAction(conversationId, { action, note }) {
       await ctx.trip();
-      const words = { called: "Called", texted: "Texted", replied: "Replied on WhatsApp", "walk-in": "Came in person", none: "No action needed" }[action];
       const next = save(conversationId, (c) => ({ ...c, waitingSince: null, status: "done", unread: 0 }));
+      const words = {
+        called: `Called ${next.name}`,
+        texted: `Texted ${next.name}`,
+        replied: `Replied to ${next.name} on WhatsApp`,
+        "walk-in": `${next.name} came in person`,
+        none: `Closed the chat with ${next.name}, no action needed`,
+      }[action];
       ctx.log(`${words}${note.trim() ? ` · ${note.trim()}` : ""}`, { type: "conversation", id: conversationId });
-      return next;
+      return named(next);
     },
 
     async reopen(conversationId) {
       await ctx.trip();
-      return save(conversationId, (c) => ({ ...c, status: "open", waitingSince: c.waitingSince ?? ctx.now() }));
+      const next = save(conversationId, (c) => ({ ...c, status: "open", waitingSince: c.waitingSince ?? ctx.now() }));
+      ctx.log(`Reopened the chat with ${next.name}`, { type: "conversation", id: conversationId });
+      return named(next);
     },
 
     async markRead(conversationId) {
@@ -257,6 +276,17 @@ export function mockTeam(ctx: MockContext): TeamApi {
       if (id === ctx.viewer().memberId) throw new DataError("validation", "You can't remove yourself.");
       if (member.role === "admin" && admins() <= 1) throw new DataError("validation", "The venue needs at least one active admin.");
       ctx.db.write((t) => ({ ...t, team: t.team.filter((m) => m.id !== id), deviceSessions: t.deviceSessions.filter((s) => s.memberId !== id) }));
+    },
+    async resendInvite(id) {
+      await ctx.trip();
+      ctx.require("manageTeam");
+      const member = ctx.db.read().team.find((m) => m.id === id);
+      if (!member) throw new DataError("not-found", "This person is no longer on the team.");
+      if (member.status !== "invited") throw new DataError("validation", `${member.name} has already accepted their invite.`);
+      const next = { ...member, invitedAt: ctx.now() };
+      ctx.db.write((t) => ({ ...t, team: patchRow(t.team, id, () => next) }));
+      ctx.log(`Sent ${member.name} their invite again`, { type: "customer", id });
+      return next;
     },
     async access() {
       await ctx.trip();
