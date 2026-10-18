@@ -117,7 +117,8 @@ describe("on a phone", () => {
   it("the desk's booking panel is a drawer", async () => {
     phoneScreen();
     const user = userEvent.setup();
-    renderApp("#/desk/bookings", {
+    // Opened from the day: on the bookings list a row is a link to the booking's own page instead.
+    renderApp("#/desk", {
       state: {
         ...empty,
         bookings: [
@@ -145,7 +146,7 @@ describe("on a phone", () => {
       },
       now: NOW,
     });
-    await user.click(await screen.findByRole("button", { name: empty.customers[0]!.name }));
+    await user.click(await screen.findByRole("button", { name: new RegExp(`^Court 1, 6:00 – 7:00 pm, ${empty.customers[0]!.name}`) }));
     const panel = await screen.findByRole("dialog", { name: empty.customers[0]!.name });
     expect(panel).toHaveAttribute("data-slot", "drawer-popup");
     expect(document.querySelector("[data-slot=sheet-popup]")).toBeNull();

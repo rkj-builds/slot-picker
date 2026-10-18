@@ -6,7 +6,6 @@ import { LoadError } from "@/app/book/book-page";
 import { useNow } from "@/app/clock";
 import { JUMP_EVENT } from "@/app/demo-jump";
 import { BookingSheet } from "@/app/desk/booking-sheet";
-import { BookingsView } from "@/app/desk/bookings-view";
 import { DeskCommandPalette } from "@/app/desk/command-palette";
 import { DayView } from "@/app/desk/day-view";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
@@ -92,7 +91,6 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
     [cashId, cancelId, setSheetId, setCashId, setCancelId, setPrefill, setRepeatRef, setBlockDate],
   );
 
-  const query = route.query.get("q") ?? "";
   const Screen = def.screen;
   const body =
     viewer.data && def.feature && !viewer.data.features.includes(def.feature) ? (
@@ -110,8 +108,6 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <SettingsView key={`${jumps}:${store.resets}:${JSON.stringify(store.state.settings)}`} />
     ) : section === "day" ? (
       <DayView date={date} now={now} today={today} />
-    ) : section === "bookings" ? (
-      <BookingsView initialQuery={query} key={query} now={now} today={today} />
     ) : (
       <InsightsView today={today} />
     );

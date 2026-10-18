@@ -1,13 +1,14 @@
 "use client";
 
 import { Anchor } from "@/app/anchor";
-import { ChevronRightIcon, MessageCircleIcon, SendIcon } from "lucide-react";
+import { ChevronRightIcon, MessageCircleIcon, SendIcon, SquareArrowOutUpRightIcon } from "lucide-react";
 import * as React from "react";
 import { useBookingActions } from "@/app/desk/booking-actions";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { paymentLinkFor, useDeskActions } from "@/app/desk/desk-actions";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
 import { durationOf, initialsOf, LOCALE, whenOf } from "@/app/format";
+import { hrefFor } from "@/app/router";
 import { useNow } from "@/app/clock";
 import { useStore } from "@/app/store";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -68,7 +69,7 @@ export function BookingSheet({ bookingId, onClose }: { bookingId: string | null;
     return (
       <Drawer onOpenChange={onOpenChange} open={Boolean(booking)}>
         <DrawerPopup showBar>
-          {shown && <PanelBody booking={shown} parts={DRAWER_PARTS} />}
+          {shown && <PanelBody booking={shown} onClose={onClose} parts={DRAWER_PARTS} />}
           <DeskOverlays />
         </DrawerPopup>
       </Drawer>
@@ -77,14 +78,14 @@ export function BookingSheet({ bookingId, onClose }: { bookingId: string | null;
   return (
     <Sheet onOpenChange={onOpenChange} open={Boolean(booking)}>
       <SheetPopup>
-        {shown && <PanelBody booking={shown} parts={SHEET_PARTS} />}
+        {shown && <PanelBody booking={shown} onClose={onClose} parts={SHEET_PARTS} />}
         <DeskOverlays />
       </SheetPopup>
     </Sheet>
   );
 }
 
-function PanelBody({ booking, parts: P }: { booking: Booking; parts: Parts }): React.ReactElement {
+function PanelBody({ booking, parts: P, onClose }: { booking: Booking; parts: Parts; onClose: () => void }): React.ReactElement {
   const { state } = useStore();
   const actions = useDeskActions();
   const now = useNow(1000);
@@ -106,6 +107,11 @@ function PanelBody({ booking, parts: P }: { booking: Booking; parts: Parts }): R
             {stateLabel(ds)}
           </Badge>
           {ds === "held" && <span className="text-muted-foreground text-xs tabular-nums">{formatCountdown(holdRemainingMs(booking, now))} left</span>}
+          {/* The booking's own page: its activity, editing and every action, at a URL that can be shared. */}
+          <Button className="ms-auto" onClick={onClose} render={<Anchor href={hrefFor(`/desk/bookings/${encodeURIComponent(booking.id)}`)} />} size="xs" variant="ghost">
+            <SquareArrowOutUpRightIcon aria-hidden="true" />
+            Open full page
+          </Button>
         </div>
         <P.Title>{bookingTitle(booking, state.customers)}</P.Title>
         <P.Description>
