@@ -380,6 +380,8 @@ export function seedTables(now: number): Tables {
     approvedPayments: [],
     reminders: {},
     checkIns: {},
+    // The booking seed's two pay-first customers (Rohan Mehta, Yash Agarwal).
+    flagReasons: { cus_07: "Didn't turn up for two weekend bookings", cus_17: "Held courts online three times without paying" },
     profile: { name: VENUE.name, city: VENUE.city, address: VENUE.address, timeZone: VENUE.timeZone, currency: "INR", contactEmail: "hello@example.com" },
     notifications: { newBooking: true, cancellation: true, paymentFailed: true, leadWaiting: true, dailySummary: false },
   };

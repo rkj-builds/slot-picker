@@ -134,6 +134,8 @@ export interface CustomerSummary {
   lastVisit: PlainDate | null;
   /** Enrolled children or a court-hour membership. */
   tags: ("member" | "programme" | "lead")[];
+  /** Why the desk asked them to pay first (null when they aren't flagged). */
+  payFirstReason: string | null;
 }
 
 export type CustomerFilter = "all" | "customers" | "leads" | "pay-first" | "credit";
