@@ -6,6 +6,7 @@ import { useClock } from "@/app/clock";
 import type { DemoState } from "@/app/demo-states";
 import { navigate } from "@/app/router";
 import { useDemoSession } from "@/app/mock-data";
+import { useDataClient } from "@/data/provider";
 import { type DemoScenarios, useStore } from "@/app/store";
 import { TEAM_IDS } from "@/data/mock/seed";
 import { firstFreeCourt, makeId } from "@/lib/booking";
@@ -87,19 +88,42 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
   const store = useStore();
   const session = useDemoSession();
   const { now } = useClock();
+  const client = useDataClient();
   const { clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, state } = store;
   return React.useCallback(
     async (target: DemoState) => {
       clearScenarios();
       clearHandoffs();
-      if (session.memberId !== (target.signInAs ?? TEAM_IDS.owner)) session.setMemberId(target.signInAs ?? TEAM_IDS.owner);
+      const signIn = target.signInAs ?? TEAM_IDS.owner;
+      // A booking a state sets up is made by the owner, whoever the state then signs in as.
+      const makesBooking = target.setup === "booking-balance" || target.setup === "booking-reminded";
+      if (session.memberId !== (makesBooking ? TEAM_IDS.owner : signIn)) session.setMemberId(makesBooking ? TEAM_IDS.owner : signIn);
       pendingSubmitted = target.opensSubmitted ?? false;
       pendingSettings = target.unsavedSettings ?? null;
       for (const [key, value] of Object.entries(target.presets ?? {})) setScenario(key as keyof DemoScenarios, value);
       const today = todayIn(VENUE.timeZone, now());
       const saturday = nextSaturday(today);
       const date = target.day === "weekend" ? saturday : target.day === "weekday" ? nextWeekday(today) : addDays(today, 1);
-      const hash = target.hash.replace("{saturday}", saturday);
+      let hash = target.hash.replace("{saturday}", saturday);
+
+      if (makesBooking) {
+        // Tomorrow, the first free hour from 7 am, ₹300 taken in cash: a booking with a balance.
+        const day = addDays(today, 1);
+        const startMinute = freeStart(state, day, now());
+        const courtId = firstFreeCourt(bookingsWithBlocks(state, day), COURTS.map((c) => c.id), { date: day, startMinute, durationMinutes: 60 }, now()) ?? "court-1";
+        const booking = await client.bookings.create({
+          courtId,
+          date: day,
+          startMinute,
+          durationMinutes: 60,
+          customer: { id: "cus_05" },
+          notes: "Bringing two friends; they need paddles.",
+          payment: { method: "cash", amountPaise: 30_000 },
+        });
+        if (target.setup === "booking-reminded") await client.bookings.sendReminder(booking.id);
+        hash = hash.replace("{booking}", encodeURIComponent(booking.id));
+        if (signIn !== TEAM_IDS.owner) session.setMemberId(signIn);
+      }
 
       if (target.hash.startsWith("#/book")) {
         let draft = { ...EMPTY_DRAFT };
@@ -137,7 +161,7 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
       if (target.setup === "fail-load") failNextLoad();
       if (target.setup === "fail-request") session.failNextRequest();
     },
-    [clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, now, state, session],
+    [clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, now, state, session, client],
   );
 }
 

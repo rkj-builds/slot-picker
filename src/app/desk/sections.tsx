@@ -6,9 +6,8 @@
  * The sidebar, the command palette and the router all read from here, so a
  * new area is one entry.
  *
- * Day, Bookings and Insights are drawn by the desk itself
- * (src/app/desk); the rest are screens under src/app/screens, loaded on
- * demand.
+ * Day and Insights are drawn by the desk itself (src/app/desk); the rest
+ * (Bookings and Settings among them) are screens, loaded on demand.
  */
 import {
   BanknoteIcon,
@@ -73,7 +72,17 @@ const lazyScreen = (load: () => Promise<{ default: (props: ScreenProps) => React
 
 export const SECTIONS: readonly SectionDef[] = [
   { id: "day", label: "Day", line: "Two courts, by the half hour", path: "/desk", group: "Desk", icon: CalendarDaysIcon, feature: "bookings", keywords: ["grid", "today", "courts"] },
-  { id: "bookings", label: "Bookings", line: "Every booking, its status and what is still due", path: "/desk/bookings", group: "Desk", icon: ListIcon, feature: "bookings", keywords: ["list", "search", "export"] },
+  {
+    id: "bookings",
+    label: "Bookings",
+    line: "Every booking, its status and what is still due",
+    path: "/desk/bookings",
+    group: "Desk",
+    icon: ListIcon,
+    feature: "bookings",
+    keywords: ["list", "search", "export", "payment due", "remind"],
+    screen: lazyScreen(() => import("@/app/desk/bookings-screen").then((m) => ({ default: m.BookingsScreen }))),
+  },
   {
     id: "inbox",
     label: "Inbox",

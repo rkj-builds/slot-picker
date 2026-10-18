@@ -34,6 +34,8 @@ export interface Viewer {
   can: {
     writeBookings: boolean;
     handleMoney: boolean;
+    /** Change what a booking costs (a discount, a waived fee): a manager's call, not the desk's. */
+    setPrices: boolean;
     refund: boolean;
     editProgrammes: boolean;
     manageTeam: boolean;
@@ -87,6 +89,10 @@ export interface BookingDetail {
   booking: Booking;
   customer: Customer | null;
   activity: ActivityEntry[];
+  /** When the customer was checked in at the desk; null if not (yet). */
+  checkedInAt: number | null;
+  /** When the last WhatsApp reminder went, so a screen can say when the next may. */
+  lastReminderAt: number | null;
 }
 
 export interface NewBookingInput {

@@ -130,7 +130,9 @@ describe("customer preview and message", () => {
         booking({ id: "bk_next", date: "2026-10-18", ledger: [] }),
       ]),
     });
-    const names = await screen.findAllByRole("button", { name: "Diya Patel" });
+    // The name is the link to the booking's page; hovering it previews the customer.
+    const names = await screen.findAllByRole("link", { name: "Diya Patel" });
+    expect(names[0]).toHaveAttribute("href", "#/desk/bookings/bk_test");
     await user.hover(names[0]!);
     const card = await screen.findByText("Paid ahead online");
     const popup = card.closest<HTMLElement>("[data-slot=customer-preview]")!;

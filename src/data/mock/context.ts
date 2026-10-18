@@ -51,6 +51,7 @@ export interface MockContext extends MockOptions {
 const CAPABILITY_WORDS: Record<Capability, string> = {
   writeBookings: "change bookings",
   handleMoney: "take or record money",
+  setPrices: "change prices",
   refund: "refund or give credit",
   editProgrammes: "change programmes",
   manageTeam: "manage the team",
@@ -71,6 +72,7 @@ export function viewerFor(member: TeamMember, access: RoleAccess): Viewer {
       writeBookings: role !== "coach" && has("bookings"),
       handleMoney: role === "admin" || role === "manager" || (role === "staff" && has("payments")),
       refund: role === "admin" || role === "manager",
+      setPrices: role === "admin" || role === "manager",
       editProgrammes: role === "admin" || role === "manager",
       manageTeam: role === "admin",
       editSettings: role === "admin" || (role === "manager" && has("settings")),
