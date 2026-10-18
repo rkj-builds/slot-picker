@@ -10,8 +10,10 @@
 import { CalendarSearchIcon, EllipsisIcon, InfoIcon, PhoneIcon } from "lucide-react";
 import * as React from "react";
 import { Anchor } from "@/app/anchor";
-import { ACTION_ICONS, ActionButton, paymentBadge, SpecBadge, statusBadge } from "@/app/desk/booking-action-ui";
-import { clockTime, useBookingCommand } from "@/app/desk/booking-commands";
+import { ActionButton, SpecBadge } from "@/app/desk/booking-action-ui";
+import { ACTION_ICONS, paymentBadge, statusBadge } from "@/app/desk/booking-badges";
+import { useBookingCommand } from "@/app/desk/booking-commands";
+import { clockTime } from "@/app/desk/booking-feedback";
 import { type BookingTarget, CancelBookingDialog, EditBookingDialog, RecordPaymentDialog } from "@/app/desk/booking-dialogs";
 import { type BookingActionId, type BookingActionState, bookingActions } from "@/app/desk/booking-rules";
 import { viewPath } from "@/app/desk/bookings-filters";

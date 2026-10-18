@@ -10,6 +10,7 @@
 import { CalendarIcon, CalendarX2Icon } from "lucide-react";
 import * as React from "react";
 import { useClock } from "@/app/clock";
+import { toastRefusal } from "@/app/desk/booking-feedback";
 import { cancelLabel } from "@/app/desk/booking-rules";
 import { durationOf, longDayOf, minuteLabel, whenOf } from "@/app/format";
 import { LazyCalendar } from "@/components/booking/lazy-calendar";
@@ -39,7 +40,7 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/c
 import { Textarea } from "@/components/ui/textarea";
 import { toastManager } from "@/components/ui/toast";
 import type { PayMethod } from "@/data/client";
-import { errorMessage, isDataError } from "@/data/errors";
+import { isDataError } from "@/data/errors";
 import { useDataClient, useRead, useWrite } from "@/data/provider";
 import type { BookingPatch, Viewer } from "@/data/types";
 import { type Booking, bookingStart, duePaise, paidPaise } from "@/lib/booking";
@@ -59,11 +60,6 @@ function useShown(target: BookingTarget | null): BookingTarget | null {
   const [last, setLast] = React.useState(target);
   if (target && target !== last) setLast(target);
   return target ?? last;
-}
-
-/** A toast for a write the backend refused: its own sentence. */
-export function toastRefusal(title: string, error: unknown): void {
-  toastManager.add({ title, description: errorMessage(error), type: "error" });
 }
 
 /* ── Record payment ─────────────────────────────────────────────────── */

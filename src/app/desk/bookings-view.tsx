@@ -13,8 +13,9 @@ import * as React from "react";
 import { Anchor } from "@/app/anchor";
 import { useAnchoredBarHeight } from "@/app/anchored-bar";
 import { BookingRowMenu } from "@/app/desk/booking-action-ui";
-import { cooldownLine, useBookingCommand } from "@/app/desk/booking-commands";
-import { type BookingTarget, CancelBookingDialog, EditBookingDialog, RecordPaymentDialog, toastRefusal } from "@/app/desk/booking-dialogs";
+import { useBookingCommand } from "@/app/desk/booking-commands";
+import { type BookingTarget, CancelBookingDialog, EditBookingDialog, RecordPaymentDialog } from "@/app/desk/booking-dialogs";
+import { cooldownLine, toastRefusal } from "@/app/desk/booking-feedback";
 import { type BookingActionId, bookingAction, bookingActions } from "@/app/desk/booking-rules";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import {
@@ -38,6 +39,7 @@ import { CustomerPreview } from "@/app/desk/customer-preview";
 import { DeskViewFooter, DeskViewToolbar } from "@/app/desk/desk-toolbar";
 import { dayOf, durationOf, timeRangeOf } from "@/app/format";
 import { hrefFor, navigate, type Route } from "@/app/router";
+import { DisabledWithReason } from "@/app/desk/disabled-with-reason";
 import { ListSkeleton, LoadFailed, PageHeader, Screen } from "@/app/screens/screen-kit";
 import { LazyCalendar } from "@/components/booking/lazy-calendar";
 import { RadioCard } from "@/components/compositions/radio-card";
@@ -70,7 +72,6 @@ import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/c
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toastManager } from "@/components/ui/toast";
 import { Toolbar, ToolbarButton, ToolbarGroup } from "@/components/ui/toolbar";
-import { Tooltip, TooltipPopup, TooltipTrigger } from "@/components/ui/tooltip";
 import type { PayMethod } from "@/data/client";
 import { isDataError } from "@/data/errors";
 import { useDataClient, useRead } from "@/data/provider";
@@ -426,7 +427,7 @@ function FilterChip({
           {value}
           <ChevronDownIcon aria-hidden="true" />
         </PopoverTrigger>
-        <PopoverPopup align="start">
+        <PopoverPopup align="start" aria-label={`${label} filter`}>
           {field === "court" && (
             <ChoiceList
               label="Courts"
@@ -558,7 +559,9 @@ function BookingsList(props: ListProps): React.ReactElement {
   const rowActions = (b: Booking): ReturnType<typeof bookingActions> =>
     viewer ? bookingActions({ booking: b, viewer, now, hasCustomer: b.customerId !== null }).filter((a) => a.id !== "check-in" && a.id !== "undo-check-in") : [];
   const open = (event: React.MouseEvent, b: Booking): void => {
-    if ((event.target as HTMLElement).closest("a, button, input, label, [role=checkbox]")) return;
+    const target = event.target as HTMLElement;
+    // Clicks inside the row's portaled popups (its menu, the customer card) bubble here through React too; only the row itself opens.
+    if (!event.currentTarget.contains(target) || target.closest("a, button, input, label, [role=checkbox]")) return;
     navigate(`/desk/bookings/${encodeURIComponent(b.id)}`);
   };
   const actionLabel = (b: Booking): string => `Actions for ${nameOf(b)}, ${dayOf(b.date)} ${timeRangeOf(b)}`;
@@ -654,7 +657,7 @@ function BookingsList(props: ListProps): React.ReactElement {
               {groups.map((g) => (
                 <React.Fragment key={g.date}>
                   <TableRow>
-                    <TableHead className="h-8 bg-muted/72 text-foreground text-xs" colSpan={8} scope="colgroup">
+                    <TableHead className="h-8 bg-muted/72 text-foreground text-xs" colSpan={8} scope="rowgroup">
                       {g.label}
                       {g.label !== dayOf(g.date) && <span className="font-normal text-muted-foreground"> · {dayOf(g.date)}</span>}
                     </TableHead>
@@ -754,7 +757,6 @@ function BulkBar({ bookings, viewer, now, nameOf, onClear }: { bookings: Booking
   const client = useDataClient();
   const [busy, setBusy] = React.useState(false);
   const [paying, setPaying] = React.useState(false);
-  const reasonId = React.useId();
   const can = (id: BookingActionId, b: Booking): boolean => Boolean(viewer && bookingAction(id, { booking: b, viewer, now, hasCustomer: b.customerId !== null })?.enabled);
   const remindable = bookings.filter((b) => can("send-reminder", b));
   const payable = bookings.filter((b) => can("record-payment", b));
@@ -797,16 +799,10 @@ function BulkBar({ bookings, viewer, now, nameOf, onClear }: { bookings: Booking
           Send reminders
         </Button>
         {moneyBlocked ? (
-          <Tooltip>
-            <TooltipTrigger render={<Button aria-describedby={reasonId} aria-disabled="true" className="cursor-not-allowed opacity-64" onClick={(e) => e.preventDefault()} />}>
-              <BanknoteIcon aria-hidden="true" />
-              Record as paid
-              <span className="sr-only" id={reasonId}>
-                {moneyBlocked}
-              </span>
-            </TooltipTrigger>
-            <TooltipPopup>{moneyBlocked}</TooltipPopup>
-          </Tooltip>
+          <DisabledWithReason reason={moneyBlocked} variant="default">
+            <BanknoteIcon aria-hidden="true" />
+            Record as paid
+          </DisabledWithReason>
         ) : (
           <Button disabled={payable.length === 0} onClick={() => setPaying(true)}>
             <BanknoteIcon aria-hidden="true" />

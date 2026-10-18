@@ -7,24 +7,13 @@
  * row menu and the bulk bar all run them from here, so they read the same.
  */
 import * as React from "react";
-import { type BookingTarget, toastRefusal } from "@/app/desk/booking-dialogs";
-import { LOCALE, startTimeOf, whenOf } from "@/app/format";
+import type { BookingTarget } from "@/app/desk/booking-dialogs";
+import { cooldownLine, toastRefusal } from "@/app/desk/booking-feedback";
+import { startTimeOf, whenOf } from "@/app/format";
 import { toastManager } from "@/components/ui/toast";
 import type { DataClient } from "@/data/client";
-import { errorMessage, isDataError } from "@/data/errors";
+import { isDataError } from "@/data/errors";
 import { useDataClient, useWrite } from "@/data/provider";
-import { VENUE } from "@/lib/venue";
-
-/** "4:35 pm", in the venue's zone. */
-export function clockTime(at: number): string {
-  return new Intl.DateTimeFormat(LOCALE, { timeZone: VENUE.timeZone, hour: "numeric", minute: "2-digit" }).format(at);
-}
-
-/** The cooldown refusal, with when the next reminder may go. */
-export function cooldownLine(error: unknown): string {
-  if (isDataError(error) && error.code === "cooldown" && error.retryAt) return `${error.message} The next can go at ${clockTime(error.retryAt)}.`;
-  return errorMessage(error);
-}
 
 export type BookingCommand = "send-reminder" | "check-in" | "undo-check-in" | "no-show" | "undo-no-show" | "restore";
 
