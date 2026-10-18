@@ -53,7 +53,8 @@ export function mockBookings(ctx: MockContext): BookingsApi {
       ];
       const logged = ctx.db.read().activity.filter((a) => a.subject.type === "booking" && a.subject.id === id);
       const activity = [...logged, ...derived.filter((d) => !logged.some((l) => l.id === d.id))].sort((a, b) => b.at - a.at);
-      return { booking, customer, activity };
+      const tables = ctx.db.read();
+      return { booking, customer, activity, checkedInAt: tables.checkIns[id] ?? null, lastReminderAt: tables.reminders[id] ?? null };
     },
 
     async dayCounts(month) {
@@ -111,16 +112,21 @@ export function mockBookings(ctx: MockContext): BookingsApi {
       await ctx.trip();
       const booking = writable(id);
       const next = { ...booking, ...patch };
-      if (patch.pricePaise !== undefined && patch.pricePaise !== booking.pricePaise) ctx.require("handleMoney");
+      const repriced = patch.pricePaise !== undefined && patch.pricePaise !== booking.pricePaise;
+      if (repriced) {
+        ctx.require("handleMoney");
+        if (!Number.isSafeInteger(patch.pricePaise) || (patch.pricePaise ?? 0) < 0) throw new DataError("validation", "Enter a price of ₹0 or more.", { fields: { price: "₹0 or more" } });
+        if (!patch.priceReason?.trim()) throw new DataError("validation", "Say why the price changed; it goes in the activity log.", { fields: { priceReason: "Required" } });
+      }
       const moved = patch.courtId !== undefined || patch.date !== undefined || patch.startMinute !== undefined || patch.durationMinutes !== undefined;
       if (moved) {
         const clash = findConflict(bookingsWithBlocks(ctx.bridge.read(), next.date), next, ctx.now(), id);
-        if (clash) throw new DataError("clash", `${courtName(next.courtId)} is taken then. Pick another court or time.`);
+        if (clash) throw new DataError("clash", `${courtName(next.courtId)} is taken then by ${who(clash)}. Pick another court or time.`);
       }
       const { priceReason, ...rest } = patch;
       ctx.bridge.apply({ type: "update-booking", bookingId: id, patch: rest });
       if (moved) ctx.log(`Moved to ${courtName(next.courtId)}, ${next.date}`, { type: "booking", id });
-      if (patch.pricePaise !== undefined && patch.pricePaise !== booking.pricePaise) ctx.log(`Price changed to ${ctx.inr(patch.pricePaise)}${priceReason ? ` · ${priceReason}` : ""}`, { type: "booking", id });
+      if (repriced && patch.pricePaise !== undefined) ctx.log(`Price changed to ${ctx.inr(patch.pricePaise)}${priceReason ? ` · ${priceReason}` : ""}`, { type: "booking", id });
       if (patch.notes !== undefined && patch.notes !== booking.notes) ctx.log("Notes updated", { type: "booking", id });
       return find(id);
     },
@@ -140,7 +146,8 @@ export function mockBookings(ctx: MockContext): BookingsApi {
 
     async checkIn(id, value) {
       await ctx.trip();
-      writable(id);
+      const booking = writable(id);
+      if (value && (booking.kind !== "booking" || booking.status !== "confirmed")) throw new DataError("validation", "Only a confirmed booking can be checked in.");
       ctx.db.write((t) => {
         const checkIns = Object.fromEntries(Object.entries(t.checkIns).filter(([key]) => key !== id));
         return { ...t, checkIns: value ? { ...checkIns, [id]: ctx.now() } : checkIns };
@@ -161,6 +168,8 @@ export function mockBookings(ctx: MockContext): BookingsApi {
     async cancel(id, { resolution, reason }) {
       await ctx.trip();
       const booking = writable(id);
+      if (booking.status === "cancelled") throw new DataError("conflict", "This booking is already cancelled.");
+      if (!reason.trim()) throw new DataError("validation", "Pick a reason for cancelling.", { fields: { reason: "Required" } });
       if (paidPaise(booking) > 0) ctx.require("refund");
       ctx.bridge.apply({ type: "cancel", bookingId: id, resolution, at: ctx.now(), entryId: makeId("le") });
       ctx.log(`Cancelled · ${reason}`, { type: "booking", id });
@@ -172,8 +181,16 @@ export function mockBookings(ctx: MockContext): BookingsApi {
       const booking = writable(id);
       const clash = findConflict(bookingsWithBlocks(ctx.bridge.read(), booking.date), booking, ctx.now(), id);
       if (clash) throw new DataError("clash", "Someone else has that court now, so it can't be put back.");
-      ctx.bridge.apply({ type: "restore", booking: { ...booking, status: "confirmed", cancelledAt: null } });
-      ctx.log("Put back", { type: "booking", id });
+      // Credit the cancellation gave goes back onto the booking, so the money isn't counted twice.
+      // A refund stays on the ledger: that money went back, so the balance is due again.
+      const credit = booking.status === "cancelled" ? booking.ledger.findLast((e) => e.kind === "credit-issued") : undefined;
+      const customer = customerById(ctx.bridge.read().customers, booking.customerId);
+      if (credit && customer && customer.creditPaise < credit.amountPaise) {
+        throw new DataError("validation", `The ${ctx.inr(credit.amountPaise)} credit from this booking has been used, so it can't be put back. Make a new booking instead.`);
+      }
+      ctx.bridge.apply({ type: "restore", booking: { ...booking, status: "confirmed", cancelledAt: null, ledger: credit ? booking.ledger.filter((e) => e.id !== credit.id) : booking.ledger } });
+      if (credit && customer) ctx.bridge.apply({ type: "adjust-credit", customerId: customer.id, amountPaise: -credit.amountPaise });
+      ctx.log(booking.status === "no-show" ? "No-show undone" : "Put back", { type: "booking", id });
       return find(id);
     },
 
