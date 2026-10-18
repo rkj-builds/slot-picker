@@ -29,6 +29,7 @@ function validateProgramme(p: Partial<Programme>): void {
   if (p.weekdays?.length === 0) fields.weekdays = "Pick at least one day";
   if (p.courtIds?.length === 0) fields.courtIds = "Pick at least one court";
   if (p.plans?.filter((x) => !x.retired).length === 0) fields.plans = "Add a way to pay";
+  else if (p.plans?.some((x) => !x.retired && (!x.name.trim() || x.pricePaise <= 0 || (x.kind === "pack" && !x.sessions)))) fields.plans = "Every plan needs a name, a price and, for a pack, how many sessions";
   if (Object.keys(fields).length) throw new DataError("validation", "Some details need fixing.", { fields });
 }
 
@@ -195,10 +196,15 @@ export function mockEnrolments(ctx: MockContext): EnrolmentsApi {
       await ctx.trip();
       ctx.requireFeature("programmes");
       const tables = ctx.db.read();
+      // A coach sees the children in their own programmes, as they see only those programmes.
+      const viewer = ctx.viewer();
+      const mine = viewer.role === "coach" ? (tables.team.find((m) => m.id === viewer.memberId)?.programmeIds ?? []) : null;
+      const programmes = mine ? tables.programmes.filter((p) => mine.includes(p.id)) : tables.programmes;
+      const ids = new Set(programmes.map((p) => p.id));
       return {
-        enrolments: tables.enrolments.filter((e) => !programmeId || e.programmeId === programmeId),
+        enrolments: tables.enrolments.filter((e) => ids.has(e.programmeId) && (!programmeId || e.programmeId === programmeId)),
         customers: ctx.bridge.read().customers,
-        programmes: tables.programmes,
+        programmes,
       };
     },
 

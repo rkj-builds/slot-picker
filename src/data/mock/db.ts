@@ -57,6 +57,8 @@ export interface Tables {
   reminders: Record<string, number>;
   /** Booking id → when the customer checked in. */
   checkIns: Record<string, number>;
+  /** Customer id → why they were asked to pay first. Optional: tables saved before it existed have none. */
+  flagReasons?: Record<string, string>;
   profile: VenueProfile;
   notifications: NotificationPrefs;
 }

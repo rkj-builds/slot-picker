@@ -129,6 +129,23 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "team-invite-errors", group: "Inbox and team", label: "Invite with mistakes", shows: "The invite dialog after sending: an email already in use, a missing name, a coach with no programme.", hash: "#/desk/team?invite=check" },
   { id: "team-roles-unsaved", group: "Inbox and team", label: "Roles with unsaved changes", shows: "Front desk given Members, not saved yet: the save bar offers Save and Discard.", hash: "#/desk/team/roles?demo=unsaved" },
   { id: "settings-activity", group: "Inbox and team", label: "Settings › Activity", shows: "What the team did recently, by day, with who did it.", hash: "#/desk/settings/activity" },
+
+  // ── Programmes: programmes, register, enrolments, customers, members (feat/dash-programmes) ──
+  { id: "programmes", group: "Programmes", label: "Programmes", shows: "Every programme: schedule, places taken, what's owed; filters are URLs.", hash: "#/desk/programmes" },
+  { id: "programmes-none", group: "Programmes", label: "No programme matches", shows: "A search that finds nothing, with Clear search.", hash: "#/desk/programmes?q=Tennis" },
+  { id: "programme-new", group: "Programmes", label: "New programme", shows: "The New programme dialog; press Create with it empty to see each field's refusal.", hash: "#/desk/programmes?new=1" },
+  { id: "programme-overview", group: "Programmes", label: "A programme's overview", shows: "Off-Screen Club Juniors: who owes, periods ending this week, the waitlist, the register to take.", hash: "#/desk/programmes/prg_juniors" },
+  { id: "programme-settings", group: "Programmes", label: "Programme settings", shows: "Details with a save bar, status that saves at once, plans to add or retire.", hash: "#/desk/programmes/prg_juniors/settings" },
+  { id: "register-take", group: "Programmes", label: "Register to take", shows: "The latest Juniors session, nobody marked: mark some, then leave to be asked, or save to be told how many are unmarked.", hash: "#/desk/programmes/prg_juniors/sessions/latest" },
+  { id: "register-future", group: "Programmes", label: "Register for a future session", shows: "Marks are allowed; saving is refused with the backend's reason.", hash: "#/desk/programmes/prg_juniors/sessions/next" },
+  { id: "enrolments-chase", group: "Programmes", label: "Enrolments to chase", shows: "Who owes, and whose paid period runs out within 3 days, each with its next step.", hash: "#/desk/enrolments" },
+  { id: "renew-credit", group: "Programmes", label: "Renew with credit", shows: "Aanya's month ends today and her parent holds credit: the preview takes it off what's due.", hash: "#/desk/enrolments?renew=enr_j1" },
+  { id: "add-child", group: "Programmes", label: "Add a child", shows: "The Add a child dialog: try age 17 for Juniors to see the refusal on the field.", hash: "#/desk/enrolments?add=1" },
+  { id: "coach-view", group: "Programmes", label: "A coach's view", shows: "Signed in as the coach: only their two programmes, and money and changes say why they're off.", signInAs: TEAM_IDS.coach, hash: "#/desk/enrolments" },
+  { id: "enrolments-fail", group: "Programmes", label: "Enrolments fail to load", shows: "The error state with Try again; the retry works.", setup: "fail-request", hash: "#/desk/enrolments/everyone" },
+  { id: "customer-pay-first", group: "Programmes", label: "A pay-first customer", shows: "A customer's page with the pay-first reason, their bookings and their child's enrolment.", hash: "#/desk/customers/cus_07" },
+  { id: "members-low", group: "Programmes", label: "Members low on hours", shows: "Court-hour members with 3 hours or less left, as meters.", hash: "#/desk/members/low-hours" },
+  { id: "member-owes", group: "Programmes", label: "A member who owes", shows: "The member panel: ledger, activity, and Take payment first.", hash: "#/desk/members/owes?open=mem_3" },
 ];
 
 /** The switches, grouped as the Demo control shows them. */

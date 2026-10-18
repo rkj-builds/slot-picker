@@ -276,6 +276,7 @@ export function summarize(ctx: MockContext, customerId: string): CustomerSummary
     firstVisit: visits[0] ?? null,
     lastVisit: visits.at(-1) ?? null,
     tags,
+    payFirstReason: customer.payFirst ? (tables.flagReasons?.[customerId] ?? null) : null,
   };
 }
 
@@ -322,7 +323,15 @@ export function mockCustomers(ctx: MockContext): CustomersApi {
     async setFlag(id, flag, value, reason) {
       await ctx.trip();
       ctx.require("writeBookings");
+      const why = reason?.trim() ?? "";
+      if (flag === "payFirst" && value && !why) throw new DataError("validation", "Say why they pay first, so the next person on the desk knows.", { fields: { reason: "Required" } });
       ctx.bridge.apply({ type: "set-customer-flag", customerId: id, flag, value });
+      if (flag === "payFirst") {
+        ctx.db.write((t) => {
+          const reasons = Object.fromEntries(Object.entries(t.flagReasons ?? {}).filter(([key]) => key !== id));
+          return { ...t, flagReasons: value ? { ...reasons, [id]: why } : reasons };
+        });
+      }
       const customer = customerById(ctx.bridge.read().customers, id);
       if (!customer) throw new DataError("not-found", "This customer no longer exists.");
       ctx.log(`${value ? "Flagged" : "Cleared"} ${flag === "payFirst" ? "pay first" : "trusted"}${reason ? ` · ${reason}` : ""}`, { type: "customer", id });
