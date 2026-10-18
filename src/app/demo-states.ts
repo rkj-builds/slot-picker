@@ -5,7 +5,8 @@
  * index on #/primitives both read this list.
  */
 import type { DemoScenarios } from "@/app/store";
-import type { VenueSettings } from "@/lib/venue";
+import { TEAM_IDS } from "@/data/mock/seed";
+import { DEFAULT_SETTINGS, type VenueSettings } from "@/lib/venue";
 
 export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "Programmes" | "Money" | "Inbox and team" | "System";
 
@@ -21,7 +22,11 @@ export type StateSetup =
   /** The next load fails, then a retry works. */
   | "fail-load"
   /** The next data request (any screen's read or save) fails, then a retry works. */
-  | "fail-request";
+  | "fail-request"
+  /** A desk booking for tomorrow with ₹300 paid in cash and the rest due; "{booking}" in the hash is its id. */
+  | "booking-balance"
+  /** The same, with a WhatsApp reminder just sent, so the next is on cooldown. */
+  | "booking-reminded";
 
 export interface DemoState {
   id: string;
@@ -33,7 +38,7 @@ export interface DemoState {
   setup?: StateSetup;
   /** Where the held or drafted booking falls: the next Saturday, the next Monday to Friday, else tomorrow. */
   day?: "tomorrow" | "weekday" | "weekend";
-  /** The screen, as a hash; "{saturday}" is filled with the next Saturday's date. */
+  /** The screen, as a hash; "{saturday}" is filled with the next Saturday's date, "{booking}" with a set-up booking's id. */
   hash: string;
   /** Run the first payment during the jump, so the pay step opens on its outcome (declined, slot taken). */
   opensOutcome?: boolean;
@@ -84,6 +89,26 @@ export const DEMO_STATES: readonly DemoState[] = [
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },
+
+  // Bookings and availability: the booking page, the list's views and filters, opening hours, closures, blocks.
+  { id: "booking-detail", group: "Desk", label: "Booking with a balance", shows: "A booking's own page: ₹300 paid in cash, the rest due. Record payment opens with the balance filled in.", setup: "booking-balance", hash: "#/desk/bookings/{booking}" },
+  { id: "booking-cooldown", group: "Desk", label: "Reminder on cooldown", shows: "A reminder went a moment ago: press Send reminder and it is refused, saying when the next can go.", setup: "booking-reminded", hash: "#/desk/bookings/{booking}" },
+  { id: "booking-front-desk", group: "Desk", label: "Booking as front desk", shows: "Signed in as front desk: Record payment and cancelling a paid booking are disabled, each saying why.", setup: "booking-balance", signInAs: TEAM_IDS.desk, hash: "#/desk/bookings/{booking}" },
+  { id: "booking-not-found", group: "Desk", label: "Booking not found", shows: "A link to a booking that isn't there, with the way back to Bookings.", hash: "#/desk/bookings/bk_missing" },
+  { id: "bookings-due", group: "Desk", label: "Bookings: payment due", shows: "Every booking with money still to collect, past or upcoming, grouped by day; select some to record them as paid.", hash: "#/desk/bookings/payment-due" },
+  { id: "bookings-chips", group: "Desk", label: "Bookings with filter chips", shows: "Court 1, booked at the desk: two removable chips and Clear, all in the URL.", hash: "#/desk/bookings?court=court-1&via=desk" },
+  { id: "bookings-fails", group: "Desk", label: "Bookings fail to load", shows: "The past bookings fail to load once; Try again works.", setup: "fail-request", hash: "#/desk/bookings/past" },
+  { id: "availability", group: "Desk", label: "Availability", shows: "Weekly hours, closures and the club's repeating block on one page.", hash: "#/desk/availability" },
+  {
+    id: "availability-unsaved",
+    group: "Desk",
+    label: "Availability with unsaved hours",
+    shows: "Sunday changed to 8:00 am – 8:00 pm and not saved: the bar at the bottom offers Save hours and Discard.",
+    unsavedSettings: { hours: { ...DEFAULT_SETTINGS.hours, sun: { open: 8 * 60, close: 20 * 60, closed: false } } },
+    hash: "#/desk/availability",
+  },
+  { id: "closure-warning", group: "Desk", label: "Closure over booked courts", shows: "Add closure for Saturday: before saving, it names the confirmed bookings that fall in it.", hash: "#/desk/availability?closure=new&date={saturday}" },
+  { id: "availability-manager", group: "Desk", label: "Availability as a manager", shows: "A manager without settings access sees hours, closures and blocks read-only, and why.", signInAs: TEAM_IDS.manager, hash: "#/desk/availability" },
 ];
 
 /** The switches, grouped as the Demo control shows them. */
