@@ -120,6 +120,7 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
 
   return (
     <div className="flex flex-col gap-4">
+      <h2 className="sr-only">Payments in these dates</h2>
       <DeskViewToolbar inlineOnPhone>
         <div className="flex flex-wrap items-start gap-2" data-slot="payments-filters">
           <Field className="min-w-56 flex-1 rounded-xl border bg-card not-dark:bg-clip-padding p-1">
@@ -308,9 +309,12 @@ function FiltersControl({ filters, setFilters, phone }: { filters: PaymentFilter
       <ListFilterIcon aria-hidden="true" />
       Filters
       {count > 0 && (
-        <Badge aria-label={`${count} on`} className="-me-1" variant="outline">
-          {count}
-        </Badge>
+        <>
+          <Badge aria-hidden="true" className="-me-1" variant="outline">
+            {count}
+          </Badge>
+          <span className="sr-only">, {count} on</span>
+        </>
       )}
     </>
   );

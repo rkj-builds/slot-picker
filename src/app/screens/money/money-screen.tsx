@@ -150,7 +150,7 @@ function Tile({ label, value, sub, href, failed, onRetry }: { label: string; val
   return (
     <li className="min-w-0">
       <a className={cn(frame, "outline-none transition-colors hover:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring")} href={href}>
-        <span className="text-muted-foreground text-xs sm:text-sm">{label}</span>
+        <span className="text-muted-foreground text-xs sm:text-sm">{label}</span>{" "}
         {value === null ? (
           <>
             <Skeleton className="h-7 w-24" />
@@ -158,7 +158,7 @@ function Tile({ label, value, sub, href, failed, onRetry }: { label: string; val
           </>
         ) : (
           <>
-            <span className="font-semibold text-xl tabular-nums tracking-tight sm:text-2xl">{value}</span>
+            <span className="font-semibold text-xl tabular-nums tracking-tight sm:text-2xl">{value}</span>{" "}
             {sub && <span className="text-pretty text-muted-foreground text-xs">{sub}</span>}
           </>
         )}

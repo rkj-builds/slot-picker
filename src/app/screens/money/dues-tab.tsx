@@ -80,6 +80,7 @@ export function DuesTab({ route, today }: { route: Route; today: PlainDate }): R
 
   return (
     <div className="flex flex-col gap-4">
+      <h2 className="sr-only">Dues by customer</h2>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <p aria-live="polite" className="text-muted-foreground text-sm">
           {groups.length} {groups.length === 1 ? "customer owes" : "customers owe"} <span className="font-medium text-foreground tabular-nums">{formatInr(total)}</span>

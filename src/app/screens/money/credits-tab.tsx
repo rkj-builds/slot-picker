@@ -66,6 +66,7 @@ export function CreditsTab({ route }: { route: Route; today: PlainDate }): React
 
   return (
     <div className="flex flex-col gap-4">
+      <h2 className="sr-only">Credit by customer</h2>
       <p aria-live="polite" className="text-muted-foreground text-sm">
         <span className="font-medium text-foreground tabular-nums">{formatInr(total)}</span> held for {credits.filter((c) => c.creditPaise > 0).length} customers. It comes off their next booking.
       </p>
