@@ -144,6 +144,8 @@ export interface MoneyApi {
 
 export interface InboxApi {
   conversations(query: { tab: ConversationTab; q: string }): Promise<Conversation[]>;
+  /** One conversation, whichever tab it is in (the chat pane's header). */
+  get(conversationId: string): Promise<Conversation>;
   messages(conversationId: string, before?: number): Promise<{ messages: Message[]; hasMore: boolean }>;
   send(conversationId: string, body: string): Promise<Message>;
   setManual(conversationId: string, manual: boolean): Promise<Conversation>;
@@ -159,6 +161,8 @@ export interface TeamApi {
   invite(input: { name: string; email: string; role: Role; programmeIds: string[] }): Promise<TeamMember>;
   update(id: string, patch: Partial<Pick<TeamMember, "name" | "role" | "status" | "programmeIds">>): Promise<TeamMember>;
   remove(id: string): Promise<void>;
+  /** Send an invited person their invite again. */
+  resendInvite(id: string): Promise<TeamMember>;
   access(): Promise<RoleAccess>;
   saveAccess(access: RoleAccess): Promise<RoleAccess>;
   sessions(): Promise<DeviceSession[]>;

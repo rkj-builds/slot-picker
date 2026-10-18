@@ -92,6 +92,19 @@ export const DEMO_STATES: readonly DemoState[] = [
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },
+
+  // Inbox and team (inbox, team, settings).
+  { id: "inbox-lead-waiting", group: "Inbox and team", label: "Lead waiting over 4 hours", shows: "The inbox with a lead whose wait has turned red, open beside the list.", hash: "#/desk/inbox/cnv_1" },
+  { id: "inbox-failed", group: "Inbox and team", label: "A message that didn't deliver", shows: "WhatsApp refused a receipt: the failure note under it, and Send again.", hash: "#/desk/inbox/cnv_5?tab=customers" },
+  { id: "inbox-locked", group: "Inbox and team", label: "Composer locked for the bot", shows: "The bot is answering, so the reply box is locked until Reply by hand is on.", hash: "#/desk/inbox/cnv_2" },
+  { id: "inbox-taken", group: "Inbox and team", label: "A chat someone else has", shows: "Sunil has taken this lead: Take this is off and says why.", hash: "#/desk/inbox/cnv_3" },
+  { id: "inbox-older", group: "Inbox and team", label: "Long chat, load older", shows: "A regular's chat with weeks of history behind Load older messages.", hash: "#/desk/inbox/cnv_4?tab=customers" },
+  { id: "inbox-fails", group: "Inbox and team", label: "Inbox fails to load, then retry", shows: "The conversations don't load; Try again brings them back.", setup: "fail-request", hash: "#/desk/inbox" },
+  { id: "team-coach", group: "Inbox and team", label: "Team, signed in as a coach", shows: "A coach has no Team access: the page says so and who can change it.", signInAs: TEAM_IDS.coach, hash: "#/desk/team" },
+  { id: "team-manager", group: "Inbox and team", label: "Team, signed in as a manager", shows: "A manager sees the team, but invites and row actions are off, with a line saying why.", signInAs: TEAM_IDS.manager, hash: "#/desk/team" },
+  { id: "team-invite-errors", group: "Inbox and team", label: "Invite with mistakes", shows: "The invite dialog after sending: an email already in use, a missing name, a coach with no programme.", hash: "#/desk/team?invite=check" },
+  { id: "team-roles-unsaved", group: "Inbox and team", label: "Roles with unsaved changes", shows: "Front desk given Members, not saved yet: the save bar offers Save and Discard.", hash: "#/desk/team/roles?demo=unsaved" },
+  { id: "settings-activity", group: "Inbox and team", label: "Settings › Activity", shows: "What the team did recently, by day, with who did it.", hash: "#/desk/settings/activity" },
 ];
 
 /** The switches, grouped as the Demo control shows them. */

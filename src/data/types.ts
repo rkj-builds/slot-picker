@@ -295,6 +295,8 @@ export interface Conversation {
   /** When a person started waiting on a reply; null when nobody is waiting. */
   waitingSince: number | null;
   assignedTo: string | null;
+  /** The assignee's name, filled in on read so the inbox needn't read the team. */
+  assigneeName?: string | null;
   /** Off: the booking bot answers. On: the team replies by hand. */
   manual: boolean;
   status: "open" | "done";

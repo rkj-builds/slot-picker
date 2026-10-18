@@ -6,7 +6,7 @@
  * The sidebar, the command palette and the router all read from here, so a
  * new area is one entry.
  *
- * Day, Bookings, Insights and Settings are drawn by the desk itself
+ * Day, Bookings and Insights are drawn by the desk itself
  * (src/app/desk); the rest are screens under src/app/screens, loaded on
  * demand.
  */
@@ -163,7 +163,17 @@ export const SECTIONS: readonly SectionDef[] = [
     keywords: ["staff", "roles", "invite", "access", "permissions"],
     screen: lazyScreen(() => import("@/app/screens/team/team-screen").then((m) => ({ default: m.TeamScreen }))),
   },
-  { id: "settings", label: "Settings", line: "The rules online booking follows", path: "/desk/settings", group: "Venue", icon: SettingsIcon, feature: "settings", keywords: ["deposit", "prices", "pay first", "notifications", "security"] },
+  {
+    id: "settings",
+    label: "Settings",
+    line: "Booking rules, the venue's details, alerts and activity",
+    path: "/desk/settings",
+    group: "Venue",
+    icon: SettingsIcon,
+    feature: "settings",
+    keywords: ["deposit", "prices", "pay first", "notifications", "venue", "time zone", "activity", "log"],
+    screen: lazyScreen(() => import("@/app/screens/settings/settings-screen").then((m) => ({ default: m.SettingsScreen }))),
+  },
 ];
 
 export const SECTION_GROUPS: readonly SectionGroup[] = ["Desk", "Programmes", "People", "Money", "Venue"];

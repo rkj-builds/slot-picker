@@ -4,7 +4,6 @@ import { SearchIcon } from "lucide-react";
 import * as React from "react";
 import { LoadError } from "@/app/book/book-page";
 import { useNow } from "@/app/clock";
-import { JUMP_EVENT } from "@/app/demo-jump";
 import { BookingSheet } from "@/app/desk/booking-sheet";
 import { BookingsView } from "@/app/desk/bookings-view";
 import { DeskCommandPalette } from "@/app/desk/command-palette";
@@ -18,7 +17,6 @@ import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill, t
 import { BlockCourtsDialog, RepeatBlockDialog } from "@/app/desk/repeat-dialogs";
 import { InsightsView } from "@/app/desk/insights-view";
 import { NewBookingDialog } from "@/app/desk/new-booking-dialog";
-import { SettingsView } from "@/app/desk/settings-view";
 import { hrefFor, type Route } from "@/app/router";
 import { useStore } from "@/app/store";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -36,8 +34,8 @@ const BELOW_DEMO_BAR: React.CSSProperties = { top: "calc(3rem + 1px)", height: "
 /**
  * The venue's side, in coss's app shell: a Sidebar for the views, a header
  * with the breadcrumb and the ⌘K palette, the view itself. #/desk is the day,
- * #/desk/bookings the list, #/desk/insights the numbers, #/desk/settings the
- * rules. The date lives in the URL too (?date=2026-10-17), so a link to a
+ * #/desk/bookings the list, #/desk/insights the numbers; the other areas are
+ * screens (src/app/desk/sections.tsx), Settings among them. The date lives in the URL too (?date=2026-10-17), so a link to a
  * busy Saturday is shareable.
  */
 export function DeskPage({ route }: { route: Route }): React.ReactElement {
@@ -51,13 +49,6 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const date: PlainDate = isPlainDate(dateParam) ? dateParam : today;
 
   const [sheetId, setSheetId] = React.useState<string | null>(null);
-  // A demo jump starts the open view over, so settings already on screen pick up the jump's unsaved edits.
-  const [jumps, setJumps] = React.useState(0);
-  React.useEffect(() => {
-    const bump = (): void => setJumps((n) => n + 1);
-    window.addEventListener(JUMP_EVENT, bump);
-    return () => window.removeEventListener(JUMP_EVENT, bump);
-  }, []);
   const [cashId, setCashId] = React.useState<string | null>(null);
   const [cancelId, setCancelId] = React.useState<string | null>(null);
   const [prefill, setPrefill] = React.useState<NewBookingPrefill | null>(null);
@@ -105,9 +96,6 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <DeskSkeleton />
     ) : store.status === "error" ? (
       <LoadError onRetry={store.retryLoad} />
-    ) : section === "settings" ? (
-      // Saved settings, a reset or a demo jump each start the draft over.
-      <SettingsView key={`${jumps}:${store.resets}:${JSON.stringify(store.state.settings)}`} />
     ) : section === "day" ? (
       <DayView date={date} now={now} today={today} />
     ) : section === "bookings" ? (
