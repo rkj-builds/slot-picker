@@ -234,7 +234,9 @@ export function mockTeam(ctx: MockContext): TeamApi {
   const admins = (): number => ctx.db.read().team.filter((m) => m.role === "admin" && m.status === "active").length;
   return {
     async viewer() {
-      await ctx.trip();
+      // Who's signed in is the session, not a screen's data: "fail the next request" skips it, so the
+      // failure lands on the screen being demonstrated instead of being swallowed by the desk's first read.
+      await ctx.wait();
       return ctx.viewer();
     },
     async members() {

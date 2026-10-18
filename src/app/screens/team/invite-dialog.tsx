@@ -101,7 +101,7 @@ function InviteForm({ withMistakes, onDone }: { withMistakes: boolean; onDone: (
             </Field>
             <Field invalid={Boolean(errors.email)} name="email">
               <FieldLabel>Email</FieldLabel>
-              <Input autoComplete="off" onChange={(e) => set("email", e.target.value)} placeholder="name@example.com" type="email" value={draft.email} />
+              <Input autoComplete="off" onChange={(e) => set("email", e.target.value)} inputMode="email" placeholder="name@example.com" value={draft.email} />
               {errors.email ? <FieldError match>{errors.email}</FieldError> : <FieldDescription>They sign in with this.</FieldDescription>}
             </Field>
           </div>

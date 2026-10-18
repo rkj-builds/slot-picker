@@ -72,6 +72,16 @@ describe("#/desk/team", () => {
     expect(within(row).getByText("1 programme")).toBeInTheDocument();
   });
 
+  it("says what's wrong with an email the backend refuses", async () => {
+    const user = userEvent.setup();
+    renderApp("#/desk/team?invite=1");
+    const dialog = await screen.findByRole("dialog", { name: "Invite someone" });
+    await user.type(within(dialog).getByRole("textbox", { name: "Name" }), "Meera Nair");
+    await user.type(within(dialog).getByRole("textbox", { name: "Email" }), "meera@");
+    await user.click(within(dialog).getByRole("button", { name: "Send invite" }));
+    expect(await within(dialog).findByText("Enter an email like name@example.com")).toBeInTheDocument();
+  });
+
   it("opens the invite with mistakes already checked (the demo's state)", async () => {
     renderApp("#/desk/team?invite=check");
     const dialog = await screen.findByRole("dialog", { name: "Invite someone" });

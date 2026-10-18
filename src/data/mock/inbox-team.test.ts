@@ -74,3 +74,26 @@ describe("mock backend: team invites", () => {
     expect(await refusal(client.team.resendInvite(TEAM_IDS.invited))).toBe("forbidden: Manager can't manage the team. Ask an admin.");
   });
 });
+
+describe("mock backend: fail the next request", () => {
+  it("skips who's signed in, so the screen's own read is the one that fails", async () => {
+    let failNext = true;
+    let state: AppState = seedState(TEST_NOW);
+    const client = createMockClient({
+      db: new MockDb(seedTables(TEST_NOW)),
+      bridge: { read: () => state, apply: (action) => (state = reducer(state, action)) },
+      now: () => TEST_NOW,
+      wait: () => Promise.resolve(),
+      memberId: () => TEAM_IDS.owner,
+      takeFailure: () => {
+        const fail = failNext;
+        failNext = false;
+        return fail;
+      },
+      later: () => undefined,
+    });
+    expect((await client.team.viewer()).name).toBe("Asha Kumar");
+    expect(await refusal(client.inbox.conversations({ tab: "leads", q: "" }))).toBe("unavailable: Couldn't reach the server. Check the connection and try again.");
+    expect(await client.inbox.conversations({ tab: "leads", q: "" })).toHaveLength(3);
+  });
+});

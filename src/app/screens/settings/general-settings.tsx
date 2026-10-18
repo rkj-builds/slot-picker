@@ -73,7 +73,8 @@ function ProfileForm({ saved, canEdit, now }: { saved: VenueProfile; canEdit: bo
             </Field>
             <Field invalid={Boolean(errors.contactEmail)} name="contactEmail">
               <FieldLabel>Contact email</FieldLabel>
-              <Input onChange={(e) => set("contactEmail", e.target.value)} type="email" value={draft.contactEmail} />
+              {/* Text with an email keyboard: the backend checks the address and says what is wrong, rather than the browser blocking the send. */}
+              <Input autoComplete="email" inputMode="email" onChange={(e) => set("contactEmail", e.target.value)} value={draft.contactEmail} />
               {errors.contactEmail ? <FieldError match>{errors.contactEmail}</FieldError> : <FieldDescription>Where customers' email replies go.</FieldDescription>}
             </Field>
             <Field className="sm:col-span-2" invalid={Boolean(errors.address)} name="address">
