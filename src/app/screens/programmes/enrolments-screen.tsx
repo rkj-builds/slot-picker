@@ -22,6 +22,7 @@ import { useRead } from "@/data/provider";
 import type { Customer, Enrolment, Programme } from "@/data/types";
 import type { PlainDate } from "@/lib/plain-date";
 
+const NOTHING: { enrolments: Enrolment[]; customers: Customer[]; programmes: Programme[] } = { enrolments: [], customers: [], programmes: [] };
 const CHASE = { id: "chase", label: "To chase", empty: ENROLMENT_TABS[0]?.empty ?? "" } as const;
 
 /**
@@ -48,37 +49,27 @@ export function EnrolmentsScreen({ route, sub, today }: ScreenProps): React.Reac
     </Gated>
   );
 
-  if (list.isPending) {
-    return (
-      <Screen>
-        <PageHeader description={section.line} title={section.label} />
-        <ListSkeleton label="Loading enrolments" />
-      </Screen>
-    );
-  }
-  if (list.isError) {
-    return (
-      <Screen>
-        <PageHeader description={section.line} title={section.label} />
-        <LoadFailed error={list.error} onRetry={() => void list.refetch()} what="enrolments" />
-      </Screen>
-    );
-  }
-
-  const { enrolments, customers, programmes } = list.data;
+  // One tree whatever the state, so the heading isn't replaced (and focus kept) when the list arrives.
+  const data = list.data ?? NOTHING;
   return (
     <EnrolmentActionsProvider
-      customers={customers}
-      enrolments={enrolments}
+      customers={data.customers}
+      enrolments={data.enrolments}
       initial={renewId ? { dialog: "renew", id: renewId } : null}
       onInitialClosed={() => keep({ renew: null })}
-      programmes={programmes}
+      programmes={data.programmes}
       today={today}
     >
-      <AddFromUrl adding={adding} onOpened={() => keep({ add: null })} />
+      <AddFromUrl adding={adding && Boolean(list.data)} onOpened={() => keep({ add: null })} />
       <Screen>
         <PageHeader actions={add} description={viewer?.role === "coach" ? "The children in the programmes you coach." : section.line} title={section.label} />
-        <Body customers={customers} enrolments={enrolments} programmeId={programmeId} programmes={programmes} q={q} setQuery={(value) => keep({ q: value || null })} tab={tab.id} today={today} />
+        {list.isPending ? (
+          <ListSkeleton label="Loading enrolments" />
+        ) : list.isError ? (
+          <LoadFailed error={list.error} onRetry={() => void list.refetch()} what="enrolments" />
+        ) : (
+          <Body customers={data.customers} enrolments={data.enrolments} programmeId={programmeId} programmes={data.programmes} q={q} setQuery={(value) => keep({ q: value || null })} tab={tab.id} today={today} />
+        )}
       </Screen>
     </EnrolmentActionsProvider>
   );

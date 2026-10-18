@@ -115,14 +115,14 @@ export function EnrolmentActionsProvider({
   return (
     <ActionsContext.Provider value={actions}>
       {children}
-      <Shell onClose={close} open={target?.dialog === "pay"}>{shown && <PayForm {...common} enrolment={shown} />}</Shell>
-      <Shell onClose={close} open={target?.dialog === "renew"}>
+      <Shell onClose={close} open={target?.dialog === "pay" && shown !== undefined}>{shown && <PayForm {...common} enrolment={shown} />}</Shell>
+      <Shell onClose={close} open={target?.dialog === "renew" && shown !== undefined}>
         {shown && <RenewForm {...common} enrolment={shown} onTakePayment={() => setTarget({ dialog: "pay", id: shown.id })} />}
       </Shell>
-      <Shell onClose={close} open={target?.dialog === "pause"}>{shown && <PauseForm {...common} enrolment={shown} />}</Shell>
-      <Shell onClose={close} open={target?.dialog === "stop"}>{shown && <StopForm {...common} enrolment={shown} />}</Shell>
-      <Shell onClose={close} open={target?.dialog === "give-back"}>{shown && <GiveBackForm {...common} enrolment={shown} />}</Shell>
-      <Shell onClose={close} open={target?.dialog === "follow-up"}>{shown && <FollowUpForm {...common} enrolment={shown} />}</Shell>
+      <Shell onClose={close} open={target?.dialog === "pause" && shown !== undefined}>{shown && <PauseForm {...common} enrolment={shown} />}</Shell>
+      <Shell onClose={close} open={target?.dialog === "stop" && shown !== undefined}>{shown && <StopForm {...common} enrolment={shown} />}</Shell>
+      <Shell onClose={close} open={target?.dialog === "give-back" && shown !== undefined}>{shown && <GiveBackForm {...common} enrolment={shown} />}</Shell>
+      <Shell onClose={close} open={target?.dialog === "follow-up" && shown !== undefined}>{shown && <FollowUpForm {...common} enrolment={shown} />}</Shell>
       <Shell onClose={() => setAdding(null)} open={adding !== null} wide>
         {adding && <AddChildForm customers={customers} onAdded={onAdded} onClose={() => setAdding(null)} prefill={adding} programmes={programmes} today={today} />}
       </Shell>
@@ -238,7 +238,7 @@ function RenewForm({ enrolment: e, programme, name, onClose, today, onTakePaymen
           </AlertAction>
         </Alert>
       )}
-      <Field name="planId" render={(props) => <div {...props} />}>
+      <div className="flex flex-col gap-2">
         <span className="font-medium text-sm" id={`renew-plan-${e.id}`}>
           Plan
         </span>
@@ -253,8 +253,11 @@ function RenewForm({ enrolment: e, programme, name, onClose, today, onTakePaymen
             </RadioCard>
           ))}
         </RadioGroup>
-        <FieldError />
-      </Field>
+        {/* The radios are named by their cards, so the plan error sits in its own Field rather than wrapping them. */}
+        <Field name="planId">
+          <FieldError />
+        </Field>
+      </div>
       <DateField
         description={compareDates(e.paidUntil, today) >= 0 ? `Their current period ends ${longDayOf(e.paidUntil)}.` : `Their last period ended ${longDayOf(e.paidUntil)}.`}
         label="New period starts"
@@ -697,7 +700,7 @@ function AddChildForm({
         </Field>
       )}
 
-      <Field name="planId" render={(props) => <div {...props} />}>
+      <div className="flex flex-col gap-2">
         <span className="font-medium text-sm" id="add-plan">
           Plan
         </span>
@@ -712,8 +715,11 @@ function AddChildForm({
             </RadioCard>
           ))}
         </RadioGroup>
-        <FieldError />
-      </Field>
+        {/* The radios are named by their cards, so the plan error sits in its own Field rather than wrapping them. */}
+        <Field name="planId">
+          <FieldError />
+        </Field>
+      </div>
       <DateField label="Starts" name="startsOn" onChange={setStartsOn} value={startsOn} />
       <Field className="flex-row items-start gap-3">
         <Switch checked={alreadyPaid} className="mt-0.5" onCheckedChange={setAlreadyPaid} />

@@ -67,35 +67,21 @@ export function ProgrammePage({ id, tab, today }: { id: string; tab: ProgrammeTa
   const detail = useRead(["programme", id], (c) => c.programmes.get(id));
   const people = useRead(["enrolments", id], (c) => c.enrolments.list({ programmeId: id }));
 
-  if (detail.isPending || people.isPending) {
-    return (
-      <Screen>
-        <PageHeader back={{ href: hrefFor("/desk/programmes"), label: "Programmes" }} title="Programme" />
-        <ListSkeleton label="Loading the programme" rows={5} />
-      </Screen>
-    );
-  }
-  if (detail.isError || people.isError) {
-    const error = detail.error ?? people.error;
-    const missing = isDataError(error) && error.code === "not-found";
-    return (
-      <Screen>
-        <PageHeader back={{ href: hrefFor("/desk/programmes"), label: "Programmes" }} title={missing ? "Programme not found" : "Programme"} />
-        <LoadFailed error={error} onRetry={() => void (detail.isError ? detail.refetch() : people.refetch())} what="this programme" />
-      </Screen>
-    );
-  }
-
-  const { programme, sessions } = detail.data;
-  const enrolments = people.data.enrolments;
-  const base = `/desk/programmes/${programme.id}`;
+  const error = detail.error ?? people.error;
+  const missing = isDataError(error) && error.code === "not-found";
+  const ready = detail.data && people.data ? { ...detail.data, ...people.data } : null;
+  const programme = ready?.programme;
+  const base = `/desk/programmes/${id}`;
+  const sessions = ready?.sessions ?? [];
+  const enrolments = ready?.enrolments ?? NONE;
   const upcoming = sessions.filter((s) => s.status === "scheduled" && compareDates(s.date, today) > 0).length;
   const enrolled = enrolments.filter((e) => e.status === "running" || e.status === "paused").length;
   const take = registerSession(sessions, today);
-  const meta = STATUS_META[programme.status];
+  const meta = programme ? STATUS_META[programme.status] : null;
 
+  // One tree whatever the state, so the heading isn't replaced (and focus kept) when the programme arrives.
   return (
-    <EnrolmentActionsProvider customers={people.data.customers} enrolments={enrolments} programmes={people.data.programmes} today={today}>
+    <EnrolmentActionsProvider customers={ready?.customers ?? NONE} enrolments={enrolments} programmes={ready?.programmes ?? NONE} today={today}>
       <Screen>
         <PageHeader
           actions={
@@ -107,27 +93,37 @@ export function ProgrammePage({ id, tab, today }: { id: string; tab: ProgrammeTa
             )
           }
           back={{ href: hrefFor("/desk/programmes"), label: "Programmes" }}
-          description={scheduleLine(programme)}
-          meta={<Badge variant={meta.badge}>{meta.label}</Badge>}
-          title={programme.name}
+          description={programme ? scheduleLine(programme) : undefined}
+          meta={meta && <Badge variant={meta.badge}>{meta.label}</Badge>}
+          title={programme?.name ?? (missing ? "Programme not found" : "Programme")}
         />
-        <LinkTabs
-          label={`${programme.name} sections`}
-          tabs={[
-            { href: hrefFor(base), label: "Overview", current: tab === "overview" },
-            { href: hrefFor(`${base}/sessions`), label: "Sessions", current: tab === "sessions", count: upcoming },
-            { href: hrefFor(`${base}/enrolled`), label: "Enrolled", current: tab === "enrolled", count: enrolled },
-            { href: hrefFor(`${base}/settings`), label: "Settings", current: tab === "settings" },
-          ]}
-        />
-        {tab === "overview" && <Overview enrolments={enrolments} programme={programme} sessions={sessions} today={today} />}
-        {tab === "sessions" && <Sessions programme={programme} sessions={sessions} today={today} viewer={viewer} />}
-        {tab === "enrolled" && <Enrolled enrolments={enrolments} programme={programme} viewer={viewer} />}
-        {tab === "settings" && <SettingsTab key={programme.id} programme={programme} today={today} viewer={viewer} />}
+        {error ? (
+          <LoadFailed error={error} onRetry={() => void (detail.isError ? detail.refetch() : people.refetch())} what="this programme" />
+        ) : !programme ? (
+          <ListSkeleton label="Loading the programme" rows={5} />
+        ) : (
+          <>
+            <LinkTabs
+              label={`${programme.name} sections`}
+              tabs={[
+                { href: hrefFor(base), label: "Overview", current: tab === "overview" },
+                { href: hrefFor(`${base}/sessions`), label: "Sessions", current: tab === "sessions", count: upcoming },
+                { href: hrefFor(`${base}/enrolled`), label: "Enrolled", current: tab === "enrolled", count: enrolled },
+                { href: hrefFor(`${base}/settings`), label: "Settings", current: tab === "settings" },
+              ]}
+            />
+            {tab === "overview" && <Overview enrolments={enrolments} programme={programme} sessions={sessions} today={today} />}
+            {tab === "sessions" && <Sessions programme={programme} sessions={sessions} today={today} viewer={viewer} />}
+            {tab === "enrolled" && <Enrolled enrolments={enrolments} programme={programme} viewer={viewer} />}
+            {tab === "settings" && <SettingsTab key={programme.id} programme={programme} today={today} viewer={viewer} />}
+          </>
+        )}
       </Screen>
     </EnrolmentActionsProvider>
   );
 }
+
+const NONE: never[] = [];
 
 /* ── Overview ───────────────────────────────────────────────────────── */
 

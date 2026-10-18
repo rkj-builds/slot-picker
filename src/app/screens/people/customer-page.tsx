@@ -44,51 +44,65 @@ export function CustomerPage({ id, now }: { id: string; now: number }): React.Re
   const memberships = useRead(["memberships"], (c) => c.memberships.list(), { enabled: canMembers });
   const back = { href: hrefFor("/desk/customers"), label: "Customers" };
 
-  if (read.isPending) {
-    return (
-      <Screen>
-        <PageHeader back={back} title="Customer" />
-        <ListSkeleton label="Loading the customer" rows={5} />
-      </Screen>
-    );
-  }
-  if (read.isError) {
-    return (
-      <Screen>
-        <PageHeader back={back} title="Customer" />
-        <LoadFailed error={read.error} onRetry={() => void read.refetch()} what="this customer" />
-      </Screen>
-    );
-  }
+  const summary = read.data?.summary;
+  const c = summary?.customer;
 
-  const { summary, bookings, enrolments } = read.data;
-  const c = summary.customer;
-  const programmeName = (pid: string): string => programmes.data?.programmes.find((p) => p.id === pid)?.name ?? "Programme";
-  const planName = (pid: string): string => memberships.data?.plans.find((p) => p.id === pid)?.name ?? "Court hours";
-  const today = todayIn(VENUE.timeZone, now);
-  const owed = bookings.reduce((sum, b) => sum + duePaise(b), 0) + enrolments.reduce((sum, e) => sum + enrolmentDue(e), 0) + read.data.memberships.reduce((sum, m) => sum + membershipDue(m), 0);
-
+  // One tree whatever the state, so the heading isn't replaced (and focus kept) when the customer arrives.
   return (
     <Screen>
       <PageHeader
         actions={
-          <>
-            <Button render={<Anchor href={`tel:${c.phone}`} />} variant="outline">
-              <PhoneIcon aria-hidden="true" />
-              Call
-            </Button>
-            <Button render={<Anchor href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} rel="noreferrer" target="_blank" />} variant="outline">
-              <MessageCircleIcon aria-hidden="true" />
-              WhatsApp
-            </Button>
-          </>
+          c && (
+            <>
+              <Button render={<Anchor href={`tel:${c.phone}`} />} variant="outline">
+                <PhoneIcon aria-hidden="true" />
+                Call
+              </Button>
+              <Button render={<Anchor href={`https://wa.me/${c.phone.replace(/\D/g, "")}`} rel="noreferrer" target="_blank" />} variant="outline">
+                <MessageCircleIcon aria-hidden="true" />
+                WhatsApp
+              </Button>
+            </>
+          )
         }
         back={back}
-        description={`${formatPhone(c.phone)}${summary.firstVisit ? ` · first visit ${dayOf(summary.firstVisit)}` : " · hasn't visited yet"}`}
-        meta={<CustomerTags summary={summary} />}
-        title={c.name}
+        description={summary && c ? `${formatPhone(c.phone)}${summary.firstVisit ? ` · first visit ${dayOf(summary.firstVisit)}` : " · hasn't visited yet"}` : undefined}
+        meta={summary && <CustomerTags summary={summary} />}
+        title={c?.name ?? "Customer"}
       />
+      {read.isError ? (
+        <LoadFailed error={read.error} onRetry={() => void read.refetch()} what="this customer" />
+      ) : !read.data ? (
+        <ListSkeleton label="Loading the customer" rows={5} />
+      ) : (
+        <CustomerBody canMembers={canMembers} canProgrammes={canProgrammes} data={read.data} now={now} planName={(pid) => memberships.data?.plans.find((p) => p.id === pid)?.name ?? "Court hours"} programmeName={(pid) => programmes.data?.programmes.find((p) => p.id === pid)?.name ?? "Programme"} />
+      )}
+    </Screen>
+  );
+}
 
+function CustomerBody({
+  data,
+  now,
+  canProgrammes,
+  canMembers,
+  programmeName,
+  planName,
+}: {
+  data: { summary: CustomerSummary; bookings: Booking[]; enrolments: Enrolment[]; memberships: Membership[] };
+  now: number;
+  canProgrammes: boolean;
+  canMembers: boolean;
+  programmeName: (id: string) => string;
+  planName: (id: string) => string;
+}): React.ReactElement {
+  const { summary, bookings, enrolments } = data;
+  const c = summary.customer;
+  const today = todayIn(VENUE.timeZone, now);
+  const owed = bookings.reduce((sum, b) => sum + duePaise(b), 0) + enrolments.reduce((sum, e) => sum + enrolmentDue(e), 0) + data.memberships.reduce((sum, m) => sum + membershipDue(m), 0);
+
+  return (
+    <>
       <dl className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <Stat label="Bookings" line={summary.cancellations > 0 ? `${summary.cancellations} cancelled` : "None cancelled"} value={String(summary.bookings)} />
         <Stat label="Spent" line={owed > 0 ? `${formatInr(owed)} owed now` : "Nothing owed"} tone={owed > 0 ? "warning" : undefined} value={formatInr(summary.spentPaise)} />
@@ -112,18 +126,18 @@ export function CustomerPage({ id, now }: { id: string; now: number }): React.Re
           </Rows>
         )}
       </Section>
-      <Section count={read.data.memberships.length} title="Memberships">
-        {read.data.memberships.length === 0 ? (
+      <Section count={data.memberships.length} title="Memberships">
+        {data.memberships.length === 0 ? (
           <None>No court-hour membership.</None>
         ) : (
           <Rows>
-            {read.data.memberships.map((m) => (
+            {data.memberships.map((m) => (
               <MembershipLine canOpen={canMembers} key={m.id} m={m} plan={planName(m.planId)} />
             ))}
           </Rows>
         )}
       </Section>
-    </Screen>
+    </>
   );
 }
 

@@ -78,59 +78,68 @@ export function RegisterPage({ programmeId, sessionRef, today }: { programmeId: 
   const session = detail.data ? resolveSession(detail.data.sessions, sessionRef, today) : undefined;
   const sessionId = session?.id ?? "";
   const attendance = useRead(["attendance", sessionId], (c) => c.programmes.attendance(sessionId), { enabled: Boolean(sessionId) });
-  const back = { href: hrefFor(`/desk/programmes/${programmeId}`), label: detail.data?.programme.name ?? "Programme" };
 
-  const failed = detail.error ?? people.error ?? attendance.error;
-  if (failed) {
-    return (
-      <Screen>
-        <PageHeader back={back} title="Register" />
-        <LoadFailed error={failed} onRetry={() => void Promise.all([detail.refetch(), people.refetch(), sessionId ? attendance.refetch() : null])} what="the register" />
-      </Screen>
-    );
-  }
-  if (detail.data && !session) {
-    return (
-      <Screen>
-        <PageHeader back={back} title="Register" />
-        <LoadFailed error={new DataError("not-found", sessionRef === "next" ? "No sessions are coming up." : "This session doesn't exist. It may be from before the programme changed its days.")} onRetry={() => void detail.refetch()} what="the register" />
-      </Screen>
-    );
-  }
-  if (!detail.data || !people.data || !attendance.data || !session) {
-    return (
-      <Screen>
-        <PageHeader back={back} title="Register" />
-        <ListSkeleton label="Loading the register" rows={8} />
-      </Screen>
-    );
-  }
+  const failed = detail.error ?? people.error ?? attendance.error ?? (detail.data && !session ? new DataError("not-found", sessionRef === "next" ? "No sessions are coming up." : "This session doesn't exist. It may be from before the programme changed its days.") : null);
+  const programme = detail.data?.programme;
+  const base = `/desk/programmes/${programmeId}`;
+  const live = (detail.data?.sessions ?? []).filter((s) => s.status === "scheduled" || s.id === session?.id);
+  const at = live.findIndex((s) => s.id === session?.id);
+  const prev = at > 0 ? live[at - 1] : undefined;
+  const next = at >= 0 ? live[at + 1] : undefined;
+  const cancelled = session?.status === "cancelled";
 
+  // One tree whatever the state, so the heading isn't replaced (and focus kept) when the register arrives.
   return (
-    <EnrolmentActionsProvider customers={people.data.customers} enrolments={people.data.enrolments} programmes={people.data.programmes} today={today}>
-      <Register
-        expected={attendance.data.expected}
-        programme={detail.data.programme}
-        saved={attendance.data.attendance}
-        session={session}
-        sessions={detail.data.sessions}
-        today={today}
-      />
+    <EnrolmentActionsProvider customers={people.data?.customers ?? NONE} enrolments={people.data?.enrolments ?? NONE} programmes={people.data?.programmes ?? NONE} today={today}>
+      <Screen>
+        <PageHeader
+          actions={
+            session && (
+              <div className="flex items-center gap-1">
+                <Button aria-label={prev ? `Previous session, ${dayOf(prev.date)}` : "No earlier session"} disabled={!prev} render={prev ? <Anchor href={hrefFor(`${base}/sessions/${prev.id}`)} /> : undefined} size="sm" variant="outline">
+                  <ChevronLeftIcon aria-hidden="true" />
+                  <span className="max-sm:sr-only">{prev ? dayOf(prev.date) : "Previous"}</span>
+                </Button>
+                <Button aria-label={next ? `Next session, ${dayOf(next.date)}` : "No later session"} disabled={!next} render={next ? <Anchor href={hrefFor(`${base}/sessions/${next.id}`)} /> : undefined} size="sm" variant="outline">
+                  <span className="max-sm:sr-only">{next ? dayOf(next.date) : "Next"}</span>
+                  <ChevronRightIcon aria-hidden="true" />
+                </Button>
+              </div>
+            )
+          }
+          back={{ href: hrefFor(base), label: programme?.name ?? "Programme" }}
+          description={session ? `${longDayOf(session.date)} · ${timeRangeOf({ date: session.date, startMinute: session.startMinute, durationMinutes: session.endMinute - session.startMinute })}` : undefined}
+          meta={
+            <>
+              {session?.date === today && <Badge variant="info">Today</Badge>}
+              {cancelled && <Badge variant="error">Cancelled</Badge>}
+            </>
+          }
+          title="Register"
+        />
+        {failed ? (
+          <LoadFailed error={failed} onRetry={() => void Promise.all([detail.refetch(), people.refetch(), sessionId ? attendance.refetch() : null])} what="the register" />
+        ) : !programme || !people.data || !attendance.data || !session ? (
+          <ListSkeleton label="Loading the register" rows={8} />
+        ) : (
+          <Register expected={attendance.data.expected} key={session.id} programme={programme} saved={attendance.data.attendance} session={session} today={today} />
+        )}
+      </Screen>
     </EnrolmentActionsProvider>
   );
 }
 
+const NONE: never[] = [];
+
 function Register({
   programme,
   session,
-  sessions,
   expected,
   saved,
   today,
 }: {
   programme: Programme;
   session: ProgrammeSession;
-  sessions: readonly ProgrammeSession[];
   expected: readonly Enrolment[];
   saved: { marks: Marks; savedAt: number | null; savedBy: string | null };
   today: PlainDate;
@@ -153,11 +162,6 @@ function Register({
   const dirty = changed > 0;
   const cancelled = session.status === "cancelled";
   const future = compareDates(session.date, today) > 0;
-  const base = `/desk/programmes/${programme.id}`;
-  const live = sessions.filter((s) => s.status === "scheduled" || s.id === session.id);
-  const at = live.findIndex((s) => s.id === session.id);
-  const prev = at > 0 ? live[at - 1] : undefined;
-  const next = at >= 0 ? live[at + 1] : undefined;
   const guard = useLeaveGuard(dirty, { onLeave: () => writeDraft(storeKey, null) });
   const draftJson = JSON.stringify(marked);
   React.useEffect(() => {
@@ -188,31 +192,7 @@ function Register({
     : "Not taken yet";
 
   return (
-    <Screen>
-      <PageHeader
-        actions={
-          <div className="flex items-center gap-1">
-            <Button aria-label={prev ? `Previous session, ${dayOf(prev.date)}` : "No earlier session"} disabled={!prev} render={prev ? <Anchor href={hrefFor(`${base}/sessions/${prev.id}`)} /> : undefined} size="sm" variant="outline">
-              <ChevronLeftIcon aria-hidden="true" />
-              <span className="max-sm:sr-only">{prev ? dayOf(prev.date) : "Previous"}</span>
-            </Button>
-            <Button aria-label={next ? `Next session, ${dayOf(next.date)}` : "No later session"} disabled={!next} render={next ? <Anchor href={hrefFor(`${base}/sessions/${next.id}`)} /> : undefined} size="sm" variant="outline">
-              <span className="max-sm:sr-only">{next ? dayOf(next.date) : "Next"}</span>
-              <ChevronRightIcon aria-hidden="true" />
-            </Button>
-          </div>
-        }
-        back={{ href: hrefFor(base), label: programme.name }}
-        description={`${longDayOf(session.date)} · ${timeRangeOf({ date: session.date, startMinute: session.startMinute, durationMinutes: session.endMinute - session.startMinute })}`}
-        meta={
-          <>
-            {session.date === today && <Badge variant="info">Today</Badge>}
-            {cancelled && <Badge variant="error">Cancelled</Badge>}
-          </>
-        }
-        title="Register"
-      />
-
+    <>
       {cancelled && (
         <Alert variant="warning">
           <AlertDescription>This session was cancelled, so nobody is marked. Restore it from the programme's Sessions tab to take a register.</AlertDescription>
@@ -307,7 +287,7 @@ function Register({
         leaveLabel="Discard marks"
         title="Leave without saving the register?"
       />
-    </Screen>
+    </>
   );
 }
 

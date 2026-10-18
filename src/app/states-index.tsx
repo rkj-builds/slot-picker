@@ -8,7 +8,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 
-const GROUPS: StateGroup[] = ["Booking", "Payment", "After booking", "Desk", "System"];
+/** Every group that has states, in the order they are listed, with System last. */
+const GROUPS: StateGroup[] = [...new Set(DEMO_STATES.map((s) => s.group))].sort((a, b) => Number(a === "System") - Number(b === "System"));
 
 /** Every state, grouped, each a button that goes straight there. */
 export function StatesIndex({ compact = false, onJump }: { compact?: boolean; onJump?: () => void }): React.ReactElement {

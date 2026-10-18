@@ -52,7 +52,7 @@ type Paid = { method: PayMethod; amountPaise: number } | null;
 function PlanCards({ plans, value, onChange, label }: { plans: readonly MembershipPlan[]; value: string; onChange: (id: string) => void; label: string }): React.ReactElement {
   const id = React.useId();
   return (
-    <Field name="planId" render={(props) => <div {...props} />}>
+    <div className="flex flex-col gap-2">
       <span className="font-medium text-sm" id={id}>
         {label}
       </span>
@@ -64,8 +64,11 @@ function PlanCards({ plans, value, onChange, label }: { plans: readonly Membersh
           </RadioCard>
         ))}
       </RadioGroup>
-      <FieldError />
-    </Field>
+      {/* The radios are named by their cards, so the plan error sits in its own Field rather than wrapping them. */}
+      <Field name="planId">
+        <FieldError />
+      </Field>
+    </div>
   );
 }
 
