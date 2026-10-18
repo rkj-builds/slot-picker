@@ -156,12 +156,11 @@ function Loaded({ detail, viewer, now }: { detail: BookingDetail; viewer: Viewer
         </p>
       )}
 
+      {/* Details, payment, activity: in that order on a phone; payment beside the other two on a laptop. */}
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_22rem]">
-        <div className="flex min-w-0 flex-col gap-5">
-          <DetailsCard detail={detail} />
-          <ActivityCard activity={activity} />
-        </div>
+        <DetailsCard detail={detail} />
         {booking.kind === "booking" && <PaymentCard booking={booking} creditPaise={customer?.creditPaise ?? 0} />}
+        <ActivityCard activity={activity} />
       </div>
 
       <RecordPaymentDialog onClose={() => setDialog(null)} target={dialog === "pay" ? target : null} />
@@ -184,7 +183,7 @@ function DetailsCard({ detail }: { detail: BookingDetail }): React.ReactElement 
   const { booking: b, customer } = detail;
   const isBooking = b.kind === "booking";
   return (
-    <Card>
+    <Card className="min-w-0 lg:col-start-1">
       <CardHeader>
         <h2>
           <CardTitle render={<span className="block" />}>Details</CardTitle>
@@ -239,7 +238,7 @@ function PaymentCard({ booking, creditPaise }: { booking: Booking; creditPaise: 
   const paid = Math.max(0, paidPaise(booking));
   const due = duePaise(booking);
   return (
-    <Card>
+    <Card className="lg:col-start-2 lg:row-span-2 lg:row-start-1">
       <CardHeader>
         <h2>
           <CardTitle render={<span className="block" />}>Payment</CardTitle>
@@ -287,7 +286,7 @@ function PaymentCard({ booking, creditPaise }: { booking: Booking; creditPaise: 
 
 function ActivityCard({ activity }: { activity: readonly ActivityEntry[] }): React.ReactElement {
   return (
-    <Card>
+    <Card className="min-w-0 lg:col-start-1">
       <CardHeader>
         <h2>
           <CardTitle render={<span className="block" />}>Activity</CardTitle>

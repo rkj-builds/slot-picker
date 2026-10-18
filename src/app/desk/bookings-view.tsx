@@ -209,7 +209,7 @@ export function BookingsView({ view, route, today, now }: { view: BookingsViewId
 /** The status views as links (coss particle p-navigation-1): each a URL, so Back and shared links work. Filters carry across. */
 function ViewTabs({ view, filters }: { view: BookingsViewId; filters: BookingFilters }): React.ReactElement {
   return (
-    <nav aria-label="Booking views" className="max-w-full overflow-x-auto">
+    <nav aria-label="Booking views" className="max-w-full overflow-x-auto [scrollbar-width:none]">
       <ul className={segmentedControlRootClassName}>
         {BOOKINGS_VIEWS.map((v) => (
           <li key={v.id}>

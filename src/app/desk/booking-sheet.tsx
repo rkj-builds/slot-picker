@@ -108,7 +108,7 @@ function PanelBody({ booking, parts: P, onClose }: { booking: Booking; parts: Pa
           </Badge>
           {ds === "held" && <span className="text-muted-foreground text-xs tabular-nums">{formatCountdown(holdRemainingMs(booking, now))} left</span>}
           {/* The booking's own page: its activity, editing and every action, at a URL that can be shared. */}
-          <Button className="ms-auto" onClick={onClose} render={<Anchor href={hrefFor(`/desk/bookings/${encodeURIComponent(booking.id)}`)} />} size="xs" variant="ghost">
+          <Button className="ms-auto me-7" onClick={onClose} render={<Anchor href={hrefFor(`/desk/bookings/${encodeURIComponent(booking.id)}`)} />} size="xs" variant="ghost">
             <SquareArrowOutUpRightIcon aria-hidden="true" />
             Open full page
           </Button>
