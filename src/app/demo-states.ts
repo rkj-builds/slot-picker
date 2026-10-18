@@ -7,7 +7,7 @@
 import type { DemoScenarios } from "@/app/store";
 import type { VenueSettings } from "@/lib/venue";
 
-export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "System";
+export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "Programmes" | "Money" | "Inbox and team" | "System";
 
 export type StateSetup =
   /** A draft with a day and a time chosen, so the details step opens. */
@@ -19,7 +19,9 @@ export type StateSetup =
   | "cancel-credit"
   | "cancel-refund"
   /** The next load fails, then a retry works. */
-  | "fail-load";
+  | "fail-load"
+  /** The next data request (any screen's read or save) fails, then a retry works. */
+  | "fail-request";
 
 export interface DemoState {
   id: string;
@@ -41,6 +43,8 @@ export interface DemoState {
   opensSubmitted?: boolean;
   /** Settings open with these edits made but not saved. */
   unsavedSettings?: Partial<VenueSettings>;
+  /** Sign the demo in as this team member first (see TEAM_IDS in src/data/mock/seed.ts), to show a role's view. Otherwise the owner. */
+  signInAs?: string;
 }
 
 export const DEMO_STATES: readonly DemoState[] = [

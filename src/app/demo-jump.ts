@@ -5,7 +5,9 @@ import { EMPTY_DRAFT, writeDraft } from "@/app/book/flow";
 import { useClock } from "@/app/clock";
 import type { DemoState } from "@/app/demo-states";
 import { navigate } from "@/app/router";
+import { useDemoSession } from "@/app/mock-data";
 import { type DemoScenarios, useStore } from "@/app/store";
+import { TEAM_IDS } from "@/data/mock/seed";
 import { firstFreeCourt, makeId } from "@/lib/booking";
 import { bookingsWithBlocks } from "@/lib/recurring-blocks";
 import type { Alternative } from "@/lib/checkout";
@@ -83,12 +85,14 @@ function nextSaturday(from: PlainDate): PlainDate {
  */
 export function useJumpToState(): (state: DemoState) => Promise<void> {
   const store = useStore();
+  const session = useDemoSession();
   const { now } = useClock();
   const { clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, state } = store;
   return React.useCallback(
     async (target: DemoState) => {
       clearScenarios();
       clearHandoffs();
+      if (session.memberId !== (target.signInAs ?? TEAM_IDS.owner)) session.setMemberId(target.signInAs ?? TEAM_IDS.owner);
       pendingSubmitted = target.opensSubmitted ?? false;
       pendingSettings = target.unsavedSettings ?? null;
       for (const [key, value] of Object.entries(target.presets ?? {})) setScenario(key as keyof DemoScenarios, value);
@@ -131,8 +135,9 @@ export function useJumpToState(): (state: DemoState) => Promise<void> {
       window.dispatchEvent(new Event(JUMP_EVENT));
       navigate(hash.slice(1).split("?")[0] ?? "/", Object.fromEntries(new URLSearchParams(hash.split("?")[1] ?? "")));
       if (target.setup === "fail-load") failNextLoad();
+      if (target.setup === "fail-request") session.failNextRequest();
     },
-    [clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, now, state],
+    [clearScenarios, setScenario, holdSlot, pay, commit, failNextLoad, now, state, session],
   );
 }
 
