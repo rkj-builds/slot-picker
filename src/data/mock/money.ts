@@ -48,7 +48,10 @@ export function mockMoney(ctx: MockContext): MoneyApi {
     async payments({ from, to }) {
       await ctx.trip();
       ctx.requireFeature("payments");
+      // A line timestamped after now (the seed's prepayments for later bookings) hasn't happened yet.
+      const now = ctx.now();
       const payments = allPayments().filter((p) => {
+        if (p.at > now) return false;
         const day = todayIn(VENUE.timeZone, p.at);
         return compareDates(day, from) >= 0 && compareDates(day, to) <= 0;
       });

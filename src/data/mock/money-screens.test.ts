@@ -44,6 +44,11 @@ describe("mock backend: what the money screens need", () => {
     expect(todayIn("Asia/Kolkata", oldest) >= addDays(TODAY, -2)).toBe(true);
   });
 
+  it("never lists money from the future", async () => {
+    const { payments } = await setup().money.payments({ from: TODAY, to: addDays(TODAY, 30) });
+    expect(payments.every((p) => p.at <= TEST_NOW)).toBe(true);
+  });
+
   it("approves for a manager and refuses the front desk, naming who can", async () => {
     const client = setup(TEAM_IDS.desk);
     const { payments } = await client.money.payments({ from: addDays(TODAY, -6), to: TODAY });

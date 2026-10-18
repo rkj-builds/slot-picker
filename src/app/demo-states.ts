@@ -5,6 +5,7 @@
  * index on #/primitives both read this list.
  */
 import type { DemoScenarios } from "@/app/store";
+import { TEAM_IDS } from "@/data/mock/seed";
 import type { VenueSettings } from "@/lib/venue";
 
 export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "Programmes" | "Money" | "Inbox and team" | "System";
@@ -81,6 +82,13 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "insights-empty", group: "Desk", label: "Insights with no data", shows: "Insights before any day has finished.", presets: { emptyVenue: true }, hash: "#/desk/insights" },
   { id: "settings", group: "Desk", label: "Settings", shows: "The rules: change one to see the unsaved bar, save, undo.", hash: "#/desk/settings" },
   { id: "settings-unsaved", group: "Desk", label: "Settings with unsaved changes", shows: "The deposit changed from 50% to 30% and not saved yet: the save bar offers Save and Discard.", unsavedSettings: { depositPercent: 30 }, hash: "#/desk/settings" },
+
+  // Money (payments, dues, credits): src/app/screens/money.
+  { id: "money-waiting", group: "Money", label: "Cash waiting for approval", shows: "Payments filtered to the desk's cash that a manager hasn't approved yet; tick lines to approve them in bulk.", hash: "#/desk/money?approval=waiting" },
+  { id: "money-dues-mixed", group: "Money", label: "One customer owing in two places", shows: "Dues with a customer opened who owes for court bookings and a programme; take payment for either.", hash: "#/desk/money/dues?open=mixed" },
+  { id: "money-credit-payout", group: "Money", label: "Paying out more credit than they hold", shows: "The Adjust credit dialog set to pay out ₹50,000: the amount field says how much they really have.", hash: "#/desk/money/credits?adjust=largest&payout=50000" },
+  { id: "money-staff", group: "Money", label: "Front desk: can't approve", shows: "Signed in as the front desk: payments and dues work, but approving and moving credit say who can.", signInAs: TEAM_IDS.desk, hash: "#/desk/money?approval=waiting" },
+  { id: "money-fails", group: "Money", label: "Payments fail to load", shows: "The next request fails: the list offers Try again, which works.", setup: "fail-request", hash: "#/desk/money" },
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },

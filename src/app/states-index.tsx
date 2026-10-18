@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 
-const GROUPS: StateGroup[] = ["Booking", "Payment", "After booking", "Desk", "System"];
+/** Every group in this order, once it has a state, so a new area's states show up without an edit here. */
+const ORDER: StateGroup[] = ["Booking", "Payment", "After booking", "Desk", "Programmes", "Money", "Inbox and team", "System"];
+const GROUPS: StateGroup[] = ORDER.filter((group) => DEMO_STATES.some((s) => s.group === group));
 
 /** Every state, grouped, each a button that goes straight there. */
 export function StatesIndex({ compact = false, onJump }: { compact?: boolean; onJump?: () => void }): React.ReactElement {
