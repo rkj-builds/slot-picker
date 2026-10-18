@@ -6,6 +6,9 @@ import { act, render, type RenderResult, screen } from "@testing-library/react";
 import type { UserEvent } from "@testing-library/user-event";
 import { Routes } from "@/app/app";
 import { ClockProvider } from "@/app/clock";
+import { MockDataProvider } from "@/app/mock-data";
+import type { Tables } from "@/data/mock/db";
+import { makeQueryClient } from "@/data/provider";
 import { type DemoScenarios, StoreProvider } from "@/app/store";
 import { ToastProvider } from "@/components/ui/toast";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -18,18 +21,20 @@ export const TEST_NOW = instantAt("2026-10-15", 10 * 60, "Asia/Kolkata");
 
 export function renderApp(
   hash: string,
-  { state, scenarios, now = TEST_NOW }: { state?: AppState; scenarios?: Partial<DemoScenarios>; now?: number } = {},
+  { state, scenarios, now = TEST_NOW, tables, memberId }: { state?: AppState; scenarios?: Partial<DemoScenarios>; now?: number; tables?: Tables; memberId?: string } = {},
 ): RenderResult & { state: AppState } {
   window.location.hash = hash;
   const initial = state ?? seedState(now);
   const result = render(
     <ClockProvider start={now}>
       <StoreProvider initialScenarios={scenarios} initialState={initial} latency={[0, 0]} persist={false}>
-        <TooltipProvider delay={0}>
-          <ToastProvider>
-            <Routes />
-          </ToastProvider>
-        </TooltipProvider>
+        <MockDataProvider initialMemberId={memberId} initialTables={tables} latency={[0, 0]} persist={false} queryClient={makeQueryClient({ test: true })}>
+          <TooltipProvider delay={0}>
+            <ToastProvider>
+              <Routes />
+            </ToastProvider>
+          </TooltipProvider>
+        </MockDataProvider>
       </StoreProvider>
     </ClockProvider>,
   );

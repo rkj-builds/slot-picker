@@ -6,6 +6,7 @@ import { bookingTitle } from "@/app/desk/booking-visuals";
 import { useDeskUi } from "@/app/desk/desk-ui";
 import { dayOf, longDayOf, timeRangeOf } from "@/app/format";
 import { navigate } from "@/app/router";
+import { SECTIONS } from "@/app/desk/sections";
 import { useStore } from "@/app/store";
 import { useAutocompleteFilter } from "@/components/ui/autocomplete";
 import {
@@ -102,6 +103,7 @@ export function DeskCommandPalette({
         items: [
           { value: "go:day", label: "Day", hint: "Courts by half hour", run: go("/desk", { date: date === today ? null : date }) },
           { value: "go:bookings", label: "Bookings", hint: "Search, filter, export", run: go("/desk/bookings") },
+          ...SECTIONS.filter((x) => x.screen).map((x) => ({ value: `go:${x.id}`, label: x.label, hint: x.line, keywords: x.keywords, run: go(x.path) })),
           { value: "go:insights", label: "Insights", hint: "Cancellations by payment", run: go("/desk/insights") },
           { value: "go:settings", label: "Settings", hint: "Deposits, hours, prices", keywords: ["deposit", "hours", "pay-first"], run: go("/desk/settings") },
           { value: "go:book", label: "Booking page", hint: "What customers see", run: go("/book") },

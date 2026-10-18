@@ -5,7 +5,10 @@ import * as React from "react";
 import { clearHandoffs, useJumpToState } from "@/app/demo-jump";
 import { DEMO_STATES, PRESET_GROUPS } from "@/app/demo-states";
 import { StatesIndex } from "@/app/states-index";
+import { useDemoSession } from "@/app/mock-data";
 import { useStore } from "@/app/store";
+import { ROLE_LABELS } from "@/data/mock/db";
+import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -26,6 +29,7 @@ import { toastManager } from "@/components/ui/toast";
  */
 export function DemoControl(): React.ReactElement {
   const { scenarios, setScenario, clearScenarios, failNextLoad, reset } = useStore();
+  const session = useDemoSession();
   const [open, setOpen] = React.useState(false);
   useStateFromUrl();
   const active = Object.values(scenarios).filter(Boolean).length;
@@ -52,6 +56,30 @@ export function DemoControl(): React.ReactElement {
             <Badge variant="warning">Demo control</Badge>
           </div>
           <PopoverDescription>Force a state to see how the product handles it. Off by default; never saved.</PopoverDescription>
+          <div className="mt-2 flex items-center justify-between gap-3">
+            <Label htmlFor="demo-signed-in-as">Signed in as</Label>
+            <Select
+              items={session.people.map((p) => ({ label: `${p.name} · ${ROLE_LABELS[p.role]}`, value: p.id }))}
+              onValueChange={(id) => {
+                if (!id) return;
+                session.setMemberId(id);
+                const person = session.people.find((p) => p.id === id);
+                if (person) toastManager.add({ title: `Signed in as ${person.name}`, description: `${ROLE_LABELS[person.role]}: the sidebar and actions now follow that role.`, type: "info" });
+              }}
+              value={session.memberId}
+            >
+              <SelectTrigger className="w-auto min-w-0 max-w-52" id="demo-signed-in-as" size="sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectPopup>
+                {session.people.map((p) => (
+                  <SelectItem key={p.id} value={p.id}>
+                    {p.name} · {ROLE_LABELS[p.role]}
+                  </SelectItem>
+                ))}
+              </SelectPopup>
+            </Select>
+          </div>
         </div>
         <Tabs className="mt-3 flex min-h-0 flex-1 flex-col gap-0" defaultValue="presets">
           <TabsList className="mx-4 shrink-0">
@@ -85,17 +113,28 @@ export function DemoControl(): React.ReactElement {
                     </ul>
                   </section>
                 ))}
-                <Button
-                  className="self-start"
-                  onClick={() => {
-                    setOpen(false);
-                    failNextLoad();
-                  }}
-                  size="sm"
-                  variant="outline"
-                >
-                  Fail the next load
-                </Button>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    onClick={() => {
+                      setOpen(false);
+                      failNextLoad();
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Fail the next load
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      session.failNextRequest();
+                      toastManager.add({ title: "The next request will fail", description: "Load or save anything to see how the screen handles it.", type: "info" });
+                    }}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Fail the next request
+                  </Button>
+                </div>
               </div>
             </ScrollArea>
           </TabsPanel>

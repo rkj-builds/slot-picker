@@ -7,6 +7,7 @@ import { useToastClearance } from "@/app/anchored-bar";
 import { DemoBar, useFocusHeadingOnNavigate } from "@/app/app-shell";
 import { ClockProvider, pinnedNowFromUrl } from "@/app/clock";
 import { HomePage } from "@/app/home-page";
+import { MockDataProvider } from "@/app/mock-data";
 import { useRoute } from "@/app/router";
 import { StoreProvider } from "@/app/store";
 import { Button } from "@/components/ui/button";
@@ -27,12 +28,14 @@ export function App(): React.ReactElement {
   return (
     <ClockProvider start={start}>
       <StoreProvider failFirstLoad={failFirstLoad}>
+        <MockDataProvider>
         <TooltipProvider delay={300}>
           {/* Toasts are for passing outcomes only (saved, paid, undo), so they leave on their own after four seconds. */}
           <ToastProvider timeout={4000}>
             <Routes />
           </ToastProvider>
         </TooltipProvider>
+        </MockDataProvider>
       </StoreProvider>
     </ClockProvider>
   );

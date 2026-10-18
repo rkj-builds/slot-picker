@@ -39,6 +39,14 @@ export type Action =
   /** A booking made at the desk, confirmed straight away. */
   | { type: "create"; booking: Booking; customer?: Customer }
   | { type: "record-cash"; bookingId: string; amountPaise: Paise; at: number; entryId: string }
+  /** Money taken online by the desk (a UPI transfer to the venue), or a note on any ledger line. */
+  | { type: "record-online"; bookingId: string; amountPaise: Paise; at: number; entryId: string; note: string }
+  /** Change a booking's court, time, length, price or notes (the dashboard's edit and move). */
+  | { type: "update-booking"; bookingId: string; patch: Partial<Pick<Booking, "courtId" | "date" | "startMinute" | "durationMinutes" | "notes" | "pricePaise">> }
+  /** A new customer with no booking yet (a parent enrolling a child, a member signing up). */
+  | { type: "add-customer"; customer: Customer }
+  /** Add (positive) or take away (negative) customer credit by hand. */
+  | { type: "adjust-credit"; customerId: string; amountPaise: Paise }
   | { type: "mark-no-show"; bookingId: string }
   | { type: "cancel"; bookingId: string; resolution: CancelResolution; at: number; entryId: string }
   /** Undo of a desk "create": the booking never happened. */
@@ -95,6 +103,25 @@ export function reducer(state: AppState, action: Action): AppState {
         ...b,
         ledger: [...b.ledger, { id: action.entryId, at: action.at, kind: "cash", amountPaise: action.amountPaise, note: "Cash at the desk" }],
       }));
+
+    case "record-online":
+      if (action.amountPaise <= 0) return state;
+      return updateBooking(state, action.bookingId, (b) => ({
+        ...b,
+        ledger: [...b.ledger, { id: action.entryId, at: action.at, kind: "online", amountPaise: action.amountPaise, note: action.note }],
+      }));
+
+    case "update-booking":
+      return updateBooking(state, action.bookingId, (b) => ({ ...b, ...action.patch }));
+
+    case "add-customer":
+      return { ...state, customers: upsertCustomer(state.customers, action.customer) };
+
+    case "adjust-credit":
+      return {
+        ...state,
+        customers: state.customers.map((c) => (c.id === action.customerId ? { ...c, creditPaise: Math.max(0, c.creditPaise + action.amountPaise) } : c)),
+      };
 
     case "mark-no-show":
       return updateBooking(state, action.bookingId, (b) => (b.kind === "booking" && b.status === "confirmed" ? { ...b, status: "no-show" } : b));

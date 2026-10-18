@@ -62,6 +62,10 @@ interface StoreValue {
   pay: (bookingId: string, mode: PayMode, method: "upi" | "card") => Promise<PayResult>;
   /** Run a desk action after the simulated round trip. */
   commit: (action: Action) => Promise<void>;
+  /** Run an action now, with no round trip (the mock backend has already waited). */
+  apply: (action: Action) => void;
+  /** The latest state with the demo overlay, read at call time (for the mock backend). */
+  current: () => AppState;
   retryLoad: () => void;
   /** Demo: make the next load fail, to show the error state and its retry. */
   failNextLoad: () => void;
@@ -215,6 +219,12 @@ export function StoreProvider({
     [wait],
   );
 
+  const apply = React.useCallback((action: Action): void => {
+    stateRef.current = reducer(stateRef.current, action);
+    dispatch(action);
+  }, []);
+  const current = React.useCallback((): AppState => view(stateRef.current), [view]);
+
   const [resets, setResets] = React.useState(0);
   const reset = React.useCallback(() => {
     setResets((n) => n + 1);
@@ -259,8 +269,8 @@ export function StoreProvider({
   );
 
   const value = React.useMemo<StoreValue>(
-    () => ({ state: shown, status, dispatch, holdSlot, pay, commit, retryLoad: load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios }),
-    [shown, status, holdSlot, pay, commit, load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios],
+    () => ({ state: shown, status, dispatch, holdSlot, pay, commit, apply, current, retryLoad: load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios }),
+    [shown, status, holdSlot, pay, commit, apply, current, load, failNextLoad, reset, resets, scenarios, setScenario, clearScenarios],
   );
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

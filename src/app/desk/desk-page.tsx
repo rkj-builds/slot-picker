@@ -10,7 +10,10 @@ import { BookingsView } from "@/app/desk/bookings-view";
 import { DeskCommandPalette } from "@/app/desk/command-palette";
 import { DayView } from "@/app/desk/day-view";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
-import { type DeskSection, DeskSidebar } from "@/app/desk/desk-sidebar";
+import { DeskSidebar } from "@/app/desk/desk-sidebar";
+import { type DeskSection, sectionById, sectionOf } from "@/app/desk/sections";
+import { ListSkeleton, NoAccess } from "@/app/screens/screen-kit";
+import { useRead } from "@/data/provider";
 import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill, type RepeatRef } from "@/app/desk/desk-ui";
 import { BlockCourtsDialog, RepeatBlockDialog } from "@/app/desk/repeat-dialogs";
 import { InsightsView } from "@/app/desk/insights-view";
@@ -27,13 +30,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { isPlainDate, type PlainDate, todayIn } from "@/lib/plain-date";
 import { VENUE } from "@/lib/venue";
 
-const TITLES: Record<DeskSection, { title: string; line: string }> = {
-  day: { title: "Day", line: `${VENUE.name} · two courts, by the half hour` },
-  bookings: { title: "Bookings", line: "Every booking, its status and what is still due" },
-  insights: { title: "Insights", line: "What happened once courts needed money up front" },
-  settings: { title: "Settings", line: "The rules online booking follows" },
-};
-
 /** The sidebar sits under the demo bar (h-12 plus its 1px border), not over it. */
 const BELOW_DEMO_BAR: React.CSSProperties = { top: "calc(3rem + 1px)", height: "calc(100svh - 3rem - 1px)" };
 
@@ -48,8 +44,9 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
   const store = useStore();
   const now = useNow(1000);
   const today = todayIn(VENUE.timeZone, now);
-  const sub = route.segments[1];
-  const section: DeskSection = sub === "bookings" || sub === "insights" || sub === "settings" ? sub : "day";
+  const section: DeskSection = sectionOf(route);
+  const def = sectionById(section);
+  const viewer = useRead(["viewer"], (c) => c.team.viewer());
   const dateParam = route.query.get("date") ?? "";
   const date: PlainDate = isPlainDate(dateParam) ? dateParam : today;
 
@@ -92,12 +89,19 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       closeCash: () => setCashId(null),
       closeCancel: () => setCancelId(null),
     }),
-    [cashId, cancelId],
+    [cashId, cancelId, setSheetId, setCashId, setCancelId, setPrefill, setRepeatRef, setBlockDate],
   );
 
   const query = route.query.get("q") ?? "";
+  const Screen = def.screen;
   const body =
-    store.status === "loading" ? (
+    viewer.data && def.feature && !viewer.data.features.includes(def.feature) ? (
+      <NoAccess area={def.label} viewer={viewer.data} />
+    ) : Screen ? (
+      <React.Suspense fallback={<ListSkeleton label={`Loading ${def.label.toLowerCase()}`} />}>
+        <Screen now={now} route={route} sub={route.segments.slice(2)} today={today} />
+      </React.Suspense>
+    ) : store.status === "loading" ? (
       <DeskSkeleton />
     ) : store.status === "error" ? (
       <LoadError onRetry={store.retryLoad} />
@@ -111,12 +115,13 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
     ) : (
       <InsightsView today={today} />
     );
-  const { title, line } = TITLES[section];
+  const title = def.label;
+  const line = section === "day" ? `${VENUE.name} · two courts, by the half hour` : def.line;
 
   return (
     <DeskUiContext.Provider value={ui}>
       <SidebarProvider className="min-h-0 flex-1">
-        <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} />
+        <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} viewer={viewer.data ?? null} />
         <SidebarInset className="min-w-0">
           {/*
             The desk's toolbar, anchored under the demo bar: where you are and the search on the first row,
@@ -134,7 +139,7 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
                     </BreadcrumbItem>
                     <BreadcrumbSeparator />
                     <BreadcrumbItem>
-                      <BreadcrumbPage>{title}</BreadcrumbPage>
+                      {route.segments.length > 2 ? <BreadcrumbLink href={hrefFor(def.path)}>{title}</BreadcrumbLink> : <BreadcrumbPage>{title}</BreadcrumbPage>}
                     </BreadcrumbItem>
                   </BreadcrumbList>
                 </Breadcrumb>
@@ -151,10 +156,12 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
             </div>
           </header>
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pt-5 pb-6 sm:pt-6">
-            <div className="flex flex-col">
-              <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
-              <p className="text-muted-foreground text-sm">{line}</p>
-            </div>
+            {!Screen && (
+              <div className="flex flex-col">
+                <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
+                <p className="text-muted-foreground text-sm">{line}</p>
+              </div>
+            )}
             <DeskSlotsContext.Provider value={slots}>{body}</DeskSlotsContext.Provider>
           </div>
           <div className="sticky bottom-0 z-20 empty:hidden" data-desk-footer-slot="" ref={setFooterSlot} />

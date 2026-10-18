@@ -1,10 +1,12 @@
 "use client";
 
 import { Anchor } from "@/app/anchor";
-import { BookOpenIcon, CalendarDaysIcon, ChartColumnIcon, ChevronsUpDownIcon, ListIcon, SearchIcon, SettingsIcon } from "lucide-react";
+import { BookOpenIcon, ChevronsUpDownIcon, SearchIcon, SettingsIcon } from "lucide-react";
 import type * as React from "react";
 import { LogoMark } from "@/app/app-shell";
+import { type DeskSection, SECTION_GROUPS, SECTIONS } from "@/app/desk/sections";
 import { hrefFor } from "@/app/router";
+import type { Viewer } from "@/data/types";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Menu, MenuGroup, MenuGroupLabel, MenuLinkItem, MenuPopup, MenuRadioGroup, MenuRadioItem, MenuSeparator, MenuTrigger } from "@/components/ui/menu";
 import {
@@ -22,13 +24,6 @@ import {
 } from "@/components/ui/sidebar";
 import { VENUE } from "@/lib/venue";
 
-export type DeskSection = "day" | "bookings" | "insights" | "settings";
-
-const DESK_LINKS: { section: DeskSection; label: string; path: string; icon: React.ComponentType<{ "aria-hidden"?: boolean | "true" }> }[] = [
-  { section: "day", label: "Day", path: "/desk", icon: CalendarDaysIcon },
-  { section: "bookings", label: "Bookings", path: "/desk/bookings", icon: ListIcon },
-  { section: "insights", label: "Insights", path: "/desk/insights", icon: ChartColumnIcon },
-];
 
 /**
  * The desk's navigation: coss Sidebar, collapsible to icons on a laptop
@@ -41,8 +36,11 @@ export function DeskSidebar({
   date,
   onSearch,
   style,
+  viewer,
 }: {
   section: DeskSection;
+  /** Who is signed in; areas their role doesn't have are left out. Null while loading: show everything. */
+  viewer: Viewer | null;
   /** The date in the URL, if any, kept when moving between views. */
   date: string | null;
   onSearch: () => void;
@@ -88,50 +86,40 @@ export function DeskSidebar({
       </SidebarHeader>
       <SidebarContent>
         <nav aria-label="Desk">
-        <SidebarGroup>
-          <SidebarGroupLabel>Desk</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {DESK_LINKS.map(({ section: s, label, path, icon: Icon }) => (
-                <SidebarMenuItem key={s}>
-                  <SidebarMenuButton
-                    aria-current={section === s ? "page" : undefined}
-                    isActive={section === s}
-                    render={<Anchor href={link(path)} />}
-                    tooltip={label}
-                  >
-                    <Icon aria-hidden="true" />
-                    <span>{label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup>
-          <SidebarGroupLabel>Venue</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  aria-current={section === "settings" ? "page" : undefined}
-                  isActive={section === "settings"}
-                  render={<Anchor href={hrefFor("/desk/settings")} />}
-                  tooltip="Settings"
-                >
-                  <SettingsIcon aria-hidden="true" />
-                  <span>Settings</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton render={<Anchor href={hrefFor("/book")} />} tooltip="Booking page">
-                  <BookOpenIcon aria-hidden="true" />
-                  <span>Booking page</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+          {SECTION_GROUPS.map((group) => {
+            const links = SECTIONS.filter((s) => s.group === group && (!viewer || !s.feature || viewer.features.includes(s.feature)));
+            if (links.length === 0) return null;
+            return (
+              <SidebarGroup key={group}>
+                <SidebarGroupLabel>{group}</SidebarGroupLabel>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {links.map(({ id, label, path, icon: Icon }) => (
+                      <SidebarMenuItem key={id}>
+                        <SidebarMenuButton
+                          aria-current={section === id ? "page" : undefined}
+                          isActive={section === id}
+                          render={<Anchor href={id === "day" || id === "bookings" ? link(path) : hrefFor(path)} />}
+                          tooltip={label}
+                        >
+                          <Icon aria-hidden="true" />
+                          <span>{label}</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                    {group === "Venue" && (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton render={<Anchor href={hrefFor("/book")} />} tooltip="Booking page">
+                          <BookOpenIcon aria-hidden="true" />
+                          <span>Booking page</span>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    )}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </SidebarGroup>
+            );
+          })}
         </nav>
       </SidebarContent>
       <SidebarFooter>
