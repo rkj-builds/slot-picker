@@ -8,7 +8,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 
-const GROUPS: StateGroup[] = ["Booking", "Payment", "After booking", "Desk", "System"];
+/** Every group in the order the menu shows them; a group with no states yet is left out. */
+const GROUPS: StateGroup[] = (["Booking", "Payment", "After booking", "Desk", "Programmes", "Money", "Inbox and team", "System"] as const).filter((g) =>
+  DEMO_STATES.some((s) => s.group === g),
+);
 
 /** Every state, grouped, each a button that goes straight there. */
 export function StatesIndex({ compact = false, onJump }: { compact?: boolean; onJump?: () => void }): React.ReactElement {

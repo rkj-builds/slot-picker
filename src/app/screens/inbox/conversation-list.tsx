@@ -116,7 +116,7 @@ function ConversationRow({ conversation: c, open, tab, now }: { conversation: Co
         className="flex gap-3 px-3 py-3 outline-none hover:bg-accent/50 focus-visible:bg-accent/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset aria-[current=page]:bg-accent"
         href={inboxHref(tab, c.id)}
       >
-        <Avatar className="size-9 shrink-0">
+        <Avatar aria-hidden="true" className="size-9 shrink-0">
           <AvatarFallback>{initialsOf(c.name)}</AvatarFallback>
         </Avatar>
         <span className="flex min-w-0 flex-1 flex-col gap-1">
