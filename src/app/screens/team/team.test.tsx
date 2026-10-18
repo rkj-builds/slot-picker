@@ -186,6 +186,23 @@ describe("#/desk/team/roles", () => {
     expect(within(matrix).getByRole("checkbox", { name: "Front desk: Payments" })).not.toBeChecked();
   });
 
+  it("on a phone, picks a role and lists its areas", async () => {
+    const restore = asPhone();
+    try {
+      const user = userEvent.setup();
+      renderApp("#/desk/team/roles");
+      const list = await screen.findByRole("list", { name: "Front desk can open" });
+      await user.click(within(list).getByRole("checkbox", { name: /Payments/ }));
+      expect(within(list).getByText("Changed")).toBeInTheDocument();
+      expect(screen.getByText("Unsaved changes")).toBeInTheDocument();
+      await user.click(screen.getByRole("radio", { name: "Coach" }));
+      expect(within(await screen.findByRole("list", { name: "Coach can open" })).getByRole("checkbox", { name: /Programmes/ })).toBeChecked();
+      expect(await axeViolations()).toEqual([]);
+    } finally {
+      restore();
+    }
+  });
+
   it("is read-only for a manager", async () => {
     renderApp("#/desk/team/roles", { memberId: TEAM_IDS.manager });
     const matrix = await table("Roles and access");

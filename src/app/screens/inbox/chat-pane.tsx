@@ -175,7 +175,7 @@ function TriageBar({ conversation: c, now, viewer }: { conversation: Conversatio
 
   return (
     <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-b bg-muted/40 px-3 py-2 sm:px-5" data-slot="triage-bar">
-      <p className="flex min-w-0 flex-1 flex-wrap items-center gap-2 text-sm">
+      <p className="flex min-w-0 grow basis-56 flex-wrap items-center gap-2 text-sm">
         {c.status === "done" ? (
           <Badge variant="success">
             <CheckIcon aria-hidden="true" />

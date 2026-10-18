@@ -27,12 +27,17 @@ export function InboxScreen({ route, sub, now }: ScreenProps): React.ReactElemen
 
   return (
     <Screen className="gap-4">
-      <PageHeader description={section.line} title={section.label} />
+      {phone && openId ? (
+        // A chat on a phone gets the whole screen; the page keeps its heading for screen readers.
+        <h1 className="sr-only">{section.label}</h1>
+      ) : (
+        <PageHeader description={section.line} title={section.label} />
+      )}
       <div
         className={cn(
           "grid min-h-0 overflow-hidden rounded-2xl border bg-card shadow-xs/5",
           // Tall enough to fill the window under the desk's header, so the composer stays in sight.
-          "h-[calc(100svh-14rem)] min-h-[28rem] md:min-h-[32rem]",
+          phone && openId ? "h-[calc(100svh-8.5rem)] min-h-[26rem]" : "h-[calc(100svh-14rem)] min-h-[28rem] md:min-h-[32rem]",
           !phone && "grid-cols-[minmax(17rem,22rem)_minmax(0,1fr)]",
         )}
         data-slot="inbox"

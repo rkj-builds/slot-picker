@@ -109,7 +109,7 @@ export function MessageLog({
           <div aria-label={`Messages with ${conversation.name}`} className="flex flex-col gap-4" role="log">
             {days.map((group) => (
               <section aria-labelledby={`day-${group.day}`} className="flex flex-col gap-2" key={group.day}>
-                <h3 className="sticky top-0 z-10 self-center rounded-full border bg-background/90 px-2.5 py-0.5 font-medium text-muted-foreground text-xs backdrop-blur-sm" id={`day-${group.day}`}>
+                <h3 className="sticky top-0 z-10 self-center rounded-full border bg-background px-2.5 py-0.5 font-medium text-muted-foreground text-xs shadow-xs/5" id={`day-${group.day}`}>
                   {dayHeadingOf(group.day, now)}
                 </h3>
                 <ol className="flex flex-col gap-2">
