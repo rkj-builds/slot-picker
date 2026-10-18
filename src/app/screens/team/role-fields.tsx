@@ -16,7 +16,8 @@ import type { Role } from "@/data/types";
 /** The four roles as cards, each with what it can do in a line (coss p-radio-group-4). */
 export function RolePicker({ value, onChange }: { value: Role; onChange: (role: Role) => void }): React.ReactElement {
   return (
-    <Field name="role" render={(props) => <Fieldset {...props} />}>
+    // A plain Fieldset, not a Field: a Field would claim the radios' ids, and each card's label would lose its radio.
+    <Fieldset>
       <FieldsetLegend className="mb-2 font-medium text-sm">Role</FieldsetLegend>
       <RadioGroup aria-label="Role" className="grid gap-2 sm:grid-cols-2" onValueChange={(v) => onChange(v as Role)} value={value}>
         {ROLES.map((role) => (
@@ -26,7 +27,7 @@ export function RolePicker({ value, onChange }: { value: Role; onChange: (role: 
           </RadioCard>
         ))}
       </RadioGroup>
-    </Field>
+    </Fieldset>
   );
 }
 
