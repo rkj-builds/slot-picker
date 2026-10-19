@@ -18,7 +18,7 @@ import { InsightsView } from "@/app/desk/insights-view";
 import { NewBookingDialog } from "@/app/desk/new-booking-dialog";
 import { hrefFor, type Route } from "@/app/router";
 import { useStore } from "@/app/store";
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
+import { Anchor } from "@/app/anchor";
 import { Button } from "@/components/ui/button";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
 import { Separator } from "@/components/ui/separator";
@@ -100,7 +100,6 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <InsightsView today={today} />
     );
   const title = def.label;
-  const line = section === "day" ? `${VENUE.name} · two courts, by the half hour` : def.line;
 
   return (
     <DeskUiContext.Provider value={ui}>
@@ -108,26 +107,27 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
         <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} viewer={viewer.data ?? null} />
         <SidebarInset className="min-w-0">
           {/*
-            The desk's toolbar, anchored under the demo bar: where you are and the search on the first row,
-            the view's own controls (date and actions, or the filters) on the second. The page scrolls under it.
+            The desk's toolbar, anchored under the demo bar, one row where it fits: where you are, then the
+            view's own controls (date and actions, or the filters). No breadcrumb and no page title under it:
+            the sidebar already says Desk, and the title sits in the row (as the h1 on the day and insights
+            views, which have no header of their own). Search lives in the sidebar; the button here is for
+            phones, where the sidebar is closed. The page scrolls under the row.
           */}
           <header className="sticky top-[calc(3rem+1px)] z-20 border-b bg-background/94 backdrop-blur-md" data-desk-toolbar="">
-            <div className="mx-auto flex w-full max-w-6xl flex-col gap-2.5 px-4 py-2.5">
-              <div className="flex min-h-9 items-center gap-2">
+            <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
+              <div className="flex min-h-9 items-center gap-2 max-md:w-full">
                 <SidebarTrigger className="-ms-1" />
                 <Separator className="h-4" orientation="vertical" />
-                <Breadcrumb>
-                  <BreadcrumbList>
-                    <BreadcrumbItem>
-                      <BreadcrumbLink href={hrefFor("/desk")}>Desk</BreadcrumbLink>
-                    </BreadcrumbItem>
-                    <BreadcrumbSeparator />
-                    <BreadcrumbItem>
-                      {route.segments.length > 2 ? <BreadcrumbLink href={hrefFor(def.path)}>{title}</BreadcrumbLink> : <BreadcrumbPage>{title}</BreadcrumbPage>}
-                    </BreadcrumbItem>
-                  </BreadcrumbList>
-                </Breadcrumb>
-                <Button className="ms-auto text-muted-foreground" onClick={() => setSearchOpen(true)} variant="outline">
+                {route.segments.length > 2 ? (
+                  <Button className="-ms-2 text-muted-foreground" render={<Anchor href={hrefFor(def.path)} />} size="sm" variant="ghost">
+                    {title}
+                  </Button>
+                ) : Screen ? (
+                  <span className="font-medium text-muted-foreground text-sm">{title}</span>
+                ) : (
+                  <h1 className="font-semibold text-sm outline-none">{title}</h1>
+                )}
+                <Button className="ms-auto text-muted-foreground md:hidden" onClick={() => setSearchOpen(true)} variant="outline">
                   <SearchIcon aria-hidden="true" />
                   <span className="max-sm:sr-only">Search and jump</span>
                   <KbdGroup aria-hidden="true" className="max-sm:hidden">
@@ -136,16 +136,10 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
                   </KbdGroup>
                 </Button>
               </div>
-              <div className="empty:hidden" data-desk-toolbar-slot="" ref={setToolbarSlot} />
+              <div className="flex min-w-0 flex-1 basis-[22rem] empty:hidden" data-desk-toolbar-slot="" ref={setToolbarSlot} />
             </div>
           </header>
-          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-5 px-4 pt-5 pb-6 sm:pt-6">
-            {!Screen && (
-              <div className="flex flex-col">
-                <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
-                <p className="text-muted-foreground text-sm">{line}</p>
-              </div>
-            )}
+          <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pt-4 pb-6">
             <DeskSlotsContext.Provider value={slots}>{body}</DeskSlotsContext.Provider>
           </div>
           <div className="sticky bottom-0 z-20 empty:hidden" data-desk-footer-slot="" ref={setFooterSlot} />
@@ -167,11 +161,7 @@ function DeskSkeleton(): React.ReactElement {
   return (
     <div aria-busy="true" className="flex flex-col gap-4" role="status">
       <span className="sr-only">Loading the desk</span>
-      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-        {[0, 1, 2, 3].map((i) => (
-          <Skeleton className="h-17" key={i} />
-        ))}
-      </div>
+      <Skeleton className="h-5 w-2/3" />
       <Skeleton className="h-[28rem] rounded-2xl" />
     </div>
   );

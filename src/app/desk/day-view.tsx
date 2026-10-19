@@ -15,7 +15,6 @@ import { DayStepper } from "@/components/booking/day-stepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Toggle } from "@/components/ui/toggle";
 import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator } from "@/components/ui/toolbar";
@@ -84,14 +83,16 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
       </div>
       </DeskViewToolbar>
 
-      <dl className="grid grid-cols-2 gap-2 sm:grid-cols-4" data-slot="day-stats">
-        <Stat label="Booked" value={stats.minutesBooked === 0 ? "None" : durationOf(stats.minutesBooked, "short")} />
-        <Stat label="Expected" value={formatInr(stats.expectedPaise)} />
-        <Stat label="Collected" value={formatInr(stats.collectedPaise)} />
-        <Stat emphasis={stats.duePaise > 0} label="Due" value={formatInr(stats.duePaise)} />
-      </dl>
-
-      <Legend />
+      {/* The day's numbers and the key on one line: the grid is what the screen is for. */}
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+        <dl className="flex flex-wrap items-baseline gap-x-5 gap-y-1" data-slot="day-stats">
+          <Stat label="Booked" value={stats.minutesBooked === 0 ? "None" : durationOf(stats.minutesBooked, "short")} />
+          <Stat label="Expected" value={formatInr(stats.expectedPaise)} />
+          <Stat label="Collected" value={formatInr(stats.collectedPaise)} />
+          <Stat emphasis={stats.duePaise > 0} label="Due" value={formatInr(stats.duePaise)} />
+        </dl>
+        <Legend />
+      </div>
 
       {hours.closed || hours.close <= hours.open ? (
         <Empty className="rounded-2xl border border-dashed" role="status">
@@ -147,13 +148,13 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
   );
 }
 
-/** A dt/dd pair on a coss Card; the Card is the dl's grouping div, so the list stays valid. */
+/** A dt/dd pair inline (label, then the number); the div is the dl's grouping element, so the list stays valid. */
 function Stat({ label, value, emphasis = false }: { label: string; value: string; emphasis?: boolean }): React.ReactElement {
   return (
-    <Card className="gap-0.5 rounded-xl px-4 py-3 before:rounded-[calc(var(--radius-xl)-1px)]">
+    <div className="flex items-baseline gap-1.5">
       <dt className="text-muted-foreground text-xs">{label}</dt>
-      <dd className={cn("font-semibold text-lg tabular-nums tracking-tight", emphasis && "text-warning-foreground")}>{value}</dd>
-    </Card>
+      <dd className={cn("font-semibold text-sm tabular-nums", emphasis && "text-warning-foreground")}>{value}</dd>
+    </div>
   );
 }
 
