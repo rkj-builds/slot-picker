@@ -3,7 +3,7 @@
 import { CalendarRangeIcon, CircleCheckIcon, ClockIcon, DownloadIcon, ListFilterIcon, ReceiptTextIcon, SearchIcon, SearchXIcon, XIcon } from "lucide-react";
 import * as React from "react";
 import { useAnchoredBarHeight } from "@/app/anchored-bar";
-import { DeskViewFooter, DeskViewToolbar } from "@/app/desk/desk-toolbar";
+import { DeskViewFooter } from "@/app/desk/desk-toolbar";
 import { dayOf, LOCALE } from "@/app/format";
 import type { Route } from "@/app/router";
 import {
@@ -121,11 +121,15 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
   return (
     <div className="flex flex-col gap-4">
       <h2 className="sr-only">Payments in these dates</h2>
-      <DeskViewToolbar inlineOnPhone>
-        <div className="flex flex-wrap items-start gap-2" data-slot="payments-filters">
-          <Field className="w-64 max-w-full rounded-xl border bg-card not-dark:bg-clip-padding p-1">
+      {/* The row right above the list: the dates on the left, the search at the right end, then filters and export. Same row on every list. */}
+      <div className="flex flex-wrap items-center justify-between gap-3" data-slot="payments-filters">
+        <Toolbar aria-label="Dates" className="flex-wrap">
+          <RangeControl range={range} setRange={setRange} today={today} />
+        </Toolbar>
+        <div className="ms-auto flex flex-wrap items-center gap-2">
+          <Field className="w-full sm:w-64">
             <FieldLabel className="sr-only">Search by customer</FieldLabel>
-            <InputGroup className="border-none shadow-none before:hidden">
+            <InputGroup>
               <InputGroupAddon>
                 <SearchIcon aria-hidden="true" />
               </InputGroupAddon>
@@ -134,15 +138,13 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
                   setSearch(e.target.value);
                   setLimit(PAGE);
                 }}
-                placeholder="Customer name or phone"
+                placeholder="Name or phone"
                 type="search"
                 value={search}
               />
             </InputGroup>
           </Field>
-          <Toolbar aria-label="Dates, filters and export" className="ms-auto flex-wrap justify-end">
-            <RangeControl range={range} setRange={setRange} today={today} />
-            <ToolbarSeparator className="max-sm:hidden" orientation="vertical" />
+          <Toolbar aria-label="Filters and export">
             <ToolbarGroup>
               <FiltersControl filters={filters} phone={phone} setFilters={setFilters} />
               <ToolbarButton disabled={rows.length === 0} onClick={exportCsv} render={<Button variant="outline" />}>
@@ -152,7 +154,7 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
             </ToolbarGroup>
           </Toolbar>
         </div>
-      </DeskViewToolbar>
+      </div>
 
       {!phone && filterCount(filters) > 0 && <FilterChips filters={filters} onClear={clearAll} setFilters={setFilters} />}
 

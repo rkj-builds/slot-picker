@@ -20,13 +20,17 @@ describe("the desk's anchored controls", () => {
     expect(within(toolbar()).getByRole("button", { name: /^Choose a date/ })).toBeInTheDocument();
   });
 
-  it("Bookings: the filters sit in the sticky header, above the table", async () => {
+  it("Bookings: the search and filters sit in the page, in the row right above the table, not in the header", async () => {
     renderApp("#/desk/bookings");
     await screen.findByRole("heading", { level: 1, name: "Bookings" });
-    const filters = await within(toolbar()).findByRole("toolbar", { name: "Filters and export" });
+    const filters = await screen.findByRole("toolbar", { name: "Filters and export" });
     expect(within(filters).getByRole("button", { name: "Export CSV" })).toBeInTheDocument();
-    expect(within(toolbar()).getByRole("combobox", { name: "Search" })).toBeInTheDocument();
-    expect(toolbar()).not.toContainElement(screen.getByRole("table", { name: "Bookings" }));
+    const search = screen.getByRole("combobox", { name: "Search" });
+    expect(toolbar()).not.toContainElement(filters);
+    expect(toolbar()).not.toContainElement(search);
+    const table = screen.getByRole("table", { name: "Bookings" });
+    // The row comes before the table in the document, with nothing but the table's own frame between them.
+    expect(search.compareDocumentPosition(table) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
   });
 
   it("Settings: the save bar is anchored to the bottom of the desk and says whether anything is unsaved", async () => {

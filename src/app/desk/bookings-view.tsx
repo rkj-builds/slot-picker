@@ -36,7 +36,7 @@ import {
   viewWindow,
 } from "@/app/desk/bookings-filters";
 import { CustomerPreview } from "@/app/desk/customer-preview";
-import { DeskViewFooter, DeskViewToolbar } from "@/app/desk/desk-toolbar";
+import { DeskViewFooter } from "@/app/desk/desk-toolbar";
 import { dayOf, durationOf, timeRangeOf } from "@/app/format";
 import { hrefFor, navigate, type Route } from "@/app/router";
 import { DisabledWithReason } from "@/app/desk/disabled-with-reason";
@@ -139,13 +139,14 @@ export function BookingsView({ view, route, today, now }: { view: BookingsViewId
   return (
     <Screen className="gap-4">
       <PageHeader description="Every booking, what it's worth and what is still due." title="Bookings" />
-      <DeskViewToolbar inlineOnPhone>
-        <div className="flex flex-wrap items-start gap-2" data-slot="bookings-filters">
-          <ViewTabs filters={filters} view={view} />
+      {/* The row right above the table: the views on the left, the search at the right end, then filters and export. Same row on every list. */}
+      <div className="flex flex-wrap items-center justify-between gap-3" data-slot="bookings-filters">
+        <ViewTabs filters={filters} view={view} />
+        <div className="ms-auto flex flex-wrap items-center gap-2">
           <SearchField customers={customers} onChange={(q) => setFilters({ ...filters, q })} value={filters.q} />
           <FilterBar filters={filters} onChange={setFilters} onExport={exportCsv} rows={rows.length} today={today} />
         </div>
-      </DeskViewToolbar>
+      </div>
 
       {list.status === "pending" ? (
         <ListSkeleton label="Loading bookings" rows={8} />
@@ -250,7 +251,7 @@ function SearchField({ customers, value, onChange }: { customers: readonly Custo
     [customers],
   );
   return (
-    <Field className="w-64 max-w-full" data-slot="bookings-search">
+    <Field className="w-full sm:w-64" data-slot="bookings-search">
       <FieldLabel className="sr-only">Search</FieldLabel>
       <Autocomplete items={groups} itemToStringValue={(item: unknown) => (item as Suggestion).value} onValueChange={onChange} value={value}>
         <AutocompleteInput placeholder="Name or phone" showClear startAddon={<SearchIcon />} />
@@ -316,7 +317,7 @@ function FilterBar({
 
   return (
     <>
-      <Toolbar aria-label="Filters and export" className="ms-auto">
+      <Toolbar aria-label="Filters and export">
         <ToolbarGroup>
           <Menu>
             <ToolbarButton render={<MenuTrigger render={<Button variant="ghost" />} />}>

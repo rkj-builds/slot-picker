@@ -135,13 +135,13 @@ function Body({
 
   return (
     <>
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <LinkTabs
           label="Enrolments by state"
           tabs={ENROLMENT_TABS.map((t) => ({ href: tabHref(t.id), label: t.label, current: t.id === tab, count: scoped.filter((e) => inTab(e, t.id, today) && matches(e)).length }))}
         />
-        <div className="flex flex-wrap items-center gap-2">
-          <InputGroup className="w-full sm:w-72">
+        <div className="ms-auto flex flex-wrap items-center gap-2">
+          <InputGroup className="w-full sm:w-64">
             <InputGroupAddon>
               <SearchIcon aria-hidden="true" />
             </InputGroupAddon>
