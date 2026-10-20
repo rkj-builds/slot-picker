@@ -53,9 +53,9 @@ function ProfileForm({ saved, canEdit, now }: { saved: VenueProfile; canEdit: bo
     >
       <Card>
         <CardHeader>
-          <h3>
+          <h2>
             <CardTitle render={<span className="block" />}>Venue</CardTitle>
-          </h3>
+          </h2>
           <CardDescription>Shown on the booking page, receipts and WhatsApp messages.</CardDescription>
         </CardHeader>
         <CardPanel>

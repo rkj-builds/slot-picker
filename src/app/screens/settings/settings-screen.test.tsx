@@ -15,14 +15,14 @@ describe("#/desk/settings sections", () => {
   it("opens on Booking rules, with every section a link on the left", async () => {
     const user = userEvent.setup();
     renderApp("#/desk/settings");
-    await screen.findByRole("heading", { level: 1, name: "Settings" });
+    await screen.findByRole("heading", { level: 1, name: "Booking rules" });
     const nav = screen.getByRole("navigation", { name: "Settings sections" });
     expect(within(nav).getByRole("link", { name: "Booking rules" })).toHaveAttribute("aria-current", "page");
-    expect(await screen.findByRole("heading", { level: 2, name: "Booking rules" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Booking rules" })).toBeInTheDocument();
     expect(await screen.findByRole("textbox", { name: "Deposit" })).toBeInTheDocument();
     await user.click(within(nav).getByRole("link", { name: "Notifications" }));
     expect(window.location.hash).toBe("#/desk/settings/notifications");
-    expect(await screen.findByRole("heading", { level: 2, name: "Notifications" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { level: 1, name: "Notifications" })).toBeInTheDocument();
   });
 
   it("General: the backend's errors land on the fields, then the details save", async () => {

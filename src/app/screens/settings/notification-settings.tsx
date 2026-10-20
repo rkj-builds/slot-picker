@@ -49,9 +49,9 @@ export function NotificationSettings(): React.ReactElement {
   return (
     <Card>
       <CardHeader>
-        <h3>
+        <h2>
           <CardTitle render={<span className="block" />}>Team alerts</CardTitle>
-        </h3>
+        </h2>
         <CardDescription>Shown on the dashboard for everyone who can see the area. Changes save as you switch them.</CardDescription>
       </CardHeader>
       <CardPanel className="p-0">

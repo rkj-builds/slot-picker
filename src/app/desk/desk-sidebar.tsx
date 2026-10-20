@@ -5,6 +5,7 @@ import { BookOpenIcon, ChevronsUpDownIcon, SearchIcon, SettingsIcon } from "luci
 import type * as React from "react";
 import { LogoMark } from "@/app/app-shell";
 import { type DeskSection, SECTION_GROUPS, SECTIONS } from "@/app/desk/sections";
+import { SidebarCollapseItem } from "@/app/desk/sidebar-collapse";
 import { hrefFor } from "@/app/router";
 import type { Viewer } from "@/data/types";
 import { Kbd, KbdGroup } from "@/components/ui/kbd";
@@ -27,8 +28,9 @@ import { VENUE } from "@/lib/venue";
 
 /**
  * The desk's navigation: coss Sidebar, collapsible to icons on a laptop
- * (⌘B, or the trigger in the page header) and a sheet on a phone. The
- * header is the venue switcher; the footer opens the command palette.
+ * (⌘B, the rail on its edge, or the last item in its footer) and a sheet on
+ * a phone. The header is the venue switcher; the footer opens the command
+ * palette and collapses the sidebar.
  * Links carry the shown date along, so Bookings → Day lands where you were.
  */
 export function DeskSidebar({
@@ -134,6 +136,7 @@ export function DeskSidebar({
               </KbdGroup>
             </SidebarMenuButton>
           </SidebarMenuItem>
+          <SidebarCollapseItem />
         </SidebarMenu>
       </SidebarFooter>
       <SidebarRail />

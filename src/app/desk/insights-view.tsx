@@ -3,7 +3,9 @@
 import { ChartNoAxesColumnIcon } from "lucide-react";
 import type * as React from "react";
 import { Anchor } from "@/app/anchor";
+import { sectionById } from "@/app/desk/sections";
 import { hrefFor } from "@/app/router";
+import { PageHeader } from "@/app/screens/screen-kit";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { dayOf } from "@/app/format";
@@ -26,32 +28,34 @@ export function InsightsView({ today }: { today: PlainDate }): React.ReactElemen
   const { state } = useStore();
   const insights = computeInsights(state.bookings, today);
   const policyWeek = mondayOf(addDays(today, -28));
+  const section = sectionById("insights");
 
   if (insights.finishedBookings === 0) {
     return (
-      <Empty className="rounded-2xl border border-dashed" role="status">
-        <EmptyHeader>
-          <EmptyMedia variant="icon">
-            <ChartNoAxesColumnIcon aria-hidden="true" />
-          </EmptyMedia>
-          <EmptyTitle>No finished days yet</EmptyTitle>
-          <EmptyDescription>Insights count bookings once their day is over. Take bookings on the day view and come back tomorrow.</EmptyDescription>
-        </EmptyHeader>
-        <EmptyContent>
-          <Button render={<Anchor href={hrefFor("/desk")} />} variant="outline">
-            Go to the day
-          </Button>
-        </EmptyContent>
-      </Empty>
+      <div className="flex flex-col gap-4">
+        <PageHeader description={section.line} title={section.label} />
+        <Empty className="rounded-2xl border border-dashed" role="status">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ChartNoAxesColumnIcon aria-hidden="true" />
+            </EmptyMedia>
+            <EmptyTitle>No finished days yet</EmptyTitle>
+            <EmptyDescription>Insights count bookings once their day is over. Take bookings on the day view and come back tomorrow.</EmptyDescription>
+          </EmptyHeader>
+          <EmptyContent>
+            <Button render={<Anchor href={hrefFor("/desk")} />} variant="outline">
+              Go to the day
+            </Button>
+          </EmptyContent>
+        </Empty>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-2 text-muted-foreground text-sm">
-        <Badge variant="warning">Demo data</Badge>
-        <span>Shaped like Project 831's real numbers. Finished days only, {insights.finishedBookings} bookings.</span>
-      </div>
+      <PageHeader description={section.line} meta={<Badge variant="warning">Demo data</Badge>} title={section.label} />
+      <p className="text-muted-foreground text-sm">Shaped like Project 831's real numbers. Finished days only, {insights.finishedBookings} bookings.</p>
 
       <dl className="grid gap-3 sm:grid-cols-3">
         <Hero label="Unpaid self-serve bookings cancelled" sub={`${insights.unpaid.cancelled} of ${insights.unpaid.total}`} value={formatPercent(insights.unpaid.cancelRate)} />

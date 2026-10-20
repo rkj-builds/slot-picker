@@ -11,7 +11,7 @@ const empty = { version: STATE_VERSION, seededOn: "2026-10-15" as const, setting
 describe("#/desk/settings", () => {
   it("passes axe", async () => {
     renderApp("#/desk/settings", { state: empty });
-    await screen.findByRole("heading", { level: 1, name: "Settings" });
+    await screen.findByRole("heading", { level: 1, name: "Booking rules" });
     expect(await axeViolations()).toEqual([]);
   });
 

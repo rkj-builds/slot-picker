@@ -3,11 +3,13 @@
 import { ArrowLeftIcon } from "lucide-react";
 import type * as React from "react";
 import { Anchor } from "@/app/anchor";
+import { SidebarCollapseItem } from "@/app/desk/sidebar-collapse";
 import { hrefFor } from "@/app/router";
 import { SETTINGS_PAGES, type SettingsPage } from "@/app/screens/settings/pages";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -22,7 +24,7 @@ import {
  * Settings is its own area, as in Cal.com: the desk's sidebar gives way to
  * this one, a way back at the top and the settings pages under it, so there
  * is one navigation on screen and the sidebar itself says you have left the
- * desk. Same coss Sidebar, so ⌘B and the header trigger still collapse it.
+ * desk. Same coss Sidebar, so ⌘B, the rail and the footer item collapse it.
  */
 export function SettingsSidebar({ page, style }: { page: SettingsPage; style?: React.CSSProperties }): React.ReactElement {
   return (
@@ -61,6 +63,11 @@ export function SettingsSidebar({ page, style }: { page: SettingsPage; style?: R
           </SidebarGroup>
         </nav>
       </SidebarContent>
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarCollapseItem />
+        </SidebarMenu>
+      </SidebarFooter>
       <SidebarRail />
     </Sidebar>
   );

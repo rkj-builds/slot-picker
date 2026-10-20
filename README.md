@@ -72,7 +72,7 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | autocomplete | Bookings search with grouped suggestions (customers, phone numbers); the engine under Command |
 | avatar | Booking panel and customer preview |
 | badge | Booking states, legend, pay-first and credit flags, Verified number, Done status, demo labels, insights legend |
-| breadcrumb | Desk header: Desk › Day / Bookings / Insights / Settings |
+| breadcrumb | Components gallery (the desk has no app header: every page opens with its own title, the sidebar says where you are) |
 | button | Every action; links render through it (`render={<Anchor … />}`); slot-grid and desk-grid cells |
 | calendar | Date picker in the day stepper (book When step, desk day) and the bookings date range |
 | card | Day stats, hero numbers, chart cards, settings sections, summary, home links, booking-summary footer, grid frame |
@@ -117,9 +117,9 @@ All 55 coss primitives are installed, and the product uses every one, composed t
 | tabs | Checkout: UPI or card |
 | textarea | Booking notes |
 | toast | Every desk action with Undo, payments, messages; four seconds, and on a phone the page makes room above the action bar |
-| toggle | "Show cancelled" in the day toolbar |
+| toggle | "Show cancelled" in the Day page header |
 | toggle-group | Bookings quick dates (Last 7 days / Today / Next 7 days), clearable; the Repeat editor's days |
-| toolbar | Day actions (Block courts, New booking); bookings filters and export, the search framed to the same height |
+| toolbar | Bookings filters and export, the search framed to the same height; the gallery's day actions |
 | tooltip | Empty grid cells, day-stepper buttons, time-zone hint, collapsed sidebar |
 
 Only two project settings bend around the vendored code, and neither touches a coss file: ESLint skips the coss files (they are linted upstream under different rules), and `tsconfig.json` sets `noUnusedLocals: false` because `src/lib/composer-editor.ts` has one unused type import upstream. typescript-eslint's `no-unused-vars` still checks all app code.

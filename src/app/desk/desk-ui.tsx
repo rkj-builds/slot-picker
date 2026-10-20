@@ -42,13 +42,11 @@ export function useDeskUi(): DeskUi {
 }
 
 /**
- * Where a desk view puts its anchored controls: the second row of the desk's
- * sticky header (DeskViewToolbar), and a bar anchored to the bottom of the
- * desk's main area (DeskViewFooter).
+ * Where a desk view puts its anchored controls: a bar anchored to the bottom
+ * of the desk's main area (DeskViewFooter, Settings' save bar).
  */
 export interface DeskSlots {
-  toolbar: HTMLElement | null;
   footer: HTMLElement | null;
 }
 
-export const DeskSlotsContext = React.createContext<DeskSlots>({ toolbar: null, footer: null });
+export const DeskSlotsContext = React.createContext<DeskSlots>({ footer: null });

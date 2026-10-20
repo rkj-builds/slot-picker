@@ -3,7 +3,7 @@
 import type * as React from "react";
 import type { ScreenProps } from "@/app/desk/sections";
 import { navigate } from "@/app/router";
-import { Screen } from "@/app/screens/screen-kit";
+import { PageHeader, Screen } from "@/app/screens/screen-kit";
 import { ActivityLog } from "@/app/screens/settings/activity-log";
 import { BookingRules } from "@/app/screens/settings/booking-rules";
 import { GeneralSettings } from "@/app/screens/settings/general-settings";
@@ -15,11 +15,11 @@ import { useMediaQuery } from "@/hooks/use-media-query";
 import { cn } from "@/lib/utils";
 
 /**
- * One settings page: its title and line, then its form cards in a readable
- * width (Booking rules is wider: the hours and prices table needs it). The
- * pages are listed in the settings sidebar (src/app/desk/settings-sidebar.tsx)
- * and named in the desk header; on a phone, where the sidebar is a closed
- * sheet, a select at the top moves between them.
+ * One settings page: its title and line (the page's only heading; the
+ * sidebar says Settings), then its form cards in a readable width (Booking
+ * rules is wider: the hours and prices table needs it). The pages are listed
+ * in the settings sidebar (src/app/desk/settings-sidebar.tsx); on a phone,
+ * where the sidebar is a closed sheet, a select at the top moves between them.
  */
 export function SettingsScreen({ sub, now }: ScreenProps): React.ReactElement {
   const current = settingsPageFor(sub);
@@ -53,10 +53,7 @@ export function SettingsScreen({ sub, now }: ScreenProps): React.ReactElement {
         </Field>
       )}
       <div className={cn("flex min-w-0 flex-col gap-5", page !== "rules" && "max-w-3xl")}>
-        <div className="flex flex-col gap-1">
-          <h2 className="font-semibold text-2xl tracking-tight">{current.label}</h2>
-          <p className="text-muted-foreground text-sm">{current.line}</p>
-        </div>
+        <PageHeader description={current.line} title={current.label} />
         {page === "rules" ? <BookingRules /> : page === "general" ? <GeneralSettings now={now} /> : page === "notifications" ? <NotificationSettings /> : <ActivityLog now={now} />}
       </div>
     </Screen>

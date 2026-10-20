@@ -54,9 +54,9 @@ export function ActivityLog({ now }: { now: number }): React.ReactElement {
     <div className="flex flex-col gap-5">
       {days.map((group) => (
         <section aria-labelledby={`activity-${group.day}`} className="flex flex-col gap-2" key={group.day}>
-          <h3 className="font-medium text-muted-foreground text-sm" id={`activity-${group.day}`}>
+          <h2 className="font-medium text-muted-foreground text-sm" id={`activity-${group.day}`}>
             {dayHeadingOf(group.day, now)}
-          </h3>
+          </h2>
           <ol className="flex flex-col divide-y rounded-2xl border bg-card">
             {group.entries.map((entry) => {
               const href = linkFor(entry);

@@ -6,10 +6,11 @@ import { BookingContextMenu } from "@/app/desk/booking-context-menu";
 import { bookingTitle, STATE_META, stateLabel } from "@/app/desk/booking-visuals";
 import { DayGrid } from "@/app/desk/day-grid";
 import { dayStats, describeBooking } from "@/app/desk/desk-model";
-import { DeskViewToolbar } from "@/app/desk/desk-toolbar";
 import { useDeskUi } from "@/app/desk/desk-ui";
+import { sectionById } from "@/app/desk/sections";
 import { durationOf, LOCALE, timeRangeOf } from "@/app/format";
 import { navigate } from "@/app/router";
+import { PageHeader } from "@/app/screens/screen-kit";
 import { useStore } from "@/app/store";
 import { DayStepper } from "@/components/booking/day-stepper";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -17,7 +18,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Toggle } from "@/components/ui/toggle";
-import { Toolbar, ToolbarButton, ToolbarGroup, ToolbarSeparator } from "@/components/ui/toolbar";
 import { useMediaQuery } from "@/hooks/use-media-query";
 import { type Booking, deskState, duePaise, sortBookings } from "@/lib/booking";
 import { formatInr } from "@/lib/money";
@@ -29,6 +29,7 @@ import { COURTS, VENUE, WEEKDAY_LABEL } from "@/lib/venue";
 export function DayView({ date, now, today }: { date: PlainDate; now: number; today: PlainDate }): React.ReactElement {
   const { state } = useStore();
   const ui = useDeskUi();
+  const section = sectionById("day");
   const wide = useMediaQuery("md");
   // ?cancelled=1 opens the day with cancelled bookings shown (a shareable view, and the demo's jump).
   const [showCancelled, setShowCancelled] = React.useState(() => new URLSearchParams(window.location.hash.split("?")[1] ?? "").get("cancelled") === "1");
@@ -44,44 +45,39 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
 
   return (
     <div className="flex flex-col gap-4">
-      <DeskViewToolbar>
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <DayStepper
-          locale={LOCALE}
-          now={now}
-          onValueChange={(next) => navigate("/desk", { date: next === today ? null : next })}
-          showToday
-          timeZone={VENUE.timeZone}
-          value={date}
-        />
-        <Toolbar aria-label="Day actions" className="ms-auto">
-          <ToolbarGroup>
-            <ToolbarButton
-              aria-label={`Show cancelled${gone.length > 0 ? ` (${gone.length})` : ""}`}
-              render={<Toggle onPressedChange={setShowCancelled} pressed={showCancelled} />}
-            >
+      {/* One header row, as on every page: the title at the left, the day's controls at the right, New booking last. All of them coss's default height. */}
+      <PageHeader
+        actions={
+          <>
+            <DayStepper
+              locale={LOCALE}
+              now={now}
+              onValueChange={(next) => navigate("/desk", { date: next === today ? null : next })}
+              showToday
+              timeZone={VENUE.timeZone}
+              value={date}
+            />
+            <Toggle aria-label={`Show cancelled${gone.length > 0 ? ` (${gone.length})` : ""}`} onPressedChange={setShowCancelled} pressed={showCancelled} variant="outline">
               <EyeOffIcon aria-hidden="true" />
               <span aria-hidden="true">
                 <span className="max-sm:hidden">Show cancelled</span>
                 <span className="sm:hidden">Cancelled</span>
                 {gone.length > 0 ? ` (${gone.length})` : ""}
               </span>
-            </ToolbarButton>
-          </ToolbarGroup>
-          <ToolbarSeparator orientation="vertical" />
-          <ToolbarGroup>
-            <ToolbarButton aria-label="Block courts" onClick={() => ui.blockCourts(date)} render={<Button variant="outline" />}>
+            </Toggle>
+            <Button aria-label="Block courts" onClick={() => ui.blockCourts(date)} variant="outline">
               <RepeatIcon aria-hidden="true" />
               <span className="max-sm:hidden">Block courts</span>
-            </ToolbarButton>
-            <ToolbarButton aria-label="New booking" onClick={() => ui.newBooking(firstFree)} render={<Button />}>
+            </Button>
+            <Button aria-label="New booking" onClick={() => ui.newBooking(firstFree)}>
               <PlusIcon aria-hidden="true" />
               New<span className="max-sm:sr-only"> booking</span>
-            </ToolbarButton>
-          </ToolbarGroup>
-        </Toolbar>
-      </div>
-      </DeskViewToolbar>
+            </Button>
+          </>
+        }
+        description={section.line}
+        title={section.label}
+      />
 
       {/* The day's numbers and the key on one line: the grid is what the screen is for. */}
       <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">

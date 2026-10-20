@@ -16,6 +16,14 @@ import { ROLE_LABELS } from "@/data/mock/db";
 import type { Viewer } from "@/data/types";
 import { cn } from "@/lib/utils";
 
+/**
+ * The one header every page opens with, as Cal.com's pages do: the title and
+ * its one line on the left, the page's controls on the right, in a single
+ * row. There is no app header above it on a laptop (the sidebar says where
+ * you are), so this is the only place a page names itself. The controls end
+ * at the right edge even when they wrap under the title, and every one of
+ * them is the same height (h-8 on a laptop: coss's default Button).
+ */
 export function PageHeader({
   title,
   description,
@@ -25,7 +33,7 @@ export function PageHeader({
 }: {
   title: React.ReactNode;
   description?: React.ReactNode;
-  /** Buttons on the right; they wrap under the title on a phone. */
+  /** Controls on the right, the primary action last; they wrap under the title where the row is too narrow. */
   actions?: React.ReactNode;
   /** A link back up, for detail pages: { href, label }. */
   back?: { href: string; label: string };
@@ -33,22 +41,26 @@ export function PageHeader({
   meta?: React.ReactNode;
 }): React.ReactElement {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-slot="page-header">
       {back && (
         <Button className="-ms-2 self-start text-muted-foreground" render={<Anchor href={back.href} />} size="sm" variant="ghost">
           <ArrowLeftIcon aria-hidden="true" />
           {back.label}
         </Button>
       )}
-      <div className="flex flex-wrap items-start justify-between gap-x-4 gap-y-3">
-        <div className="flex min-w-0 flex-col gap-1">
+      <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3">
+        <div className="flex min-w-0 flex-col gap-0.5">
           <div className="flex flex-wrap items-center gap-2">
-            <h1 className="font-semibold text-2xl tracking-tight outline-none">{title}</h1>
+            <h1 className="font-semibold text-xl tracking-tight outline-none">{title}</h1>
             {meta}
           </div>
           {description && <p className="text-muted-foreground text-sm">{description}</p>}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
+        {actions && (
+          <div className="ms-auto flex flex-wrap items-center justify-end gap-2" data-slot="page-actions">
+            {actions}
+          </div>
+        )}
       </div>
     </div>
   );
