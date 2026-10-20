@@ -1,6 +1,6 @@
 "use client";
 
-import { SearchIcon } from "lucide-react";
+import { ChevronRightIcon, SearchIcon } from "lucide-react";
 import * as React from "react";
 import { LoadError } from "@/app/book/book-page";
 import { useNow } from "@/app/clock";
@@ -10,7 +10,9 @@ import { DayView } from "@/app/desk/day-view";
 import { DeskOverlays } from "@/app/desk/desk-dialogs";
 import { DeskSidebar } from "@/app/desk/desk-sidebar";
 import { type DeskSection, sectionById, sectionOf } from "@/app/desk/sections";
+import { SettingsSidebar } from "@/app/desk/settings-sidebar";
 import { ListSkeleton, NoAccess } from "@/app/screens/screen-kit";
+import { settingsPageFor } from "@/app/screens/settings/pages";
 import { useRead } from "@/data/provider";
 import { DeskSlotsContext, type DeskUi, DeskUiContext, type NewBookingPrefill, type RepeatRef } from "@/app/desk/desk-ui";
 import { BlockCourtsDialog, RepeatBlockDialog } from "@/app/desk/repeat-dialogs";
@@ -100,11 +102,17 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
       <InsightsView today={today} />
     );
   const title = def.label;
+  // Settings is its own area: its sidebar replaces the desk's, and the header names the page.
+  const settingsPage = section === "settings" ? settingsPageFor(route.segments.slice(2)) : null;
 
   return (
     <DeskUiContext.Provider value={ui}>
       <SidebarProvider className="min-h-0 flex-1">
-        <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} viewer={viewer.data ?? null} />
+        {settingsPage ? (
+          <SettingsSidebar page={settingsPage.id} style={BELOW_DEMO_BAR} />
+        ) : (
+          <DeskSidebar date={dateParam || null} onSearch={() => setSearchOpen(true)} section={section} style={BELOW_DEMO_BAR} viewer={viewer.data ?? null} />
+        )}
         <SidebarInset className="min-w-0">
           {/*
             The desk's toolbar, anchored under the demo bar, one row where it fits: where you are, then the
@@ -118,7 +126,13 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
               <div className="flex min-h-9 items-center gap-2 max-md:w-full">
                 <SidebarTrigger className="-ms-1" />
                 <Separator className="h-4" orientation="vertical" />
-                {route.segments.length > 2 ? (
+                {settingsPage ? (
+                  <>
+                    <h1 className="font-semibold text-sm outline-none">{title}</h1>
+                    <ChevronRightIcon aria-hidden="true" className="size-3.5 text-muted-foreground" />
+                    <span className="text-muted-foreground text-sm">{settingsPage.label}</span>
+                  </>
+                ) : route.segments.length > 2 ? (
                   <Button className="-ms-2 text-muted-foreground" render={<Anchor href={hrefFor(def.path)} />} size="sm" variant="ghost">
                     {title}
                   </Button>
