@@ -13,3 +13,5 @@ export * from "@/primitives/recurrence";
 export * from "@/primitives/time-zone";
 export { RepeatEditor, type RepeatEditorProps } from "@/components/compositions/repeat-editor";
 export { TimeZoneCombobox, type TimeZoneComboboxProps } from "@/components/compositions/time-zone-combobox";
+export * from "@/primitives/date-grid";
+export { AvailabilityCalendar, type AvailabilityCalendarProps } from "@/components/compositions/availability-calendar";
