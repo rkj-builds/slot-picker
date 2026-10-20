@@ -1,7 +1,9 @@
 /*
  * Theme: coss ui's own tokens, written here by the shadcn CLI
  * (`npx shadcn@latest add @coss/ui @coss/colors-neutral`). The colour values
- * below are coss's neutral palette, untouched. App-level additions are marked.
+ * in the `:root` and `.dark` blocks are coss's neutral palette, untouched.
+ * App-level additions are marked, including one override further down: dark
+ * --muted-foreground at 80% instead of 90%, for AA contrast.
  */
 @import "tailwindcss";
 
@@ -341,7 +343,7 @@ html {
     font-size: 15px;
     line-height: 1.5;
 }
-[data-bare] :where(button, input, select, textarea, fieldset, legend, output, ol, p) {
+[data-bare] :where(button, input, select, textarea, fieldset, legend, output, ol, p, table, th, td) {
     all: revert;
 }
 [data-bare] :where(p) {
@@ -392,4 +394,16 @@ html {
 }
 [data-slot="switch"][data-unchecked] {
     background-color: var(--switch-off);
+}
+
+/*
+ * App addition: dark muted text that passes WCAG AA. coss's neutral palette
+ * (the `.dark` block above, as the CLI wrote it) mixes --muted-foreground as
+ * 90% neutral-500 with white: about 4.42:1 on a dark card, under the 4.5:1 AA
+ * asks of small text. 80% is about 5.3:1. Light mode is unchanged (coss's
+ * light value already passes). Declared after coss's block so it wins without
+ * editing it.
+ */
+.dark {
+    --muted-foreground: color-mix(in srgb, var(--color-neutral-500) 80%, var(--color-white));
 }

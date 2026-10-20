@@ -18,7 +18,7 @@ export interface AvailabilityCalendarProps extends Omit<DateGridRootProps, "rend
  * Buttons to page. Each day shows its number; a label (a price) or badge sits
  * under it, outside the button and hidden from screen readers, because it is
  * already in the button's spoken name, so the button's visible text matches
- * its name (WCAG 2.5.3). A limited day carries a dot and the words "few times
+ * its name (WCAG 2.5.3); days out of range show none. A limited day carries a dot and the words "few times
  * left"; a full day is struck through and says "fully booked". The slide
  * between months runs under motion-safe only.
  */
@@ -72,8 +72,9 @@ export function AvailabilityCalendar({ className, "aria-label": ariaLabel, ...pr
                     {s.today && !s.selected && <span aria-hidden="true" className="absolute bottom-1 size-1 rounded-full bg-foreground" />}
                     {s.status === "limited" && !s.selected && <span aria-hidden="true" className="absolute end-1 top-1 size-1.5 rounded-full bg-warning" />}
                   </DateGrid.Day>
-                  {(Boolean(s.badge) || Boolean(s.label)) && (
+                  {(Boolean(s.badge) || Boolean(s.label)) && !s.outsideRange && (
                     // Outside the button and already in its spoken name; clicks pass through to the button.
+                    // A day out of range shows no price: it cannot be booked at any price.
                     <span
                       aria-hidden="true"
                       className={cn(
@@ -84,9 +85,8 @@ export function AvailabilityCalendar({ className, "aria-label": ariaLabel, ...pr
                             : "font-semibold text-success-foreground"
                           : s.selected
                             ? "text-primary-foreground/80"
-                            : s.disabled
-                              ? "text-muted-foreground/64"
-                              : "text-muted-foreground",
+                            : // Full muted text even on a full day: the label sits outside the button, so it is not exempt from contrast as a disabled control's text is.
+                              "text-muted-foreground",
                         s.status === "full" && "line-through decoration-muted-foreground/48",
                       )}
                     >

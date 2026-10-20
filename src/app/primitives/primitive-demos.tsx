@@ -19,7 +19,7 @@ import { Toolbar, ToolbarGroup } from "@/components/ui/toolbar";
 import { computeDaySlots } from "@/lib/availability";
 import { formatDay, formatTime, formatTimeRange } from "@/lib/format";
 import { formatInr } from "@/lib/money";
-import { addDays, type PlainDate, parsePlainDate, todayIn, toPlainDate } from "@/lib/plain-date";
+import { addDays, type PlainDate, todayIn, toPlainDate } from "@/lib/plain-date";
 import { type DayShift, dayShift, instantAt, localTimeZone, wallClockIn, zoneCityLabel, zoneOffsetMinutes } from "@/lib/time-zone";
 import { DEFAULT_SETTINGS, hourlyRateAt } from "@/lib/venue";
 import { cn } from "@/lib/utils";
@@ -593,28 +593,24 @@ export function DeskSkinDateGrid(): React.ReactElement {
           <DateGrid.Head>{(w) => <DateGrid.HeadCell className="pb-1 font-normal text-[11px] text-muted-foreground" key={w.day} weekday={w} />}</DateGrid.Head>
           <DateGrid.Body>
             {(date) => (
-              <DateGrid.Cell className="p-0" date={date}>
-                <DateGrid.Day
-                  className={(s) =>
-                    cn(
-                      "flex size-8 flex-col items-center justify-center rounded-md text-xs tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
-                      s.today && "ring-1 ring-border",
-                      s.selected && "bg-primary text-primary-foreground hover:bg-primary",
-                    )
-                  }
-                >
-                  {(s) => (
-                    <>
-                      <span>{parsePlainDate(date).day}</span>
-                      {/* Inside the button here, but the name already says it, so it is hidden from screen readers. */}
-                      {s.badge && (
-                        <span aria-hidden="true" className={cn("text-[9px] leading-none", s.selected ? "text-primary-foreground/80" : "text-muted-foreground")}>
-                          {s.badge}
-                        </span>
+              <DateGrid.Cell className="relative p-0" date={date}>
+                {(s) => (
+                  <>
+                    <DateGrid.Day
+                      className={cn(
+                        "flex size-8 items-start justify-center rounded-md pt-1 text-xs tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                        s.today && "ring-1 ring-border",
+                        s.selected && "bg-primary text-primary-foreground hover:bg-primary",
                       )}
-                    </>
-                  )}
-                </DateGrid.Day>
+                    />
+                    {/* Outside the button, as in the booking skin: the name already says it, and the button's text stays the number. */}
+                    {s.badge && (
+                      <span aria-hidden="true" className={cn("pointer-events-none absolute inset-x-0 bottom-1 text-center text-[9px] leading-none", s.selected ? "text-primary-foreground" : "text-muted-foreground")}>
+                        {s.badge}
+                      </span>
+                    )}
+                  </>
+                )}
               </DateGrid.Cell>
             )}
           </DateGrid.Body>

@@ -16,6 +16,19 @@ describe("#/primitives", () => {
     expect(await axeViolations()).toEqual([]);
   });
 
+  it("passes axe in the dark theme too (contrast is checked in a browser: jsdom has no layout)", async () => {
+    window.history.replaceState(null, "", "/?theme=dark#/primitives");
+    try {
+      renderApp("#/primitives");
+      expect(await screen.findByRole("heading", { level: 1, name: "Primitives" })).toBeInTheDocument();
+      expect(document.documentElement).toHaveClass("dark");
+      expect(await axeViolations()).toEqual([]);
+    } finally {
+      window.history.replaceState(null, "", "/");
+      document.documentElement.classList.remove("dark");
+    }
+  });
+
   it("the bare SlotGrid works with the keyboard and reports its value", async () => {
     const user = userEvent.setup();
     renderApp("#/primitives");
