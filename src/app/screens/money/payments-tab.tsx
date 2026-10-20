@@ -123,7 +123,7 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
       <h2 className="sr-only">Payments in these dates</h2>
       <DeskViewToolbar inlineOnPhone>
         <div className="flex flex-wrap items-start gap-2" data-slot="payments-filters">
-          <Field className="min-w-56 flex-1 rounded-xl border bg-card not-dark:bg-clip-padding p-1">
+          <Field className="w-64 max-w-full rounded-xl border bg-card not-dark:bg-clip-padding p-1">
             <FieldLabel className="sr-only">Search by customer</FieldLabel>
             <InputGroup className="border-none shadow-none before:hidden">
               <InputGroupAddon>
@@ -140,7 +140,7 @@ export function PaymentsTab({ route, range, today }: { route: Route; range: Date
               />
             </InputGroup>
           </Field>
-          <Toolbar aria-label="Dates, filters and export" className="flex-wrap">
+          <Toolbar aria-label="Dates, filters and export" className="ms-auto flex-wrap justify-end">
             <RangeControl range={range} setRange={setRange} today={today} />
             <ToolbarSeparator className="max-sm:hidden" orientation="vertical" />
             <ToolbarGroup>

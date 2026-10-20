@@ -250,7 +250,7 @@ function SearchField({ customers, value, onChange }: { customers: readonly Custo
     [customers],
   );
   return (
-    <Field className="min-w-56 flex-1" data-slot="bookings-search">
+    <Field className="w-64 max-w-full" data-slot="bookings-search">
       <FieldLabel className="sr-only">Search</FieldLabel>
       <Autocomplete items={groups} itemToStringValue={(item: unknown) => (item as Suggestion).value} onValueChange={onChange} value={value}>
         <AutocompleteInput placeholder="Name or phone" showClear startAddon={<SearchIcon />} />
@@ -316,7 +316,7 @@ function FilterBar({
 
   return (
     <>
-      <Toolbar aria-label="Filters and export">
+      <Toolbar aria-label="Filters and export" className="ms-auto">
         <ToolbarGroup>
           <Menu>
             <ToolbarButton render={<MenuTrigger render={<Button variant="ghost" />} />}>

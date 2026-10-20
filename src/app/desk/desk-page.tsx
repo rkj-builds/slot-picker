@@ -150,7 +150,8 @@ export function DeskPage({ route }: { route: Route }): React.ReactElement {
                   </KbdGroup>
                 </Button>
               </div>
-              <div className="flex min-w-0 flex-1 basis-[22rem] empty:hidden" data-desk-toolbar-slot="" ref={setToolbarSlot} />
+              {/* Shares the row with the title where 48rem fits (a laptop with the sidebar open); narrower, it drops under the title at full width. */}
+              <div className="flex min-w-0 flex-1 basis-[48rem] empty:hidden" data-desk-toolbar-slot="" ref={setToolbarSlot} />
             </div>
           </header>
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col gap-4 px-4 pt-4 pb-6">

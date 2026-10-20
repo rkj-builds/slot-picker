@@ -54,7 +54,7 @@ export function DayView({ date, now, today }: { date: PlainDate; now: number; to
           timeZone={VENUE.timeZone}
           value={date}
         />
-        <Toolbar aria-label="Day actions">
+        <Toolbar aria-label="Day actions" className="ms-auto">
           <ToolbarGroup>
             <ToolbarButton
               aria-label={`Show cancelled${gone.length > 0 ? ` (${gone.length})` : ""}`}
