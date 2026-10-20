@@ -1,11 +1,12 @@
 "use client";
 
-import { RepeatIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon, RepeatIcon } from "lucide-react";
 import * as React from "react";
 import { STATE_META } from "@/app/desk/booking-visuals";
 import { makeReservations, schedule } from "@/app/gallery/fixtures";
 import { SlotGrid as BookingSlotGrid } from "@/components/booking/slot-grid";
 import { TimeZoneHint } from "@/components/booking/time-zone-hint";
+import { AvailabilityCalendar } from "@/components/compositions/availability-calendar";
 import { RepeatEditor } from "@/components/compositions/repeat-editor";
 import { SegmentedControl, SegmentedControlItem } from "@/components/compositions/segmented-control";
 import { TimeZoneCombobox } from "@/components/compositions/time-zone-combobox";
@@ -17,10 +18,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Toolbar, ToolbarGroup } from "@/components/ui/toolbar";
 import { computeDaySlots } from "@/lib/availability";
 import { formatDay, formatTime, formatTimeRange } from "@/lib/format";
-import { addDays, type PlainDate } from "@/lib/plain-date";
-import { instantAt, zoneCityLabel, zoneOffsetMinutes } from "@/lib/time-zone";
+import { formatInr } from "@/lib/money";
+import { addDays, type PlainDate, parsePlainDate, todayIn, toPlainDate } from "@/lib/plain-date";
+import { type DayShift, dayShift, instantAt, localTimeZone, wallClockIn, zoneCityLabel, zoneOffsetMinutes } from "@/lib/time-zone";
+import { DEFAULT_SETTINGS, hourlyRateAt } from "@/lib/venue";
 import { cn } from "@/lib/utils";
-import { expandRecurrence, type RecurrenceRule, summarizeRecurrence, useRecurrence, WEEK, weekdayName } from "@/primitives/recurrence";
+import { DateGrid, type DayInfo } from "@/primitives/date-grid";
+import { expandRecurrence, occursOn, type RecurrenceRule, summarizeRecurrence, useRecurrence, WEEK, weekdayName } from "@/primitives/recurrence";
 import { SlotGrid } from "@/primitives/slot-grid";
 import { useTimeZoneCombobox, type ZoneGroup, type ZoneOption } from "@/primitives/time-zone";
 
@@ -48,19 +52,70 @@ const BARE_TIMES = [
   { period: "Evening", cells: [["18:00", "6:00 pm", ""], ["18:30", "6:30 pm", "being booked by someone else"], ["19:00", "7:00 pm", ""], ["19:30", "7:30 pm", "ends after closing"]] },
 ] as const;
 
-/** (a) The primitive with no classes at all: browser buttons, styled only by its data attributes. */
+const BARE_VIEWER_ZONES: [string, string][] = [
+  [VENUE_ZONE, "the venue (Kolkata)"],
+  ["America/New_York", "New York"],
+  ["Pacific/Auckland", "Auckland"],
+];
+
+interface BareCell {
+  v: string;
+  label: string;
+  reason: string;
+  shift: DayShift;
+}
+
+/**
+ * The bare grid's cells: at the venue, by its periods; for a viewer elsewhere, on their clock and
+ * grouped by their own day, in time order, each marked with its day shift from the venue's date.
+ */
+function bareGroups(viewer: string): { label: string; cells: BareCell[] }[] {
+  const none = dayShift(0, VENUE_ZONE, VENUE_ZONE);
+  if (viewer === VENUE_ZONE) return BARE_TIMES.map((g) => ({ label: g.period, cells: g.cells.map(([v, label, reason]): BareCell => ({ v, label, reason, shift: none })) }));
+  const out: { label: string; cells: BareCell[] }[] = [];
+  for (const [v, , reason] of BARE_TIMES.flatMap((g): readonly (readonly [string, string, string])[] => g.cells)) {
+    const start = instantAt(DEMO_DATE, Number(v.slice(0, 2)) * 60 + Number(v.slice(3, 5)), VENUE_ZONE);
+    const wall = wallClockIn(start, viewer);
+    const day = formatDay(toPlainDate(wall), "en-IN");
+    const cell: BareCell = { v, label: formatTime(start, { locale: "en-IN", timeZone: viewer }), reason, shift: dayShift(start, VENUE_ZONE, viewer) };
+    const last = out.at(-1);
+    if (last?.label === day) last.cells.push(cell);
+    else out.push({ label: day, cells: [cell] });
+  }
+  return out;
+}
+
+/**
+ * (a) The primitive with no classes at all: browser buttons, styled only by its data attributes.
+ * Pick a viewer zone and the times are shown on their clock, grouped by their day, and a time
+ * on another day than the venue's carries "+1 day" (read out as "the day after").
+ */
 export function BareSlotGrid(): React.ReactElement {
   const [value, setValue] = React.useState<string | null>("16:30");
+  const [viewer, setViewer] = React.useState(VENUE_ZONE);
+  const zoneId = React.useId();
+  const groups = React.useMemo(() => bareGroups(viewer), [viewer]);
   return (
     <div data-bare="">
+      <p>
+        <label htmlFor={zoneId}>Show times for </label>
+        <select id={zoneId} onChange={(e) => setViewer(e.target.value)} value={viewer}>
+          {BARE_VIEWER_ZONES.map(([zone, name]) => (
+            <option key={zone} value={zone}>
+              {name}
+            </option>
+          ))}
+        </select>
+      </p>
       <SlotGrid.Root aria-label="Start time (bare)" onValueChange={setValue} value={value}>
-        {BARE_TIMES.map((g) => (
-          <SlotGrid.Group aria-label={g.period} key={g.period}>
-            <p aria-hidden="true">{g.period}</p>
+        {groups.map((g) => (
+          <SlotGrid.Group aria-label={g.label} key={g.label}>
+            <p aria-hidden="true">{g.label}</p>
             <SlotGrid.Row>
-              {g.cells.map(([v, label, reason]) => (
-                <SlotGrid.Cell disabled={reason !== ""} key={v} reason={reason || undefined} value={v}>
+              {g.cells.map(({ v, label, reason, shift }) => (
+                <SlotGrid.Cell disabled={reason !== ""} key={v} label={shift.days ? `${label}, ${shift.spoken}` : undefined} reason={reason || undefined} value={v}>
                   {label}
+                  {shift.days !== 0 && <small aria-hidden="true"> {shift.text}</small>}
                 </SlotGrid.Cell>
               ))}
             </SlotGrid.Row>
@@ -314,12 +369,15 @@ export function BookingSkinRecurrence(): React.ReactElement {
   );
 }
 
-/** (c) The desk skin: the Repeat editor the desk uses to block courts, plus the summary in three locales. */
+/**
+ * (c) The desk skin: the Repeat editor the desk uses to block courts, plus the summary in three
+ * locales. Here its opt-in clock-change preview is on, for a viewer in New York (the desk leaves it off).
+ */
 export function DeskSkinRecurrence(): React.ReactElement {
   const [rule, setRule] = React.useState<RecurrenceRule>(OSC_RULE);
   return (
     <div className="flex flex-col gap-4">
-      <RepeatEditor locale="en-IN" onValueChange={setRule} preview={4} value={rule} />
+      <RepeatEditor clockChanges locale="en-IN" onValueChange={setRule} preview={6} value={rule} viewerTimeZone="America/New_York" />
       <Table aria-label="The same rule in three locales" className="text-xs">
         <TableHeader>
           <TableRow>
@@ -350,7 +408,8 @@ const DST_DAYS: { date: PlainDate; label: string }[] = [
 /** (a) Base UI's Combobox parts with no classes, fed by `useTimeZoneCombobox`. */
 export function BareTimeZone(): React.ReactElement {
   const [zone, setZone] = React.useState("America/New_York");
-  const { rootProps } = useTimeZoneCombobox({ value: zone, onValueChange: setZone, at: instantAt("2026-11-01", 16 * 60, VENUE_ZONE), locale: "en-US" });
+  const [yours] = React.useState(localTimeZone);
+  const { rootProps } = useTimeZoneCombobox({ value: zone, onValueChange: setZone, at: instantAt("2026-11-01", 16 * 60, VENUE_ZONE), locale: "en-US", pinned: yours });
   const id = React.useId();
   return (
     <div data-bare="">
@@ -428,6 +487,141 @@ export function DeskSkinTimeZone(): React.ReactElement {
       </Toolbar>
       <p className="text-sm tabular-nums">
         4:00 pm on Sun 1 Nov at the venue is <span className="font-semibold">{formatTime(at, { locale: "en-IN", timeZone: zone })}</span> in {zoneCityLabel(zone)}.
+      </p>
+    </div>
+  );
+}
+
+// --- DateGrid ---------------------------------------------------------------------------
+
+/** The page's today: Fri 30 Oct 2026 at the venue. */
+const DEMO_TODAY: PlainDate = todayIn(VENUE_ZONE, DEMO_NOW);
+
+/** (a) The parts with no classes: a browser table of buttons, styled only by data attributes. */
+export function BareDateGrid(): React.ReactElement {
+  const [value, setValue] = React.useState<PlainDate | null>(null);
+  return (
+    <div data-bare="">
+      <DateGrid.Root
+        getDayInfo={(d) => (d === "2026-10-31" ? { status: "full" } : undefined)}
+        locale="en-IN"
+        min={DEMO_TODAY}
+        onValueChange={setValue}
+        today={DEMO_TODAY}
+        value={value}
+      >
+        <p>
+          <DateGrid.PreviousMonth>←</DateGrid.PreviousMonth> <DateGrid.Title render={<strong />} /> <DateGrid.NextMonth>→</DateGrid.NextMonth>
+        </p>
+        <DateGrid.Grid>
+          <DateGrid.Head />
+          <DateGrid.Body />
+        </DateGrid.Grid>
+      </DateGrid.Root>
+      <p>
+        value: <output>{value ?? "none"}</output>
+      </p>
+    </div>
+  );
+}
+
+/** How full a day is, from the fixture's reservations: free one-hour starts across both courts. */
+function useBookingDayInfo(): (date: PlainDate) => DayInfo {
+  const free = React.useMemo(() => {
+    const reservations = makeReservations(DEMO_NOW);
+    const out = new Map<PlainDate, number>();
+    for (let i = 0; i < 14; i += 1) {
+      const date = addDays(DEMO_TODAY, i);
+      const count = ["court-1", "court-2"]
+        .map((spaceId) => computeDaySlots({ schedule, date, spaceId, durationMinutes: 60, reservations, now: DEMO_NOW }).filter((s) => s.status === "available").length)
+        .reduce((a, b) => a + b, 0);
+      out.set(date, count);
+    }
+    return out;
+  }, []);
+  return React.useCallback(
+    (date: PlainDate): DayInfo => {
+      const rate = formatInr(hourlyRateAt(DEFAULT_SETTINGS, date, 6 * 60));
+      const left = free.get(date);
+      const status = left === undefined ? "available" : left === 0 ? "full" : left <= 8 ? "limited" : "available";
+      return { status, label: rate, description: `from ${rate} an hour` };
+    },
+    [free],
+  );
+}
+
+/** (b) The booking skin: the availability calendar, prices from the venue's rates, fullness from the fixture's bookings. */
+export function BookingSkinDateGrid(): React.ReactElement {
+  const [value, setValue] = React.useState<PlainDate | null>(null);
+  const getDayInfo = useBookingDayInfo();
+  return (
+    <div className="flex flex-col gap-3">
+      <AvailabilityCalendar getDayInfo={getDayInfo} locale="en-IN" max={addDays(DEMO_TODAY, 60)} min={DEMO_TODAY} onValueChange={setValue} today={DEMO_TODAY} value={value} />
+      <p aria-live="polite" className="text-muted-foreground text-xs">
+        {value ? (
+          <>
+            Chosen: <span className="text-foreground">{formatDay(value, "en-IN")}</span>
+          </>
+        ) : (
+          "A dot is a day with few times left; a struck-through day is full."
+        )}
+      </p>
+    </div>
+  );
+}
+
+/**
+ * (c) The desk skin: the same parts as a compact jump-to-date for staff. No minimum, because the
+ * desk enters bookings after the fact; the club's weekend hold is a word on its days.
+ */
+export function DeskSkinDateGrid(): React.ReactElement {
+  const [value, setValue] = React.useState<PlainDate | null>(DEMO_TODAY);
+  const getDayInfo = React.useCallback((date: PlainDate): DayInfo | undefined => (occursOn(OSC_RULE, date) ? { badge: "Club", description: "Off-Screen Club Juniors, 4 – 5 pm" } : undefined), []);
+  return (
+    <div className="flex flex-col gap-3">
+      <DateGrid.Root className="w-fit rounded-xl border p-2" getDayInfo={getDayInfo} locale="en-GB" onValueChange={setValue} today={DEMO_TODAY} value={value}>
+        <div className="flex items-center justify-between gap-2 pb-1.5">
+          <DateGrid.PreviousMonth render={<Button size="icon-xs" variant="ghost" />}>
+            <ChevronLeftIcon aria-hidden="true" />
+          </DateGrid.PreviousMonth>
+          <DateGrid.Title className="font-medium text-xs" />
+          <DateGrid.NextMonth render={<Button size="icon-xs" variant="ghost" />}>
+            <ChevronRightIcon aria-hidden="true" />
+          </DateGrid.NextMonth>
+        </div>
+        <DateGrid.Grid className="border-collapse">
+          <DateGrid.Head>{(w) => <DateGrid.HeadCell className="pb-1 font-normal text-[11px] text-muted-foreground" key={w.day} weekday={w} />}</DateGrid.Head>
+          <DateGrid.Body>
+            {(date) => (
+              <DateGrid.Cell className="p-0" date={date}>
+                <DateGrid.Day
+                  className={(s) =>
+                    cn(
+                      "flex size-8 flex-col items-center justify-center rounded-md text-xs tabular-nums outline-none hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+                      s.today && "ring-1 ring-border",
+                      s.selected && "bg-primary text-primary-foreground hover:bg-primary",
+                    )
+                  }
+                >
+                  {(s) => (
+                    <>
+                      <span>{parsePlainDate(date).day}</span>
+                      {/* Inside the button here, but the name already says it, so it is hidden from screen readers. */}
+                      {s.badge && (
+                        <span aria-hidden="true" className={cn("text-[9px] leading-none", s.selected ? "text-primary-foreground/80" : "text-muted-foreground")}>
+                          {s.badge}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </DateGrid.Day>
+              </DateGrid.Cell>
+            )}
+          </DateGrid.Body>
+        </DateGrid.Grid>
+      </DateGrid.Root>
+      <p aria-live="polite" className="text-muted-foreground text-xs">
+        Day open: <span className="text-foreground">{value ? formatDay(value, "en-GB") : "none"}</span>
       </p>
     </div>
   );

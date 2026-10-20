@@ -11,7 +11,7 @@
  */
 import { formatDuration } from "@/lib/duration";
 import { addDays, compareDates, type PlainDate, parsePlainDate, type Weekday, weekdayOf } from "@/lib/plain-date";
-import { instantAt } from "@/lib/time-zone";
+import { instantAt, zoneOffsetMinutes } from "@/lib/time-zone";
 
 export type { Weekday };
 
@@ -108,6 +108,29 @@ export function expandRecurrence(rule: RecurrenceRule, range: { from: PlainDate;
 export function nextOccurrences(rule: RecurrenceRule, from: PlainDate, count: number): Occurrence[] {
   // A weekly rule with an interval of n weeks repeats within n weeks; a year is ample headroom.
   return expandRecurrence(rule, { from, to: addDays(from, Math.max(366, rule.interval * 7 * (count + 1))) }, count);
+}
+
+export interface ClockChange {
+  /** The venue's clocks changed since the previous occurrence: the same wall time, a different instant. */
+  venue: boolean;
+  /** The viewer's clocks changed relative to the venue's since the previous occurrence: their time moves. */
+  viewer: boolean;
+}
+
+/**
+ * Where the clocks change between consecutive occurrences: the week people
+ * get wrong. For the venue it is the same time on the wall; for a viewer in
+ * another zone the time they see moves (a Kolkata 4 pm is 6:30 am in New
+ * York on 31 Oct and 5:30 am from 1 Nov). The first occurrence never flags.
+ */
+export function clockChanges(occurrences: readonly Occurrence[], timeZone: string, viewerTimeZone?: string): ClockChange[] {
+  const gap = (instant: number): number => (viewerTimeZone ? zoneOffsetMinutes(instant, viewerTimeZone) - zoneOffsetMinutes(instant, timeZone) : 0);
+  return occurrences.map((o, i) => {
+    const prev = occurrences[i - 1];
+    if (!prev) return { venue: false, viewer: false };
+    const venue = zoneOffsetMinutes(o.start, timeZone) !== zoneOffsetMinutes(prev.start, timeZone);
+    return { venue, viewer: viewerTimeZone !== undefined && gap(o.start) !== gap(prev.start) };
+  });
 }
 
 /** Does the rule have an occurrence on `date`? */

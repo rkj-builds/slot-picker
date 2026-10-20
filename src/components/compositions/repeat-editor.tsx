@@ -13,10 +13,11 @@ import { Radio, RadioGroup } from "@/components/ui/radio-group";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toggle } from "@/components/ui/toggle";
 import { ToggleGroup, ToggleGroupItem, ToggleGroupSeparator } from "@/components/ui/toggle-group";
-import { formatDay, formatDayLong } from "@/lib/format";
+import { formatDay, formatDayLong, formatTime } from "@/lib/format";
 import { addDays, fromLocalDate, type PlainDate, toLocalDate } from "@/lib/plain-date";
+import { dayShift, sameWallClock, zoneCityLabel } from "@/lib/time-zone";
 import { cn } from "@/lib/utils";
-import { describeLength, formatWallRange, type RecurrenceEnd, type RecurrenceRule, useRecurrence, WEEK, weekdayName } from "@/primitives/recurrence";
+import { clockChanges, describeLength, formatWallRange, type Occurrence, type RecurrenceEnd, type RecurrenceRule, useRecurrence, WEEK, weekdayName } from "@/primitives/recurrence";
 
 export interface RepeatEditorProps {
   value: RecurrenceRule;
@@ -28,6 +29,13 @@ export interface RepeatEditorProps {
   preview?: number;
   /** Only the hours: for a one-off block that uses the same editor. */
   timesOnly?: boolean;
+  /**
+   * Under the next dates, list each one's time and flag where the clocks change ("Clocks change:
+   * same time on the wall"). Off by default, so the desk's Repeat dialogs are unchanged.
+   */
+  clockChanges?: boolean;
+  /** With `clockChanges`: show each time in this zone too, and flag where its clocks change against the venue's. */
+  viewerTimeZone?: string;
   className?: string;
 }
 
@@ -48,7 +56,17 @@ const DEFAULT_TIMES = Array.from({ length: 35 }, (_, i) => 6 * 60 + i * 30);
  * and the next dates can be skipped one by one (exceptions). The summary
  * line reads the rule back as a sentence.
  */
-export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = DEFAULT_TIMES, preview = 4, timesOnly = false, className }: RepeatEditorProps): React.ReactElement {
+export function RepeatEditor({
+  value,
+  onValueChange,
+  locale = "en-IN",
+  times = DEFAULT_TIMES,
+  preview = 4,
+  timesOnly = false,
+  clockChanges: showClockChanges = false,
+  viewerTimeZone,
+  className,
+}: RepeatEditorProps): React.ReactElement {
   const r = useRecurrence({ value, defaultValue: value, onValueChange, locale });
   const { rule } = r;
   const id = React.useId();
@@ -241,6 +259,7 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
               })}
           </ul>
           <p className="text-muted-foreground text-xs">Press a date to skip it (a holiday, a tournament); press again to bring it back.</p>
+          {showClockChanges && <ClockChangePreview locale={locale} occurrences={upcoming} timeZone={rule.timeZone} viewerTimeZone={viewerTimeZone} />}
         </div>
       )}
 
@@ -250,6 +269,50 @@ export function RepeatEditor({ value, onValueChange, locale = "en-IN", times = D
         <span>{r.valid ? r.summary : r.problems.map((p) => PROBLEM_TEXT[p]).join(" ")}</span>
       </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * The upcoming times, one per line, at the venue and (when it differs) for
+ * the viewer, with the week the clocks change called out in words: the venue's
+ * ("Clocks change: same time on the wall") or the viewer's ("Your clocks
+ * change: 5:30 am for you from here").
+ */
+function ClockChangePreview({ occurrences, timeZone, viewerTimeZone, locale }: { occurrences: readonly Occurrence[]; timeZone: string; viewerTimeZone?: string | undefined; locale: string }): React.ReactElement {
+  const id = React.useId();
+  const viewer = viewerTimeZone && occurrences.some((o) => !sameWallClock(o.start, timeZone, viewerTimeZone)) ? viewerTimeZone : undefined;
+  const changes = clockChanges(occurrences, timeZone, viewer);
+  const weekday = (instant: number, zone: string): string => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: zone }).format(instant);
+  return (
+    <div className="flex flex-col gap-1.5 rounded-lg bg-muted/48 p-3" data-slot="repeat-clock-changes">
+      <span className="font-medium text-sm" id={id}>
+        Upcoming times
+      </span>
+      <ol aria-labelledby={id} className="flex flex-col gap-1 text-muted-foreground text-sm tabular-nums">
+        {occurrences.map((o, i) => {
+          const change = changes[i];
+          const flag = change?.venue
+            ? "Clocks change: same time on the wall"
+            : change?.viewer && viewer
+              ? `Your clocks change: ${formatTime(o.start, { locale, timeZone: viewer })} for you from here`
+              : "";
+          const shift = viewer ? dayShift(o.start, timeZone, viewer) : null;
+          return (
+            <li className={cn("flex flex-wrap gap-x-3", flag && "text-foreground")} data-clock-change={flag ? (change?.venue ? "venue" : "viewer") : undefined} key={o.date}>
+              <span>{formatDay(o.date, locale)}</span>
+              <span>{formatTime(o.start, { locale, timeZone })}</span>
+              {viewer && (
+                <span>
+                  {shift?.days ? `${weekday(o.start, viewer)} ` : ""}
+                  {formatTime(o.start, { locale, timeZone: viewer })} in {zoneCityLabel(viewer)}
+                </span>
+              )}
+              {flag && <span className="basis-full font-medium text-warning-foreground">{flag}</span>}
+            </li>
+          );
+        })}
+      </ol>
     </div>
   );
 }

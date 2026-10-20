@@ -4,12 +4,15 @@ import { ArrowRightIcon, BlocksIcon } from "lucide-react";
 import type * as React from "react";
 import { Anchor } from "@/app/anchor";
 import {
+  BareDateGrid,
   BareRecurrence,
   BareSlotGrid,
   BareTimeZone,
+  BookingSkinDateGrid,
   BookingSkinRecurrence,
   BookingSkinSlotGrid,
   BookingSkinTimeZone,
+  DeskSkinDateGrid,
   DeskSkinRecurrence,
   DeskSkinSlotGrid,
   DeskSkinTimeZone,
@@ -46,7 +49,11 @@ const DOCS: PrimitiveDoc[] = [
       <SlotGrid.Cell value="19:30" disabled reason="booked" render={<Button />} className={(s) => …} />`,
     usedIn: ["Book · start times", "Desk · day grid"],
     skins: [
-      { title: "Bare", note: "No classes. Browser buttons, styled only through [data-selected], [data-disabled] and [data-highlighted].", demo: <BareSlotGrid /> },
+      {
+        title: "Bare",
+        note: "No classes. Browser buttons, styled only through [data-selected], [data-disabled] and [data-highlighted]. Show the times for Auckland and they regroup by its day, marked “+1 day”.",
+        demo: <BareSlotGrid />,
+      },
       { title: "Booking skin", note: "Single mode: a radiogroup. Cells render a coss Button through a render function of state.", demo: <BookingSkinSlotGrid /> },
       { title: "Desk skin", note: "selectionMode none, orientation vertical: each court a column, every cell an action.", demo: <DeskSkinSlotGrid /> },
     ],
@@ -64,6 +71,7 @@ const DOCS: PrimitiveDoc[] = [
       "Groups are role=group with a name (Morning, Court 2), so a screen reader hears where it is.",
       "Unavailable cells use aria-disabled, never disabled: they stay focusable and their name ends with the reason (\"7:30 pm, booked\").",
       "Selection follows focus onto available cells only, like native radios; selectOnFocus={false} turns it off.",
+      "A time on another day for the viewer than at the venue shows “−1 day” or “+1 day” and is read as “the day before” or “the day after” (dayShift in src/lib/time-zone.ts).",
       "Right-to-left pages swap ← and → (Base UI's DirectionProvider).",
     ],
     motion: ["None of its own: a headless part. Skins animate from data-highlighted / data-selected if they want to; these do not, so a choice registers instantly."],
@@ -82,7 +90,11 @@ summarizeRecurrence(rule, "fr") → "Chaque samedi et dimanche, 16:00 – 17:00,
     skins: [
       { title: "Bare", note: "useRecurrence driving native checkboxes, a number, selects, radios and a date input.", demo: <BareRecurrence /> },
       { title: "Booking skin", note: "What a customer sees of a weekly hold, in their own zone. New York's row moves an hour on 1 Nov.", demo: <BookingSkinRecurrence /> },
-      { title: "Desk skin", note: "The Repeat editor from Block courts: ToggleGroup, NumberField, Select, RadioGroup, Calendar.", demo: <DeskSkinRecurrence /> },
+      {
+        title: "Desk skin",
+        note: "The Repeat editor from Block courts: ToggleGroup, NumberField, Select, RadioGroup, Calendar. Here its opt-in clock-change preview is on for a viewer in New York; the desk leaves it off.",
+        demo: <DeskSkinRecurrence />,
+      },
     ],
     keys: [
       ["Tab", "Through the native or coss controls; the model adds no keys of its own."],
@@ -94,6 +106,7 @@ summarizeRecurrence(rule, "fr") → "Chaque samedi et dimanche, 16:00 – 17:00,
       "The model is data: a rule in, occurrences and a sentence out. Labels, fieldsets and live regions belong to whichever controls render it.",
       "Times are wall clock in the rule's zone; an occurrence becomes an instant only when expanded, so DST is handled per date (a spring-forward gap shifts forward, as calendars do).",
       "COUNT is counted before skipped dates are removed, as RFC 5545 says for EXDATE.",
+      "clockChanges(occurrences, zone, viewerZone) finds the week people get wrong: the venue's clocks change (same time on the wall) or the viewer's do (their time moves). The editor says it in words, not only a colour.",
       "Summaries use only Intl (DateTimeFormat, ListFormat, PluralRules, NumberFormat); the connecting words come from a two-language table with English as fallback. Durations are never decimal.",
     ],
     motion: ["None. The summary line updates in place (aria-live polite); moving text would be harder to read while editing."],
@@ -114,7 +127,7 @@ describeZone("America/New_York", at) → { city, region, offsetLabel: "GMT-5", l
       { title: "Desk skin", note: "Compact, in a coss Toolbar.", demo: <DeskSkinTimeZone /> },
     ],
     keys: [
-      ["Type", "Filter by city, country's long name (“india”), region or offset (“+5:30”, “gmt-5”)."],
+      ["Type", "Filter by city (old names too: “Katmandu”), country's long name (“india”), abbreviation (“IST”, “EDT”), region or offset (“+5:30”, “gmt-5”)."],
       ["↓|↑", "Open the list, move through options across region groups."],
       ["Enter", "Choose the highlighted zone."],
       ["Esc", "Close the list, keep the value."],
@@ -123,11 +136,48 @@ describeZone("America/New_York", at) → { city, region, offsetLabel: "GMT-5", l
       "Base UI's ARIA combobox: an input with role=combobox, a listbox, options grouped under labelled groups (Asia, Americas).",
       "Each option reads “Kolkata GMT+5:30”; the long name is searchable but not repeated aloud.",
       "Offsets are computed at `at`, the day being looked at, so a list opened for 1 Nov says GMT-5 for New York and one for 31 Oct says GMT-4.",
-      "Old ids are canonicalised (Asia/Calcutta → Asia/Kolkata); engines without Intl.supportedValuesOf get a 47-zone list.",
+      "Old ids are canonicalised (Asia/Calcutta → Asia/Kolkata, Asia/Katmandu → Asia/Kathmandu, America/Godthab → America/Nuuk); engines without Intl.supportedValuesOf get a 47-zone list.",
+      "Abbreviations come from Intl in a few English locales (en-IN knows IST, en-US knows EDT) and match whole words only, so “ist” is IST and not every Istanbul.",
+      "An opt-in pinned group lists one zone first under “Your time zone” (the bare demo pins yours); the booking flow does not pin.",
     ],
     motion: ["coss's popup scales and fades in from its anchor (data-starting-style); under reduced motion it simply appears."],
     why: "Zones are data with rules (offsets move, names change); the picker is a Combobox that already exists. The primitive is the data and the search, not another listbox.",
     earned: "When the booking flow had to show a viewer's own times across a DST change while the venue's clock stays put.",
+  },
+  {
+    id: "date-grid",
+    name: "DateGrid",
+    line: "A month of dates where every day can carry a status, a price and a badge, with the full date-grid keyboard; full days stay focusable and say why.",
+    api: `<DateGrid.Root value onValueChange month min max today locale getDayInfo={(d) => ({ status, label: "₹800", badge })}>
+  <DateGrid.Title /> <DateGrid.PreviousMonth render={<Button />} /> <DateGrid.NextMonth />
+  <DateGrid.Grid className={(s) => …}>
+    <DateGrid.Head />
+    <DateGrid.Body>{(date) => <DateGrid.Cell date={date}><DateGrid.Day /></DateGrid.Cell>}</DateGrid.Body>`,
+    usedIn: ["This page only, so far"],
+    skins: [
+      { title: "Bare", note: "No classes: a browser table of buttons, styled only through [data-selected] and [data-disabled]. Days before today are out of range; 31 Oct is full.", demo: <BareDateGrid /> },
+      { title: "Booking skin", note: "AvailabilityCalendar: the venue's hourly rate under each day, fullness from the fixture's bookings, coss Buttons to page.", demo: <BookingSkinDateGrid /> },
+      { title: "Desk skin", note: "A compact jump-to-date with no minimum (the desk works after the fact); the club's weekend hold is a word on its days.", demo: <DeskSkinDateGrid /> },
+    ],
+    keys: [
+      ["←|→", "Previous / next day, into the next month if need be (swapped on right-to-left pages)."],
+      ["↑|↓", "The same day a week earlier / later."],
+      ["Home|End", "First / last day of the week, from the locale's first day."],
+      ["Page Up|Page Down", "The same day a month earlier / later, clamped (31 Jan → 28 Feb). With Shift: a year."],
+      ["Space|Enter", "Choose the focused day, unless it is full, unavailable or out of range."],
+      ["Tab", "One stop for the grid: the focused day, else the chosen one, else today, else the month's first."],
+    ],
+    semantics: [
+      "A WAI-ARIA grid: a table with role=grid, named by the month title; column headers carry the weekday's long name in abbr.",
+      "The chosen day's cell has aria-selected; today has aria-current=date; full, unavailable and out-of-range days use aria-disabled, never disabled, so they stay reachable and their name ends with why (“fully booked”).",
+      "A day's name is its full date, today, its description or label, its badge and its status: “Saturday, 31 October 2026, from ₹800 an hour, few times left”.",
+      "In the booking skin the price is drawn outside the button and hidden from screen readers, because it is already in the name: the button's visible text is just the day number (WCAG 2.5.3).",
+      "Six rows every month, so the height never jumps; the week starts where the locale's does (Intl.Locale week info). Keys stop at min and max instead of doing nothing.",
+      "The month title is a polite live region, so paging is announced.",
+    ],
+    motion: ["The month slides 6 px from the side you paged towards, 180 ms, under motion-safe only; otherwise it simply changes, and the title says which month it is."],
+    why: "It owns the date logic (no date-picker dependency) and exposes each day's status as data attributes, so a booking month and a desk jump-to-date share the keyboard and semantics and nothing of their look.",
+    earned: "Ported from the author's scheduling-primitives study, where a booking month had to carry how full each day is and what it costs. coss's Calendar (DayPicker) is good at picking a date; Book and the desk still use it, and this grid is shown here only.",
   },
 ];
 
@@ -137,6 +187,7 @@ const MOTION: [string, string, string][] = [
   ["Toasts on a phone", "No motion of their own beyond coss's; the page shifts up by the toast's height, instantly", "Content makes room for a toast instead of hiding behind it; an animated scroll would fight your own."],
   ["Drawers, sheets, dialogs, popups", "coss's data-starting-style / data-ending-style transitions", "Where a surface came from, and where it went."],
   ["Toasts", "coss's stack: slide in, swipe away; gone after four seconds", "A passing outcome, never something to read later."],
+  ["Availability calendar month change", "Slides 6 px from the side you paged towards, 180 ms", "Which way you paged, without hiding the new month behind a long transition."],
   ["Slot selection, desk cells", "Nothing", "A choice must register instantly; motion would only delay it."],
 ];
 
@@ -158,7 +209,8 @@ export function PrimitivesPage(): React.ReactElement {
         </h1>
         <p className="max-w-3xl text-pretty text-muted-foreground">
           A component is a look you can drop in. A primitive is behaviour you can build looks on: state, keys, semantics, and data attributes to style from, with no
-          markup opinions. These three came out of this product once a second screen needed the same behaviour in a different skin. They follow Base UI's conventions:
+          markup opinions. SlotGrid, Recurrence and TimeZone came out of this product once a second screen needed the same behaviour in a different skin; DateGrid was
+          ported from a companion study and is shown here only. They follow Base UI's conventions:
           dot-namespaced parts, a <code className="font-mono text-foreground text-xs">render</code> prop, <code className="font-mono text-foreground text-xs">className</code>{" "}
           as a function of state, controlled or uncontrolled values.
         </p>

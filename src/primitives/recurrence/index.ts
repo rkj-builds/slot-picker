@@ -4,6 +4,8 @@
  * state behind any "Repeat" editor.
  */
 export {
+  type ClockChange,
+  clockChanges,
   describeLength,
   expandRecurrence,
   formatWallRange,
