@@ -6,7 +6,7 @@ import * as React from "react";
 import { addMonths, compareDates, type PlainDate, startOfMonth, todayIn, type Weekday, weekStartsOn as localeWeekStart } from "@/lib/plain-date";
 import { localTimeZone } from "@/lib/time-zone";
 import { DAY_ATTRIBUTE, type DateGridChangeDetails, DateGridRootContext, type DateGridRootContextValue } from "@/primitives/date-grid/date-grid-context";
-import { DEFAULT_STATUS_TEXT, type DayInfo, type DayStatus, inRange, isDateGridKey, moveDate, sameMonth } from "@/primitives/date-grid/model";
+import { DEFAULT_STATUS_TEXT, type DayInfo, type DayStatus, inRange, isDateGridKey, monthWeeks, moveDate, sameMonth } from "@/primitives/date-grid/model";
 import { type ClassNameProp, type StyleProp, stateProps, useControlled } from "@/primitives/utils";
 
 export interface DateGridRootState extends Record<string, unknown> {
@@ -114,14 +114,20 @@ export function DateGridRoot(props: DateGridRootProps): React.ReactElement {
     [month, setMonthState, onMonthChange, setDirection],
   );
 
-  const infoFor = React.useCallback((date: PlainDate) => getDayInfo?.(date), [getDayInfo]);
+  // Ask for each visible day's info once per month and getDayInfo, not once per part that reads it.
+  const monthInfo = React.useMemo(() => {
+    const out = new Map<PlainDate, DayInfo | undefined>();
+    if (getDayInfo) for (const d of monthWeeks(month, firstDay).flat()) if (sameMonth(d, month)) out.set(d, getDayInfo(d));
+    return out;
+  }, [month, firstDay, getDayInfo]);
+  const infoFor = React.useCallback((date: PlainDate) => (monthInfo.has(date) ? monthInfo.get(date) : getDayInfo?.(date)), [monthInfo, getDayInfo]);
   const isBlocked = React.useCallback(
     (date: PlainDate) => {
       if (disabled || !inRange(date, min, max)) return true;
-      const status = getDayInfo?.(date)?.status;
+      const status = infoFor(date)?.status;
       return status === "full" || status === "unavailable";
     },
-    [disabled, min, max, getDayInfo],
+    [disabled, min, max, infoFor],
   );
 
   const select = React.useCallback(

@@ -1,4 +1,4 @@
-import { screen, within } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import userEvent, { type UserEvent } from "@testing-library/user-event";
 import { describe, expect, it } from "vitest";
 import { DEMO_STATES } from "@/app/demo-states";
@@ -8,6 +8,10 @@ import { renderApp } from "@/app/test-utils";
 async function jump(user: UserEvent, label: string): Promise<void> {
   renderApp("#/primitives");
   await user.click(await screen.findByRole("button", { name: new RegExp(`^${label}`) }));
+  // Wait, cheaply, for the primitives page to give way while the desk chunk loads: a findBy* that fails
+  // on that long page prints the whole DOM into its error on every retry, which under a parallel run
+  // can outlast the timeout.
+  await waitFor(() => expect(document.querySelector('[data-slot="primitive-section"]')).toBeNull());
 }
 
 describe("demo states: inbox and team", () => {

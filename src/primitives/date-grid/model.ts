@@ -89,15 +89,32 @@ export function canPage(month: PlainDate, step: -1 | 1, min?: PlainDate | null, 
   return step < 0 ? !min || compareDates(endOfMonth(target), min) >= 0 : !max || compareDates(startOfMonth(target), max) <= 0;
 }
 
+const dateFormatters = new Map<string, Intl.DateTimeFormat>();
+
 /** A plain date through `Intl`, in UTC where its midnight lives, so no viewer ever sees the day before. */
 export function formatPlainDate(date: PlainDate, locale: string | undefined, options: Intl.DateTimeFormatOptions): string {
+  const key = `${locale ?? ""}|${JSON.stringify(options)}`;
+  let formatter = dateFormatters.get(key);
+  if (!formatter) {
+    // One formatter per locale and shape: a month renders forty-odd names, and constructing these is the slow part.
+    formatter = new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" });
+    dateFormatters.set(key, formatter);
+  }
   const { year, month, day } = parsePlainDate(date);
-  return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(Date.UTC(year, month - 1, day));
+  return formatter.format(Date.UTC(year, month - 1, day));
 }
+
+const todayWords = new Map<string, string>();
 
 /** "today" in the reader's language ("aujourd’hui"), from `Intl.RelativeTimeFormat`. */
 export function todayWord(locale: string | undefined): string {
-  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "day");
+  const key = locale ?? "";
+  let word = todayWords.get(key);
+  if (word === undefined) {
+    word = new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(0, "day");
+    todayWords.set(key, word);
+  }
+  return word;
 }
 
 /**

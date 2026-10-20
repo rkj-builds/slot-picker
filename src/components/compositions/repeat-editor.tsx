@@ -283,7 +283,7 @@ function ClockChangePreview({ occurrences, timeZone, viewerTimeZone, locale }: {
   const id = React.useId();
   const viewer = viewerTimeZone && occurrences.some((o) => !sameWallClock(o.start, timeZone, viewerTimeZone)) ? viewerTimeZone : undefined;
   const changes = clockChanges(occurrences, timeZone, viewer);
-  const weekday = (instant: number, zone: string): string => new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: zone }).format(instant);
+  const weekday = viewer ? new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: viewer }) : null;
   return (
     <div className="flex flex-col gap-1.5 rounded-lg bg-muted/48 p-3" data-slot="repeat-clock-changes">
       <span className="font-medium text-sm" id={id}>
@@ -304,7 +304,7 @@ function ClockChangePreview({ occurrences, timeZone, viewerTimeZone, locale }: {
               <span>{formatTime(o.start, { locale, timeZone })}</span>
               {viewer && (
                 <span>
-                  {shift?.days ? `${weekday(o.start, viewer)} ` : ""}
+                  {shift?.days && weekday ? `${weekday.format(o.start)} ` : ""}
                   {formatTime(o.start, { locale, timeZone: viewer })} in {zoneCityLabel(viewer)}
                 </span>
               )}
