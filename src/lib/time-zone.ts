@@ -115,16 +115,38 @@ export function sameWallClock(instant: number, a: string, b: string): boolean {
   return zoneOffsetMinutes(instant, a) === zoneOffsetMinutes(instant, b);
 }
 
-/** Old IANA names some engines still report, mapped to the current ones. */
-const ZONE_ALIASES: Readonly<Record<string, string>> = {
+/**
+ * Old IANA names some engines still report (Node and Chrome list Asia/Katmandu
+ * and America/Godthab, not Asia/Kathmandu and America/Nuuk), mapped to the
+ * names the cities use now. People search for the current name.
+ */
+export const ZONE_ALIASES: Readonly<Record<string, string>> = {
+  "America/Godthab": "America/Nuuk",
   "Asia/Calcutta": "Asia/Kolkata",
-  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Asia/Katmandu": "Asia/Kathmandu",
   "Asia/Rangoon": "Asia/Yangon",
+  "Asia/Saigon": "Asia/Ho_Chi_Minh",
+  "Atlantic/Faeroe": "Atlantic/Faroe",
   "Europe/Kiev": "Europe/Kyiv",
+  "Pacific/Enderbury": "Pacific/Kanton",
 };
 
+const canonicalCache = new Map<string, string>();
+
+/**
+ * The current name for a zone id. An alias is only used when this engine
+ * accepts it, so an older engine that knows only "America/Godthab" keeps it
+ * rather than getting a name `Intl` would reject.
+ */
 export function canonicalZone(timeZone: string): string {
-  return ZONE_ALIASES[timeZone] ?? timeZone;
+  const alias = ZONE_ALIASES[timeZone];
+  if (!alias) return timeZone;
+  let resolved = canonicalCache.get(timeZone);
+  if (resolved === undefined) {
+    resolved = isValidTimeZone(alias) ? alias : timeZone;
+    canonicalCache.set(timeZone, resolved);
+  }
+  return resolved;
 }
 
 /** The viewer's own zone, as the platform reports it, under its current name. */
@@ -155,6 +177,32 @@ export function zoneOffsetLabel(instant: number, timeZone: string, locale?: stri
  * is what people recognise when they are working out where they will be.
  */
 export function zoneCityLabel(timeZone: string): string {
-  const city = timeZone.split("/").at(-1) ?? timeZone;
+  const city = canonicalZone(timeZone).split("/").at(-1) ?? timeZone;
   return city.replaceAll("_", " ");
+}
+
+export interface DayShift {
+  /** Calendar days between the venue's date and the viewer's at the instant: −1, 0, +1 (±2 only across the date line's extremes). */
+  days: number;
+  /** What to print beside the time: "−1 day", "+1 day"; empty when it is the same day. */
+  text: string;
+  /** What to read out after the time: "the day before", "the day after"; empty when it is the same day. */
+  spoken: string;
+}
+
+/**
+ * Whether an instant falls on a different calendar day for the viewer than at
+ * the venue. 6:00 am on Sat in Kolkata is 8:30 pm on Fri in New York: −1 day,
+ * "the day before". A slot list grouped by the venue's day uses this to mark
+ * the times that belong to the viewer's previous or next day.
+ */
+export function dayShift(instant: number, venueZone: string, viewerZone: string): DayShift {
+  const venue = wallClockIn(instant, venueZone);
+  const viewer = wallClockIn(instant, viewerZone);
+  const days = Math.round((Date.UTC(viewer.year, viewer.month - 1, viewer.day) - Date.UTC(venue.year, venue.month - 1, venue.day)) / 86_400_000);
+  if (days === 0) return { days: 0, text: "", spoken: "" };
+  const n = Math.abs(days);
+  const text = `${days > 0 ? "+" : "\u2212"}${n} ${n === 1 ? "day" : "days"}`;
+  const spoken = n === 1 ? (days < 0 ? "the day before" : "the day after") : `${n} days ${days < 0 ? "before" : "after"}`;
+  return { days, text, spoken };
 }

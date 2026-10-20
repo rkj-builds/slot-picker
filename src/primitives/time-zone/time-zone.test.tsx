@@ -5,7 +5,7 @@ import * as React from "react";
 import { describe, expect, it } from "vitest";
 import { TimeZoneCombobox } from "@/components/compositions/time-zone-combobox";
 import { instantAt } from "@/lib/time-zone";
-import { describeZone, FALLBACK_ZONES, groupZones, listTimeZones, matchesZone } from "@/primitives/time-zone";
+import { describeZone, FALLBACK_ZONES, groupZones, listTimeZones, matchesZone, pinZone, timeZoneGroups, zoneAbbreviations } from "@/primitives/time-zone";
 
 const SAT_31_OCT = instantAt("2026-10-31", 16 * 60, "Asia/Kolkata");
 const SUN_1_NOV = instantAt("2026-11-01", 16 * 60, "Asia/Kolkata");
@@ -48,12 +48,49 @@ describe("zones as data", () => {
   });
 });
 
-function Harness({ zones }: { zones?: readonly string[] }): React.ReactElement {
+describe("zone search extras", () => {
+  it("finds a zone by the abbreviation people use, whole word only, in whichever English the engine says it", () => {
+    const kolkata = describeZone("Asia/Kolkata", SUN_1_NOV, "en-US");
+    expect(matchesZone(kolkata, "IST")).toBe(true);
+    expect(matchesZone(kolkata, "ist")).toBe(true);
+    expect(matchesZone(kolkata, "EST")).toBe(false);
+    // EDT is New York's name only before 1 Nov; after the change it is EST.
+    expect(matchesZone(describeZone("America/New_York", SAT_31_OCT, "en-IN"), "EDT")).toBe(true);
+    expect(matchesZone(describeZone("America/New_York", SUN_1_NOV, "en-IN"), "EDT")).toBe(false);
+    expect(matchesZone(describeZone("America/New_York", SUN_1_NOV, "en-IN"), "EST")).toBe(true);
+    expect(zoneAbbreviations("Europe/Paris", SAT_31_OCT)).toContain("CET");
+    expect(zoneAbbreviations("Asia/Tokyo", SAT_31_OCT).some((a) => a.startsWith("GMT"))).toBe(false);
+  });
+
+  it("finds a renamed city by its old name, and lists it under the new one", () => {
+    const kathmandu = describeZone("Asia/Katmandu", SUN_1_NOV, "en-US");
+    expect(kathmandu).toMatchObject({ value: "Asia/Kathmandu", city: "Kathmandu", offsetLabel: "GMT+5:45" });
+    expect(matchesZone(kathmandu, "katmandu")).toBe(true);
+    expect(matchesZone(kathmandu, "kathmandu")).toBe(true);
+    expect(describeZone("America/Godthab", SUN_1_NOV, "en-US").city).toBe("Nuuk");
+    expect(matchesZone(describeZone("America/Godthab", SUN_1_NOV, "en-US"), "godthab")).toBe(true);
+    expect(listTimeZones()).not.toContain("Asia/Katmandu");
+  });
+
+  it("pins a zone first, once, under Your time zone", () => {
+    const groups = pinZone(timeZoneGroups(SUN_1_NOV, "en-US", ["Asia/Kolkata", "Asia/Tokyo", "Europe/London"]), "Asia/Calcutta", SUN_1_NOV, "en-US");
+    expect(groups.map((g) => [g.value, g.items.map((z) => z.city)])).toEqual([
+      ["Your time zone", ["Kolkata"]],
+      ["Asia", ["Tokyo"]],
+      ["Europe", ["London"]],
+    ]);
+    // A zone not in the list is still pinned; a region left empty disappears.
+    expect(pinZone(timeZoneGroups(SUN_1_NOV, "en-US", ["Asia/Tokyo"]), "Asia/Tokyo", SUN_1_NOV).map((g) => g.value)).toEqual(["Your time zone"]);
+    expect(pinZone([], "America/New_York", SUN_1_NOV, "en-US")[0]!.items[0]!.offsetLabel).toBe("GMT-5");
+  });
+});
+
+function Harness({ zones, pinned }: { zones?: readonly string[]; pinned?: string }): React.ReactElement {
   const [zone, setZone] = React.useState("Asia/Kolkata");
   return (
     <>
       <label htmlFor="tz">Show times in</label>
-      <TimeZoneCombobox at={SUN_1_NOV} id="tz" locale="en-US" onValueChange={setZone} value={zone} zones={zones} />
+      <TimeZoneCombobox at={SUN_1_NOV} id="tz" locale="en-US" onValueChange={setZone} pinned={pinned} value={zone} zones={zones} />
       <output>{zone}</output>
     </>
   );
@@ -87,6 +124,31 @@ describe("TimeZoneCombobox", () => {
     const input = screen.getByRole("combobox", { name: "Show times in" });
     await user.clear(input);
     await user.type(input, "-8");
+    expect(within(await screen.findByRole("listbox")).getAllByRole("option").map((o) => o.textContent)).toEqual(["Los AngelesGMT-8"]);
+  });
+
+  it("lists no pinned group unless asked, and the pinned zone first when asked", async () => {
+    const user = userEvent.setup();
+    const { unmount } = render(<Harness zones={zones} />);
+    await user.click(screen.getByRole("combobox", { name: "Show times in" }));
+    expect(within(await screen.findByRole("listbox")).queryByRole("group", { name: "Your time zone" })).toBeNull();
+    unmount();
+
+    render(<Harness pinned="America/New_York" zones={zones} />);
+    await user.click(screen.getByRole("combobox", { name: "Show times in" }));
+    const listbox = await screen.findByRole("listbox");
+    const groups = within(listbox).getAllByRole("group");
+    expect(groups[0]).toHaveAccessibleName("Your time zone");
+    expect(within(groups[0]!).getAllByRole("option").map((o) => o.textContent)).toEqual(["New YorkGMT-5"]);
+    expect(within(listbox).getAllByRole("option").filter((o) => o.textContent?.startsWith("New York"))).toHaveLength(1);
+  });
+
+  it("finds a zone by abbreviation as you type", async () => {
+    const user = userEvent.setup();
+    render(<Harness zones={zones} />);
+    const input = screen.getByRole("combobox", { name: "Show times in" });
+    await user.clear(input);
+    await user.type(input, "PST");
     expect(within(await screen.findByRole("listbox")).getAllByRole("option").map((o) => o.textContent)).toEqual(["Los AngelesGMT-8"]);
   });
 

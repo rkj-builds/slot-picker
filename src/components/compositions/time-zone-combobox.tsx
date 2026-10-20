@@ -25,6 +25,8 @@ export interface TimeZoneComboboxProps {
   locale?: string;
   size?: "sm" | "default" | "lg";
   zones?: readonly string[];
+  /** A zone listed first under "Your time zone" (pass `localTimeZone()`). Off by default. */
+  pinned?: string | null;
   className?: string;
   /** For a Field label: `aria-labelledby` or a plain `aria-label`. */
   "aria-label"?: string;
@@ -38,8 +40,8 @@ export interface TimeZoneComboboxProps {
  * "Kolkata, Asia, GMT+5:30"; search matches cities, countries' long names
  * ("india"), regions and offsets ("+5:30").
  */
-export function TimeZoneCombobox({ value, onValueChange, at, locale, size = "default", zones, className, id, ...aria }: TimeZoneComboboxProps): React.ReactElement {
-  const { rootProps } = useTimeZoneCombobox({ value, onValueChange, at, locale, zones });
+export function TimeZoneCombobox({ value, onValueChange, at, locale, size = "default", zones, pinned = null, className, id, ...aria }: TimeZoneComboboxProps): React.ReactElement {
+  const { rootProps } = useTimeZoneCombobox({ value, onValueChange, at, locale, zones, pinned });
   return (
     <Combobox {...rootProps}>
       <ComboboxInput

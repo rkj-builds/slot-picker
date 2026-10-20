@@ -4,7 +4,7 @@
  * instant, never stored, because they change: New York is GMT−4 on
  * 31 Oct 2026 and GMT−5 on 1 Nov.
  */
-import { canonicalZone, zoneCityLabel, zoneOffsetMinutes } from "@/lib/time-zone";
+import { canonicalZone, ZONE_ALIASES, zoneCityLabel, zoneOffsetMinutes } from "@/lib/time-zone";
 
 /** For engines without `Intl.supportedValuesOf`: the zones people most often pick, one per offset band. */
 export const FALLBACK_ZONES: readonly string[] = [
@@ -66,14 +66,20 @@ export interface ZoneOption {
   offsetLabel: string;
   /** "India Standard Time": for search and for screen readers. */
   longName: string;
+  /** The instant the offset and names were read at. */
+  at: number;
   /** "Kolkata (GMT+5:30)": what the input shows once chosen. */
   label: string;
 }
 
 const longFormatters = new Map<string, Intl.DateTimeFormat>();
 const offsetFormatters = new Map<string, Intl.DateTimeFormat>();
+const shortFormatters = new Map<string, Intl.DateTimeFormat>();
 
-function formatter(cache: Map<string, Intl.DateTimeFormat>, locale: string | undefined, timeZone: string, timeZoneName: "long" | "shortOffset"): Intl.DateTimeFormat {
+/** The locales asked for abbreviations, besides the reader's: between them they know IST, EDT/PDT, BST/CET and AEST. */
+const ABBREVIATION_LOCALES = ["en-US", "en-IN", "en-GB", "en-AU"] as const;
+
+function formatter(cache: Map<string, Intl.DateTimeFormat>, locale: string | undefined, timeZone: string, timeZoneName: "long" | "short" | "shortOffset"): Intl.DateTimeFormat {
   const key = `${locale ?? ""}|${timeZone}`;
   let f = cache.get(key);
   if (!f) {
@@ -85,6 +91,33 @@ function formatter(cache: Map<string, Intl.DateTimeFormat>, locale: string | und
 
 function namePart(f: Intl.DateTimeFormat, at: number): string {
   return f.formatToParts(at).find((p) => p.type === "timeZoneName")?.value ?? "";
+}
+
+const abbreviationCache = new Map<string, string[]>();
+
+/**
+ * The short names people type for a zone at an instant: "IST", "EDT", "CET".
+ * `Intl` gives them per locale (en-IN says IST where en-US says GMT+5:30, and
+ * en-US says EDT where en-IN says GMT-4), so a few English locales are asked
+ * besides the reader's. Numeric ones ("GMT+5:30") are left to the offset
+ * match. Computed on first search, not when the list is built: it is a few
+ * thousand formatters across every zone.
+ */
+export function zoneAbbreviations(timeZone: string, at: number, locale?: string): string[] {
+  const hour = Math.floor(at / 3_600_000);
+  const key = `${locale ?? ""}|${timeZone}|${hour}`;
+  let names = abbreviationCache.get(key);
+  if (!names) {
+    names = [
+      ...new Set(
+        [locale, ...ABBREVIATION_LOCALES]
+          .map((l) => namePart(formatter(shortFormatters, l, timeZone, "short"), at))
+          .filter((name) => name !== "" && !/^(GMT|UTC)([+\-−]|$)/.test(name)),
+      ),
+    ];
+    abbreviationCache.set(key, names);
+  }
+  return names;
 }
 
 /** One zone at one instant: its city, region and live offset. */
@@ -104,6 +137,7 @@ export function describeZone(id: string, at: number, locale?: string): ZoneOptio
     offsetMinutes: zoneOffsetMinutes(at, value),
     offsetLabel,
     longName,
+    at,
     label: value === "UTC" ? `UTC (${offsetLabel})` : `${city} (${offsetLabel})`,
   };
 }
@@ -133,14 +167,20 @@ function fold(text: string): string {
 
 /**
  * Does `zone` match what someone typed? City, id, region, area, the long
- * name ("india", "pacific time") and the offset ("+5:30", "gmt-5", "utc+1").
+ * name ("india", "pacific time"), an abbreviation ("IST", "EDT", whole word
+ * only) and the offset ("+5:30", "gmt-5", "utc+1"). A city under its old
+ * name ("Katmandu", "Godthab") finds its current one.
  */
 export function matchesZone(zone: ZoneOption, query: string): boolean {
   const q = fold(query.trim()).replace(/^utc(?=[+−-])/, "gmt").replace("−", "-");
   if (!q) return true;
   const offset = fold(zone.offsetLabel).replace("−", "-");
-  const haystack = [zone.city, zone.value.replaceAll("_", " "), zone.region, zone.area, zone.longName].map(fold);
+  const formerNames = Object.entries(ZONE_ALIASES)
+    .filter(([, current]) => current === zone.value)
+    .map(([old]) => old.replaceAll("_", " "));
+  const haystack = [zone.city, zone.value.replaceAll("_", " "), zone.region, zone.area, zone.longName, ...formerNames].map(fold);
   if (haystack.some((h) => h.includes(q))) return true;
+  if (/^[a-z]{3,5}$/.test(q) && zoneAbbreviations(zone.value, zone.at).some((a) => fold(a) === q)) return true;
   if (/^[+-]\d/.test(q)) return offset === `gmt${q}` || offset.startsWith(`gmt${q}:`);
   return offset === q || (q.startsWith("gmt") && q.length > 3 && (offset === q || offset.startsWith(`${q}:`)));
 }
@@ -148,4 +188,19 @@ export function matchesZone(zone: ZoneOption, query: string): boolean {
 /** Every zone, described at `at`, grouped by region. */
 export function timeZoneGroups(at: number, locale?: string, ids: readonly string[] = listTimeZones()): ZoneGroup[] {
   return groupZones(ids.map((id) => describeZone(id, at, locale)));
+}
+
+/** The label of the group `pinZone` puts first. */
+export const PINNED_GROUP_LABEL = "Your time zone";
+
+/**
+ * Put one zone (usually the viewer's own, `localTimeZone()`) in a group of
+ * its own at the top, and take it out of its region so it is listed once.
+ * A zone missing from the list is described at `at` and added.
+ */
+export function pinZone(groups: readonly ZoneGroup[], timeZone: string, at: number, locale?: string, label: string = PINNED_GROUP_LABEL): ZoneGroup[] {
+  const id = canonicalZone(timeZone);
+  const found = groups.flatMap((g) => g.items).find((z) => z.value === id) ?? describeZone(id, at, locale);
+  const rest = groups.map((g) => ({ value: g.value, items: g.items.filter((z) => z.value !== id) })).filter((g) => g.items.length > 0);
+  return [{ value: label, items: [found] }, ...rest];
 }
