@@ -47,6 +47,14 @@
     --color-background: var(--background);
     --color-accent-foreground: var(--accent-foreground);
     --color-accent: var(--accent);
+    --color-sidebar: var(--sidebar);
+    --color-sidebar-foreground: var(--sidebar-foreground);
+    --color-sidebar-primary: var(--sidebar-primary);
+    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+    --color-sidebar-accent: var(--sidebar-accent);
+    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+    --color-sidebar-border: var(--sidebar-border);
+    --color-sidebar-ring: var(--sidebar-ring);
   @keyframes skeleton {
   to {
     background-position: -200% 0;
@@ -154,6 +162,15 @@
     --success-foreground: var(--color-emerald-700);
     --warning: var(--color-amber-500);
     --warning-foreground: var(--color-amber-700);
+    /* Sidebar (coss's Sidebar reads these; the palette ships none). Current and hover share one wash, like Cal.com's nav. */
+    --sidebar: var(--background);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: --alpha(var(--color-black) / 6%);
+    --sidebar-accent-foreground: var(--color-neutral-900);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 }
 
 .dark {
@@ -182,6 +199,14 @@
     --success-foreground: var(--color-emerald-400);
     --warning: var(--color-amber-500);
     --warning-foreground: var(--color-amber-400);
+    --sidebar: var(--background);
+    --sidebar-foreground: var(--foreground);
+    --sidebar-primary: var(--primary);
+    --sidebar-primary-foreground: var(--primary-foreground);
+    --sidebar-accent: --alpha(var(--color-white) / 8%);
+    --sidebar-accent-foreground: var(--color-white);
+    --sidebar-border: var(--border);
+    --sidebar-ring: var(--ring);
 }
 /* App addition: say which scheme native controls and scrollbars should use. */
 :root,
