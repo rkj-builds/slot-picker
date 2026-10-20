@@ -13,6 +13,16 @@ describe("home, demo bar and not found", () => {
     expect(await axeViolations()).toEqual([]);
   });
 
+  it("home says who made it and links the code, the coss ui fix and the author's site", async () => {
+    renderApp("#/");
+    await screen.findByRole("heading", { level: 1, name: /Court booking that asks for money/ });
+    expect(screen.getByRole("link", { name: "Rahul Jha" })).toHaveAttribute("href", "https://rkj-builds.github.io/");
+    const links = screen.getByRole("navigation", { name: "Source and author" });
+    expect(within(links).getByRole("link", { name: /Code on GitHub/ })).toHaveAttribute("href", "https://github.com/rkj-builds/slot-picker");
+    expect(within(links).getByRole("link", { name: /My coss ui fix/ })).toHaveAttribute("href", "https://github.com/cosscom/ui/pull/890");
+    expect(within(links).getByRole("link", { name: /More of my work/ })).toHaveAttribute("href", "https://rkj-builds.github.io/");
+  });
+
   it("the demo bar marks the current section", async () => {
     renderApp("#/book");
     const nav = await screen.findByRole("navigation", { name: "Demo sections" });
