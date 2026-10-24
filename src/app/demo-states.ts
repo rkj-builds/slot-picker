@@ -8,7 +8,7 @@ import type { DemoScenarios } from "@/app/store";
 import { TEAM_IDS } from "@/data/mock/seed";
 import { DEFAULT_SETTINGS, type VenueSettings } from "@/lib/venue";
 
-export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "Programmes" | "Money" | "Inbox and team" | "System";
+export type StateGroup = "Booking" | "Payment" | "After booking" | "Desk" | "Programmes" | "Money" | "Inbox and team" | "System" | "Components";
 
 export type StateSetup =
   /** A draft with a day and a time chosen, so the details step opens. */
@@ -96,6 +96,12 @@ export const DEMO_STATES: readonly DemoState[] = [
 
   { id: "slow", group: "System", label: "Slow network", shows: "Every round trip takes seconds: the skeletons stay up.", presets: { slowNetwork: true }, hash: "#/book/when" },
   { id: "load-fails", group: "System", label: "Load fails, then retry", shows: "The error state with Try again; the retry works.", setup: "fail-load", hash: "#/desk" },
+  { id: "wl-idle", group: "Components", label: "Waitlist: full, not joined", shows: "The proposal's demo instance before anyone joins.", hash: "#/components/waitlist?state=idle" },
+  { id: "wl-joining", group: "Components", label: "Waitlist: checking", shows: "Checking for cancellations: busy, same button width.", hash: "#/components/waitlist?state=joining" },
+  { id: "wl-joined", group: "Components", label: "Waitlist: position 1", shows: "On the list, nobody ahead; the position has focus.", hash: "#/components/waitlist?state=joined" },
+  { id: "wl-error", group: "Components", label: "Waitlist: join failed, retry", shows: "The error line on its reserved height; the same button retries.", hash: "#/components/waitlist?state=error" },
+  { id: "wl-cancel", group: "Components", label: "Waitlist: Are you sure?", shows: "The question before leaving; Escape closes it.", hash: "#/components/waitlist?state=cancel-confirm" },
+  { id: "wl-rtl-dark", group: "Components", label: "Waitlist: right-to-left, dark", shows: "The chevrons mirror (coss ui #913); tokens only.", hash: "#/components/waitlist?state=joined&dir=rtl&theme=dark" },
 
   // Bookings and availability: the booking page, the list's views and filters, opening hours, closures, blocks.
   { id: "booking-detail", group: "Desk", label: "Booking with a balance", shows: "A booking's own page: ₹300 paid in cash, the rest due. Record payment opens with the balance filled in.", setup: "booking-balance", hash: "#/desk/bookings/{booking}" },

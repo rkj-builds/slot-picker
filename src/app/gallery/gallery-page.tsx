@@ -114,6 +114,10 @@ export function GalleryPage(): React.ReactElement {
           <Button className="h-auto px-0 py-0 align-baseline text-base underline sm:h-auto sm:text-base" render={<Anchor href="#/primitives" />} variant="link">
             Primitives
           </Button>
+          . And one coss ui doesn't have yet, written up the way coss documents a component:{" "}
+          <Button className="h-auto px-0 py-0 align-baseline text-base underline sm:h-auto sm:text-base" render={<Anchor href="#/components/waitlist" />} variant="link">
+            Waitlist (proposal)
+          </Button>
           .
         </p>
         <nav aria-label="Sections">
