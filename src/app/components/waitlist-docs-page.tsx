@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowUpRightIcon, ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
+import { ChevronLeftIcon, ChevronRightIcon } from "lucide-react";
 import * as React from "react";
 import { Anchor } from "@/app/anchor";
+import { BookCallButton } from "@/app/components/book-call-button";
 import { DirectionFrame, type Direction } from "@/app/components/direction-frame";
 import { PropsTable } from "@/app/components/props-table";
 import { WaitlistDemo } from "@/app/components/waitlist-demo";
@@ -22,8 +23,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsList, TabsPanel, TabsTab } from "@/components/ui/tabs";
 import { parseComponent } from "@/lib/props";
 
-/** Rahul's 30-minute slot on Cal.com. */
-const CAL_LINK = "https://cal.com/rahul-kumar-jha-ll9vhj/30min";
+/** Rahul's 30-minute slot on Cal.com; it opens as Cal.com's own booking pop-up (book-call-button.tsx). */
+const CAL_SLUG = "rahul-kumar-jha-ll9vhj/30min";
 const WORK_LINK = "https://rkj-builds.github.io/for/cal/";
 const PR_913 = "https://github.com/cosscom/ui/pull/913";
 
@@ -299,10 +300,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       <section className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/30 p-6">
         <p className="font-medium">If a slot opens, this is where I'd like to spend it.</p>
         <div className="flex flex-wrap gap-2">
-          <Button render={<Anchor href={CAL_LINK} rel="noreferrer" target="_blank" />}>
-            Book a time to argue about the API
-            <ArrowUpRightIcon aria-hidden="true" className="rtl:-scale-x-100" />
-          </Button>
+          <BookCallButton calLink={CAL_SLUG}>Book a time to argue about the API</BookCallButton>
           <Button render={<Anchor href={WORK_LINK} />} variant="outline">
             The work
           </Button>
