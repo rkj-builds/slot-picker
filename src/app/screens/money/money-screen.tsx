@@ -158,7 +158,7 @@ function Tile({ label, value, sub, href, failed, onRetry }: { label: string; val
           </>
         ) : (
           <>
-            <span className="font-semibold text-xl tabular-nums tracking-tight sm:text-2xl">{value}</span>{" "}
+            <span className="font-semibold text-xl tabular-nums sm:text-2xl">{value}</span>{" "}
             {sub && <span className="text-pretty text-muted-foreground text-xs">{sub}</span>}
           </>
         )}

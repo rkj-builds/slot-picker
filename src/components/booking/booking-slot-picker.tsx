@@ -144,7 +144,7 @@ export function BookingSlotPicker({
     >
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <h2 className="font-semibold text-base tracking-tight" id={headingId}>
+          <h2 className="font-semibold text-base" id={headingId}>
             {heading}
           </h2>
           <TimeZoneHint

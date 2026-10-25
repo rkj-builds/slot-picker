@@ -92,7 +92,7 @@ export function BookPage({ route }: { route: Route }): React.ReactElement {
       <main className="mx-auto flex w-full max-w-xl flex-1 flex-col gap-6 px-4 pt-6 sm:pt-10 lg:max-w-5xl lg:pb-12">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-col">
-            <span className="font-semibold text-sm tracking-tight">{VENUE.name}</span>
+            <span className="font-semibold text-sm">{VENUE.name}</span>
             <span className="flex items-center gap-1 text-muted-foreground text-xs">
               <MapPinIcon aria-hidden="true" className="size-3" />
               {VENUE.city} · 2 pickleball courts
@@ -181,7 +181,7 @@ export function LoadError({ onRetry }: { onRetry: () => void }): React.ReactElem
 export function StepHeading({ title, description }: { title: string; description?: React.ReactNode }): React.ReactElement {
   return (
     <div className="flex flex-col gap-1">
-      <h1 className="font-semibold text-2xl tracking-tight outline-none" tabIndex={-1}>
+      <h1 className="font-semibold text-2xl outline-none" tabIndex={-1}>
         {title}
       </h1>
       {description && <p className="text-pretty text-muted-foreground text-sm">{description}</p>}

@@ -13,7 +13,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { attemptJoin, placeLabel, type WaitlistPlace, type WaitlistState } from "@/lib/waitlist";
@@ -154,8 +154,10 @@ export function Waitlist({
               <WaitlistTitle />
               {status ? <WaitlistStatus>{status}</WaitlistStatus> : null}
             </WaitlistHeader>
-            <WaitlistPosition />
-            <WaitlistActions />
+            <WaitlistBody>
+              <WaitlistPosition />
+              <WaitlistActions />
+            </WaitlistBody>
           </>
         )}
       </Card>
@@ -167,10 +169,11 @@ export function WaitlistHeader(props: React.ComponentProps<typeof CardHeader>): 
   return <CardHeader data-slot="waitlist-header" {...props} />;
 }
 
-export function WaitlistTitle({ children, ...props }: React.ComponentProps<typeof CardTitle>): React.ReactElement {
+export function WaitlistTitle({ children, className, ...props }: React.ComponentProps<typeof CardTitle>): React.ReactElement {
   const { item } = useWaitlist("WaitlistTitle");
   return (
-    <CardTitle data-slot="waitlist-title" {...props}>
+    // coss's CardTitle is leading-none, set for one line; an item name can wrap, so it gets the guide's 125% and balanced lines.
+    <CardTitle className={cn("text-balance leading-tight", className)} data-slot="waitlist-title" {...props}>
       {children ?? item}
     </CardTitle>
   );
@@ -189,8 +192,7 @@ export function WaitlistPosition({ className, ...props }: React.ComponentProps<"
   if (state !== "joined" || !place) return null;
   const [number, rest] = placeLabel(place).split(" · ");
   return (
-    <CardPanel>
-      <div
+    <div
         aria-label={`Position ${number}, ${rest}`}
         className={cn("flex items-baseline gap-3 rounded-lg outline-none motion-safe:animate-waitlist-enter focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
         data-slot="waitlist-position"
@@ -199,13 +201,12 @@ export function WaitlistPosition({ className, ...props }: React.ComponentProps<"
         tabIndex={-1}
         {...props}
       >
-        <span className="font-semibold text-4xl tabular-nums tracking-tight">{number}</span>
+        <span className="font-semibold text-4xl tabular-nums leading-none">{number}</span>
         <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
           <ArrowRightIcon aria-hidden="true" className="size-4 rtl:rotate-180" />
           {rest}
         </span>
       </div>
-    </CardPanel>
   );
 }
 
@@ -291,17 +292,23 @@ export function WaitlistCancel({
   );
 }
 
-/** Join and Leave side by side; whichever applies renders. */
-export function WaitlistActions({ cancelOpen = false, ...props }: React.ComponentProps<typeof CardFooter> & { cancelOpen?: boolean }): React.ReactElement {
+/** Everything under the header in one panel with one gap, so the card's rhythm doesn't depend on which parts are showing. */
+export function WaitlistBody({ className, ...props }: React.ComponentProps<typeof CardPanel>): React.ReactElement {
+  // pt-0 by hand: coss zeroes it with a :has(> header) selector that the live region, first in the card, keeps from matching.
+  return <CardPanel className={cn("flex flex-col gap-4 pt-0", className)} data-slot="waitlist-body" {...props} />;
+}
+
+/** Join and Leave; whichever applies renders. */
+export function WaitlistActions({ cancelOpen = false, className, ...props }: React.ComponentProps<"div"> & { cancelOpen?: boolean }): React.ReactElement {
   return (
-    <CardFooter data-slot="waitlist-actions" {...props}>
+    <div className={cn("flex flex-wrap items-start gap-2", className)} data-slot="waitlist-actions" {...props}>
       <WaitlistJoin />
       <WaitlistCancel defaultOpen={cancelOpen} />
-    </CardFooter>
+    </div>
   );
 }
 
-/** One line of context under the actions: the viewer's time zone, a date. */
+/** One line of context: the viewer's time zone, a date. Above the actions, so the reserved error line ends the card. */
 export function WaitlistMeta({ className, ...props }: React.ComponentProps<"p">): React.ReactElement {
-  return <p className={cn("px-6 pb-5 text-muted-foreground text-xs", className)} data-slot="waitlist-meta" {...props} />;
+  return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" {...props} />;
 }

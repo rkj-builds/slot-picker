@@ -14,7 +14,7 @@
 @custom-variant dark (&:is(.dark *):not(:is(.light *)));
 
 @theme inline {
-    /* From @coss/style: the font contract (Inter + Geist Mono, see main.tsx). */
+    /* From @coss/style: the font contract. Cal Sans + Paper Mono, as coss ui's own site (fonts.css). */
     --font-heading: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
     --font-mono: var(--font-mono, ui-monospace, monospace);
     --font-sans: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
@@ -147,8 +147,8 @@
 :root,
 .light {
     --radius: 0.625rem;
-    --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
-    --font-mono: "Geist Mono Variable", ui-monospace, monospace;
+    --font-sans: "Cal Sans", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "Paper Mono", ui-monospace, monospace;
     --accent: --alpha(var(--color-black) / 4%);
     --accent-foreground: var(--color-neutral-800);
     --background: var(--color-white);
@@ -247,6 +247,9 @@
     }
     html {
         @apply font-sans antialiased;
+        /* Cal Sans picks its drawing by size; no faux bold or italic when a style is missing. */
+        font-optical-sizing: auto;
+        font-synthesis: none;
     }
     /* App addition: nothing moves for people who asked it not to. */
     @media (prefers-reduced-motion: reduce) {

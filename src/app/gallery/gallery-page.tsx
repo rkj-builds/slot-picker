@@ -102,7 +102,7 @@ export function GalleryPage(): React.ReactElement {
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8">
       <div className="flex flex-col gap-2">
-        <h1 className="font-semibold text-3xl tracking-tight">Components</h1>
+        <h1 className="font-semibold text-3xl">Components</h1>
         <p className="max-w-2xl text-muted-foreground">
           The real{" "}
           <Button className="h-auto px-0 py-0 align-baseline text-base underline sm:h-auto sm:text-base" render={<Anchor href="https://coss.com/ui" rel="noreferrer" target="_blank" />} variant="link">
@@ -1020,7 +1020,7 @@ function Section({
   return (
     <section aria-labelledby={slug(title)} className="flex scroll-mt-16 flex-col gap-3" data-slot="gallery-section">
       <div className="flex flex-col">
-        <h2 className="font-semibold text-lg tracking-tight" id={slug(title)}>
+        <h2 className="font-semibold text-lg" id={slug(title)}>
           {title}
         </h2>
         {note && <p className="text-muted-foreground text-sm">{note}</p>}
@@ -1034,7 +1034,7 @@ function Section({
             key={scope}
             role="group"
           >
-            <span className="font-medium text-muted-foreground text-xs uppercase tracking-wide">{scope}</span>
+            <span className="font-medium text-muted-foreground text-xs uppercase">{scope}</span>
             {typeof children === "function" ? children(scope) : children}
           </div>
         ))}

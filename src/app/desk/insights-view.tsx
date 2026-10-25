@@ -110,7 +110,7 @@ function Hero({ label, value, sub }: { label: string; value: string; sub: string
   return (
     <Card className="gap-1 px-5 py-4">
       <dt className="text-muted-foreground text-sm">{label}</dt>
-      <dd className="font-semibold text-3xl tabular-nums tracking-tight">{value}</dd>
+      <dd className="font-semibold text-3xl tabular-nums">{value}</dd>
       <dd className="text-muted-foreground text-xs">{sub}</dd>
     </Card>
   );

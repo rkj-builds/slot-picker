@@ -77,7 +77,7 @@ export function DoneStep(): React.ReactElement | null {
           {cancelled ? "Cancelled" : "Confirmed"}
         </Badge>
         <div className="flex flex-col gap-1">
-          <h1 className="font-semibold text-2xl tracking-tight outline-none" tabIndex={-1}>
+          <h1 className="font-semibold text-2xl outline-none" tabIndex={-1}>
             {cancelled ? "Booking cancelled" : "You are booked"}
           </h1>
           <p className="text-muted-foreground text-sm">{where}</p>

@@ -204,7 +204,7 @@ export function PrimitivesPage(): React.ReactElement {
           <BlocksIcon aria-hidden="true" className="size-4" />
           src/primitives
         </div>
-        <h1 className="font-semibold text-3xl tracking-tight outline-none" tabIndex={-1}>
+        <h1 className="font-semibold text-3xl outline-none" tabIndex={-1}>
           Primitives
         </h1>
         <p className="max-w-3xl text-pretty text-muted-foreground">
@@ -283,7 +283,7 @@ export function PrimitivesPage(): React.ReactElement {
 function SectionHeading({ id, title, line }: { id: string; title: string; line: string }): React.ReactElement {
   return (
     <div className="flex flex-col gap-1">
-      <h2 className="font-semibold text-xl tracking-tight" id={id}>
+      <h2 className="font-semibold text-xl" id={id}>
         {title}
       </h2>
       <p className="max-w-3xl text-pretty text-muted-foreground text-sm">{line}</p>

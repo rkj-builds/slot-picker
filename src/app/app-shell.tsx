@@ -51,7 +51,7 @@ export function DemoBar({ route }: { route: Route }): React.ReactElement {
   return (
     <header className="sticky top-0 z-40 border-b bg-background/88 backdrop-blur supports-[backdrop-filter]:bg-background/72" data-slot="demo-bar">
       <div className="mx-auto flex h-12 w-full max-w-6xl items-center gap-2 px-4 sm:gap-4">
-        <Button aria-label="Project 831, home" className="shrink-0 px-1 font-semibold tracking-tight" render={<Anchor href="#/" />} variant="ghost">
+        <Button aria-label="Project 831, home" className="shrink-0 px-1 font-semibold" render={<Anchor href="#/" />} variant="ghost">
           <LogoMark />
           <span aria-hidden="true" className="hidden lg:inline">
             Project 831

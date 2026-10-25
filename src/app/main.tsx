@@ -2,8 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "@/app/app";
 import { installCookieStoreShim } from "@/app/cookie-store-shim";
-import "@fontsource-variable/inter";
-import "@fontsource-variable/geist-mono";
+import "@/styles/fonts.css";
 import "@/styles/theme.css";
 
 installCookieStoreShim();

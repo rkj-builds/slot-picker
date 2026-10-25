@@ -179,7 +179,7 @@ export function SlotGrid({
       {groups.map(({ period, slots: periodSlots }) => (
         <SlotGridPrimitive.Group aria-label={PERIOD_LABEL[period]} className="flex flex-col gap-2" data-period={period} data-slot="slot-grid-period" key={period}>
           <div aria-hidden="true" className="flex items-baseline gap-2 text-muted-foreground text-xs">
-            <span className="font-medium uppercase tracking-wide">{PERIOD_LABEL[period]}</span>
+            <span className="font-medium uppercase">{PERIOD_LABEL[period]}</span>
             <span className="tabular-nums">{periodSlots.filter((s) => s.status === "available").length} free</span>
           </div>
           <SlotGridPrimitive.Row className="grid grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))] gap-2" data-slot="slot-grid-row">

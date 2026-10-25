@@ -78,7 +78,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
         </Breadcrumb>
         <div className="flex flex-col gap-2">
           <div className="flex flex-wrap items-center gap-3">
-            <h1 className="font-semibold text-3xl tracking-tight" tabIndex={-1}>
+            <h1 className="font-semibold text-3xl" tabIndex={-1}>
               Waitlist
             </h1>
             <Badge variant="secondary">proposal</Badge>
@@ -93,7 +93,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
 
       <section aria-labelledby="preview-h" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-xl tracking-tight" id="preview-h">
+          <h2 className="font-semibold text-xl" id="preview-h">
             Preview
           </h2>
           <div className="flex flex-wrap items-center gap-2">
@@ -176,7 +176,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="api-h" className="flex flex-col gap-3">
-        <h2 className="font-semibold text-xl tracking-tight" id="api-h">
+        <h2 className="font-semibold text-xl" id="api-h">
           API reference
         </h2>
         <p className="max-w-2xl text-muted-foreground text-sm">
@@ -187,7 +187,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="states-h" className="flex flex-col gap-4">
-        <h2 className="font-semibold text-xl tracking-tight" id="states-h">
+        <h2 className="font-semibold text-xl" id="states-h">
           States
         </h2>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -205,7 +205,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="a11y-h" className="flex flex-col gap-4">
-        <h2 className="font-semibold text-xl tracking-tight" id="a11y-h">
+        <h2 className="font-semibold text-xl" id="a11y-h">
           Accessibility
         </h2>
         <ul className="flex max-w-2xl list-disc flex-col gap-2 ps-5 text-muted-foreground text-sm">
@@ -256,7 +256,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="motion-h" className="flex flex-col gap-3">
-        <h2 className="font-semibold text-xl tracking-tight" id="motion-h">
+        <h2 className="font-semibold text-xl" id="motion-h">
           Motion
         </h2>
         <dl className="grid max-w-2xl gap-x-6 gap-y-2 text-sm sm:grid-cols-[8rem_1fr]">
@@ -272,7 +272,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="rtl-h" className="flex flex-col gap-3">
-        <h2 className="font-semibold text-xl tracking-tight" id="rtl-h">
+        <h2 className="font-semibold text-xl" id="rtl-h">
           Right-to-left
         </h2>
         <p className="max-w-2xl text-muted-foreground text-sm">
@@ -286,7 +286,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
       </section>
 
       <section aria-labelledby="from-h" className="flex flex-col gap-3">
-        <h2 className="font-semibold text-xl tracking-tight" id="from-h">
+        <h2 className="font-semibold text-xl" id="from-h">
           Where it came from
         </h2>
         <p className="max-w-2xl text-muted-foreground text-sm">

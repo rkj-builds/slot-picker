@@ -1,6 +1,6 @@
 import * as React from "react";
 import { useClock } from "@/app/clock";
-import { Waitlist, WaitlistActions, WaitlistHeader, WaitlistMeta, WaitlistPosition, WaitlistStatus, WaitlistTitle, type WaitlistPlace, type WaitlistState } from "@/components/compositions/waitlist";
+import { Waitlist, WaitlistActions, WaitlistBody, WaitlistHeader, WaitlistMeta, WaitlistPosition, WaitlistStatus, WaitlistTitle, type WaitlistPlace, type WaitlistState } from "@/components/compositions/waitlist";
 import { toastManager } from "@/components/ui/toast";
 import { describeZone } from "@/primitives/time-zone";
 
@@ -33,11 +33,14 @@ export function WaitlistDemo({ state, onStateChange, fail = false, cancelOpen = 
         <WaitlistTitle />
         <WaitlistStatus>Every slot taken</WaitlistStatus>
       </WaitlistHeader>
-      <WaitlistPosition />
-      <WaitlistActions cancelOpen={cancelOpen} />
-      <WaitlistMeta>
-        Your time: {zone.offsetLabel} · {zone.city}
-      </WaitlistMeta>
+      <WaitlistBody>
+        {/* A true minus in the offset (GMT−4), as Cal Sans's guide asks: the hyphen only joins words. */}
+        <WaitlistMeta>
+          Your time: {zone.offsetLabel.replace("-", "−")} · {zone.city}
+        </WaitlistMeta>
+        <WaitlistPosition />
+        <WaitlistActions cancelOpen={cancelOpen} />
+      </WaitlistBody>
     </Waitlist>
   );
 }

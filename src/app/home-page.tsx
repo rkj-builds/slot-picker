@@ -46,7 +46,7 @@ export function HomePage(): React.ReactElement {
           <LogoMark className="size-8" />
           <Badge variant="outline">Demo · mock data</Badge>
         </div>
-        <h1 className="text-balance font-semibold text-3xl tracking-tight sm:text-4xl">Court booking that asks for money before it holds a court.</h1>
+        <h1 className="text-balance font-semibold text-3xl sm:text-4xl">Court booking that asks for money before it holds a court.</h1>
         <p className="max-w-2xl text-pretty text-muted-foreground">
           At Project 831, a two-court pickleball venue in Jamshedpur, self-serve bookings with nothing paid were cancelled 45% of the time.
           Paid ones, 7%. This is the booking product that followed: deposits on weekends, pay-first for people who ghost, a hold while you pay.

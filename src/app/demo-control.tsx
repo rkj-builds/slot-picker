@@ -91,7 +91,7 @@ export function DemoControl(): React.ReactElement {
               <div className="flex flex-col gap-4 px-4 py-3">
                 {PRESET_GROUPS.map(({ group, items }) => (
                   <section aria-label={group} className="flex flex-col gap-2.5" key={group}>
-                    <h3 className="font-medium text-muted-foreground text-xs uppercase tracking-wide">{group}</h3>
+                    <h3 className="font-medium text-muted-foreground text-xs uppercase">{group}</h3>
                     <ul className="flex flex-col gap-3">
                       {items.map((item) => (
                         <li className="flex items-start justify-between gap-3" key={item.key}>

@@ -1,6 +1,7 @@
 export {
   Waitlist,
   WaitlistActions,
+  WaitlistBody,
   WaitlistCancel,
   WaitlistHeader,
   WaitlistJoin,
