@@ -1,1 +1,0 @@
-import{a as e,c as t,r as n}from"./utils-0MzkHkZl.js";import{To as r}from"./preload-helper-CeePhocg.js";import{a as i}from"./desk-page-C1POTxub.js";var a=t(e(),1),o=t(r(),1),s=n();function c({children:e}){let t=a.useContext(i).footer;return t?(0,o.createPortal)(e,t):(0,s.jsx)(s.Fragment,{children:e})}export{c as t};
