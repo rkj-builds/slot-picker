@@ -1,1 +1,0 @@
-import{a as e,c as t,r as n}from"./utils-0MzkHkZl.js";import{Da as r}from"./radio-group-EZA7t4bo.js";import{a as i}from"./desk-page-DkZZf-Iv.js";var a=t(e(),1),o=t(r(),1),s=n();function c({children:e}){let t=a.useContext(i).footer;return t?(0,o.createPortal)(e,t):(0,s.jsx)(s.Fragment,{children:e})}export{c as t};
