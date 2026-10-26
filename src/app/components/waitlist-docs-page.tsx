@@ -7,6 +7,7 @@ import { BookCallButton } from "@/app/components/book-call-button";
 import { DirectionFrame, type Direction } from "@/app/components/direction-frame";
 import { PropsTable } from "@/app/components/props-table";
 import { WaitlistDemo } from "@/app/components/waitlist-demo";
+import { WaitlistStory } from "@/app/components/waitlist-story";
 import demoSource from "@/app/components/waitlist-demo.tsx?raw";
 import { navigate, type Route } from "@/app/router";
 import { ThemeToggle } from "@/app/theme";
@@ -55,7 +56,7 @@ function shownFrom(route: Route): Shown {
 /**
  * A component proposal, laid out the way coss ui documents a component: preview and code, the API read
  * from the type, every state, the keyboard, motion, right-to-left. The instance is the role this page was
- * written for.
+ * written for, and the page opens with how that happened (waitlist-story.tsx).
  */
 export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElement {
   const shown = shownFrom(route);
@@ -85,12 +86,11 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
             <Badge variant="secondary">proposal</Badge>
           </div>
           <p className="max-w-2xl text-muted-foreground">{DOC.summary}</p>
-          <p className="max-w-2xl text-muted-foreground text-sm">
-            coss ui has no Waitlist. This is one, built from coss parts the way the library builds its own: Card, Badge, Button, Alert Dialog, Toast. Every colour is a token; every
-            word on it can be changed from a prop.
-          </p>
+          <p className="max-w-2xl text-muted-foreground text-sm">A coss ui component Cal.com doesn’t have yet.</p>
         </div>
       </header>
+
+      <WaitlistStory dir={dir} />
 
       <section aria-labelledby="preview-h" className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -287,19 +287,8 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
         </p>
       </section>
 
-      <section aria-labelledby="from-h" className="flex flex-col gap-3">
-        <h2 className="font-semibold text-xl" id="from-h">
-          Where it came from
-        </h2>
-        <p className="max-w-2xl text-muted-foreground text-sm">
-          Cal.com's Senior Product Design Engineer posting was still up when I found it; its Apply button said Position Closed. For someone who builds booking software that
-          reads as a fully booked day, and a fully booked day needs a waitlist. The posting asked to send the work, and to land components in the library rather than the app. So:
-          a component.
-        </p>
-      </section>
-
       <section className="flex flex-col gap-4 rounded-2xl border border-border bg-muted/30 p-6">
-        <p className="font-medium">If a slot opens, this is where I'd like to spend it.</p>
+        <p className="font-medium">A slot should open. This is where I’d spend it.</p>
         <div className="flex flex-wrap gap-2">
           <BookCallButton calLink={CAL_SLUG}>Book a time to argue about the API</BookCallButton>
           <Button render={<Anchor href={WORK_LINK} />} variant="outline">

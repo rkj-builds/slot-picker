@@ -264,6 +264,27 @@
     }
 }
 
+/* Waitlist docs, the opening timeline: each spine segment draws from its top as its step scrolls into view.
+   Scroll-driven, so there is nothing to play on load; browsers without animation-timeline show the line still. */
+@layer components {
+    .story-spine {
+        transform-origin: top;
+        animation: spine-draw linear both;
+        animation-timeline: view();
+        animation-range: entry 0% entry 80%;
+    }
+    @keyframes spine-draw {
+        from {
+            scale: 1 0;
+        }
+    }
+    @media (prefers-reduced-motion: reduce) {
+        .story-spine {
+            animation: none;
+        }
+    }
+}
+
 /* App additions used by the booking compositions. */
 @theme {
     --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
