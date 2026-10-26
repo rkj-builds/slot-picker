@@ -189,7 +189,8 @@ export function WaitlistTitle({ children, className, ...props }: React.Component
   const { item } = useWaitlist("WaitlistTitle");
   return (
     // coss's CardTitle is leading-none, set for one line; an item name can wrap, so it gets the guide's 125% and balanced lines.
-    <CardTitle className={cn("text-balance leading-tight", className)} data-slot="waitlist-title" {...props}>
+    // dir="auto" on every string a prop supplies: an English item inside a right-to-left page keeps its own punctuation order.
+    <CardTitle className={cn("text-balance leading-tight", className)} data-slot="waitlist-title" dir="auto" {...props}>
       {children ?? item}
     </CardTitle>
   );
@@ -250,8 +251,10 @@ export function WaitlistPosition({ className, ...props }: React.ComponentProps<"
     >
       <span className="font-semibold text-3xl tabular-nums leading-none">{number}</span>
       <span className="flex flex-col text-sm leading-snug">
-        <span>in line</span>
-        <span className="text-muted-foreground">{rest}</span>
+        <span dir="auto">in line</span>
+        <span className="text-muted-foreground" dir="auto">
+          {rest}
+        </span>
       </span>
     </div>
   );
@@ -277,7 +280,7 @@ export function WaitlistJoin({ className, children, ...props }: React.ComponentP
       {labels.map(([forState, label]) => {
         const active = forState === state;
         return (
-          <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} key={forState}>
+          <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} dir="auto" key={forState}>
             {label}
           </span>
         );
@@ -345,7 +348,7 @@ export function WaitlistActions({ cancelOpen = false }: { cancelOpen?: boolean }
 
 /** One line of context, as the meta prop or as children. */
 export function WaitlistMeta({ className, ...props }: React.ComponentProps<"p">): React.ReactElement {
-  return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" {...props} />;
+  return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" dir="auto" {...props} />;
 }
 
 /**
@@ -366,7 +369,7 @@ export function WaitlistFooter({ className, children, ...props }: React.Componen
         {failed ? (
           <>
             <CircleAlertIcon aria-hidden="true" className="size-3 h-lh shrink-0" />
-            {error ?? errorLabel}
+            <span dir="auto">{error ?? errorLabel}</span>
           </>
         ) : null}
       </p>

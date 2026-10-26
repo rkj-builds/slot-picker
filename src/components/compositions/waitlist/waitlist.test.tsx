@@ -145,6 +145,9 @@ describe("Waitlist", () => {
     const classes = [card, ...card.querySelectorAll("*")].flatMap((el) => [...el.classList]);
     // Logical properties only (ms-, ps-, start-, text-start): a left/right class would not flip.
     expect(classes.filter((c) => /^(-?m[lr]|p[lr]|left|right|text-(left|right)|rounded-[lr])(-|$)/.test(c))).toEqual([]);
+    // Every prop-supplied string sets its own direction, so English inside a right-to-left page keeps its punctuation.
+    expect(screen.getByText("Senior Product Design Engineer at Cal.com")).toHaveAttribute("dir", "auto");
+    expect(screen.getByText("Your time: GMT−4 · New York")).toHaveAttribute("dir", "auto");
   });
 
   it("has no axe violations idle, joined, or with the question open", async () => {
