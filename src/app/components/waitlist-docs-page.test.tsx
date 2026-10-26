@@ -15,7 +15,7 @@ describe("#/components/waitlist", () => {
     const api = screen.getByRole("heading", { name: "API reference" }).closest("section")!;
     // The table (laptop) and the stacked list (phone) both render; CSS shows one.
     const table = within(api).getByRole("table");
-    expect(within(table).getAllByRole("row").length).toBe(13);
+    expect(within(table).getAllByRole("row").length).toBe(15); // a header row and 14 props
     expect(within(table).getByText("onJoin")).toBeInTheDocument();
     expect(within(table).getByText('"Checking for cancellations…"')).toBeInTheDocument();
     expect(within(api).queryByText("No description yet.")).toBeNull();

@@ -11,7 +11,7 @@ describe("parseComponent, on the real Waitlist source", () => {
 
   it("reads each prop from the interface, with its JSDoc and its default from the signature", () => {
     const names = doc.props.map((p) => p.name);
-    expect(names).toEqual(["item", "status", "onJoin", "onCancel", "state", "onStateChange", "defaultState", "place", "joiningLabel", "errorLabel", "className", "children"]);
+    expect(names).toEqual(["item", "status", "slots", "onJoin", "onCancel", "state", "onStateChange", "defaultState", "place", "joiningLabel", "errorLabel", "meta", "className", "children"]);
     expect(doc.props.find((p) => p.name === "onJoin")).toMatchObject({ type: "() => Promise<WaitlistPlace>", optional: false, defaultValue: null });
     expect(doc.props.find((p) => p.name === "joiningLabel")).toMatchObject({ optional: true, defaultValue: '"Checking for cancellations…"' });
     expect(doc.props.find((p) => p.name === "onCancel")?.doc).toMatch(/Return false to keep them on the list/);

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRightIcon } from "lucide-react";
+import { CircleAlertIcon, Clock3Icon } from "lucide-react";
 import * as React from "react";
 import {
   AlertDialog,
@@ -12,8 +12,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardDescription, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
+import { Card, CardFooter, CardHeader, CardPanel, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 import { attemptJoin, placeLabel, type WaitlistPlace, type WaitlistState } from "@/lib/waitlist";
@@ -23,9 +24,11 @@ export type { WaitlistPlace, WaitlistState } from "@/lib/waitlist";
 export interface WaitlistProps {
   /** What is full: a course, a court, a role. */
   item: string;
-  /** Why it is full, in a line under the item. */
+  /** The badge above the item while it is full. One or two words. */
   status?: string;
-  /** Called on Join. Resolve with the place in line; reject to show the error state, with the same button as the retry. */
+  /** The slots that are taken, already formatted for the viewer. Shown struck through, so "full" is something you see. */
+  slots?: readonly string[];
+  /** Called on Join. Resolve with the place in line; reject to show the reason in the footer, with the same button as the retry. */
   onJoin: () => Promise<WaitlistPlace>;
   /** Called when the person confirms they want to leave. Return false to keep them on the list. */
   onCancel?: () => boolean | Promise<boolean>;
@@ -39,16 +42,21 @@ export interface WaitlistProps {
   place?: WaitlistPlace;
   /** What the button says while `onJoin` is pending. */
   joiningLabel?: string;
-  /** What the error line says when `onJoin` rejects without a message of its own. */
+  /** What the footer says when `onJoin` rejects without a message of its own. */
   errorLabel?: string;
+  /** One line in the footer: the viewer's time zone, a date. A failed join shows its reason in its place. */
+  meta?: React.ReactNode;
   /** Merged onto the card, as on every coss part. */
   className?: string;
-  /** Your own arrangement of the parts (WaitlistHeader, WaitlistPosition, WaitlistActions…). Left out, the default layout renders. */
+  /** Your own arrangement of the parts (WaitlistHeader, WaitlistBody, WaitlistFooter…). Left out, the default layout renders. */
   children?: React.ReactNode;
 }
 
 interface WaitlistContextValue {
   item: string;
+  status: string;
+  slots: readonly string[];
+  meta: React.ReactNode;
   state: WaitlistState;
   place: WaitlistPlace | undefined;
   error: string | null;
@@ -70,7 +78,8 @@ function useWaitlist(part: string): WaitlistContextValue {
 /** A place in line for something that is full. It asks once, keeps the person's place, and never takes it away by accident. */
 export function Waitlist({
   item,
-  status,
+  status = "Full",
+  slots = [],
   onJoin,
   onCancel,
   state: stateProp,
@@ -79,6 +88,7 @@ export function Waitlist({
   place: placeProp,
   joiningLabel = "Checking for cancellations…",
   errorLabel = "The list did not answer. Nothing was lost.",
+  meta,
   className,
   children,
 }: WaitlistProps): React.ReactElement {
@@ -137,13 +147,16 @@ export function Waitlist({
     setState("idle");
   }, [onCancel, setState]);
 
-  const value = React.useMemo<WaitlistContextValue>(() => ({ item, state, place, error, joiningLabel, errorLabel, join, leave, positionRef }), [item, state, place, error, joiningLabel, errorLabel, join, leave]);
+  const value = React.useMemo<WaitlistContextValue>(
+    () => ({ item, status, slots, meta, state, place, error, joiningLabel, errorLabel, join, leave, positionRef }),
+    [item, status, slots, meta, state, place, error, joiningLabel, errorLabel, join, leave],
+  );
 
   const live = state === "joined" && place ? `You're on the list. Position ${place.position}, ${placeLabel(place).split(" · ")[1]}.` : state === "joining" ? joiningLabel : "";
 
   return (
     <WaitlistContext.Provider value={value}>
-      <Card aria-busy={state === "joining" || undefined} className={cn("w-full max-w-sm", className)} data-slot="waitlist" data-state={state}>
+      <Card aria-busy={state === "joining" || undefined} className={cn("w-full max-w-xs", className)} data-slot="waitlist" data-state={state}>
         {/* One live region from mount, so a screen reader hears each change and the DOM never gains a region mid-flow. */}
         <p aria-live="polite" className="sr-only" role="status">
           {live}
@@ -151,13 +164,15 @@ export function Waitlist({
         {children ?? (
           <>
             <WaitlistHeader>
+              <WaitlistStatus />
               <WaitlistTitle />
-              {status ? <WaitlistStatus>{status}</WaitlistStatus> : null}
             </WaitlistHeader>
             <WaitlistBody>
+              <WaitlistSlots />
               <WaitlistPosition />
               <WaitlistActions />
             </WaitlistBody>
+            <WaitlistFooter />
           </>
         )}
       </Card>
@@ -165,8 +180,9 @@ export function Waitlist({
   );
 }
 
-export function WaitlistHeader(props: React.ComponentProps<typeof CardHeader>): React.ReactElement {
-  return <CardHeader data-slot="waitlist-header" {...props} />;
+/** The status badge, then the item. Padding set here, not inferred from which siblings exist. */
+export function WaitlistHeader({ className, ...props }: React.ComponentProps<typeof CardHeader>): React.ReactElement {
+  return <CardHeader className={cn("flex flex-col items-start gap-2.5 p-6 pb-4", className)} data-slot="waitlist-header" {...props} />;
 }
 
 export function WaitlistTitle({ children, className, ...props }: React.ComponentProps<typeof CardTitle>): React.ReactElement {
@@ -179,12 +195,40 @@ export function WaitlistTitle({ children, className, ...props }: React.Component
   );
 }
 
-export function WaitlistStatus(props: React.ComponentProps<typeof CardDescription>): React.ReactElement {
-  return <CardDescription data-slot="waitlist-status" {...props} />;
+/** "Full" while it is; "On the list" once joined. A badge, so it reads before the title does. */
+export function WaitlistStatus({ className, children, ...props }: React.ComponentProps<typeof Badge>): React.ReactElement {
+  const { state, status } = useWaitlist("WaitlistStatus");
+  const joined = state === "joined";
+  return (
+    <Badge className={className} data-slot="waitlist-status" variant={joined ? "success" : "secondary"} {...props}>
+      {children ?? (joined ? "On the list" : status)}
+    </Badge>
+  );
+}
+
+/** Everything between the header and the footer, one gap apart. */
+export function WaitlistBody({ className, ...props }: React.ComponentProps<typeof CardPanel>): React.ReactElement {
+  return <CardPanel className={cn("flex flex-col gap-3 px-6 pt-0 pb-6", className)} data-slot="waitlist-body" {...props} />;
+}
+
+/** The taken slots, struck through, until the person joins. Each one is read as "taken". */
+export function WaitlistSlots({ className, ...props }: React.ComponentProps<"ul">): React.ReactElement | null {
+  const { state, slots, status } = useWaitlist("WaitlistSlots");
+  if (state === "joined" || slots.length === 0) return null;
+  return (
+    <ul aria-label={`${status}: every slot taken`} className={cn("grid grid-cols-3 gap-1.5", className)} data-slot="waitlist-slots" {...props}>
+      {slots.map((slot) => (
+        <li className="rounded-md border border-border border-dashed py-1.5 text-center text-muted-foreground text-xs tabular-nums" key={slot}>
+          <s className="decoration-muted-foreground/60">{slot}</s>
+          <span className="sr-only"> taken</span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 /**
- * The place in line. Rendered only once joined, and the one thing on the card that moves:
+ * The place in line, once joined, in the space the slots held. The one thing on the card that moves:
  * it rises 4px as it appears, so the eye lands on what is new. Under reduced motion it simply appears.
  */
 export function WaitlistPosition({ className, ...props }: React.ComponentProps<"div">): React.ReactElement | null {
@@ -193,26 +237,29 @@ export function WaitlistPosition({ className, ...props }: React.ComponentProps<"
   const [number, rest] = placeLabel(place).split(" · ");
   return (
     <div
-        aria-label={`Position ${number}, ${rest}`}
-        className={cn("flex items-baseline gap-3 rounded-lg outline-none motion-safe:animate-waitlist-enter focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background", className)}
-        data-slot="waitlist-position"
-        ref={positionRef}
-        role="group"
-        tabIndex={-1}
-        {...props}
-      >
-        <span className="font-semibold text-4xl tabular-nums leading-none">{number}</span>
-        <span className="flex items-center gap-1.5 text-muted-foreground text-sm">
-          <ArrowRightIcon aria-hidden="true" className="size-4 rtl:rotate-180" />
-          {rest}
-        </span>
-      </div>
+      aria-label={`Position ${number}, ${rest}`}
+      className={cn(
+        "flex items-center gap-3.5 rounded-lg bg-muted px-4 py-3 outline-none motion-safe:animate-waitlist-enter focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        className,
+      )}
+      data-slot="waitlist-position"
+      ref={positionRef}
+      role="group"
+      tabIndex={-1}
+      {...props}
+    >
+      <span className="font-semibold text-3xl tabular-nums leading-none">{number}</span>
+      <span className="flex flex-col text-sm leading-snug">
+        <span>in line</span>
+        <span className="text-muted-foreground">{rest}</span>
+      </span>
+    </div>
   );
 }
 
-/** Join, with the error line under it. Three labels share one cell, so the button never changes width. */
+/** Join, full width. Three labels share one cell, so the button never changes size while it works. */
 export function WaitlistJoin({ className, children, ...props }: React.ComponentProps<typeof Button>): React.ReactElement | null {
-  const { state, error, joiningLabel, errorLabel, join } = useWaitlist("WaitlistJoin");
+  const { state, joiningLabel, join } = useWaitlist("WaitlistJoin");
   if (state === "joined") return null;
   const labels: [WaitlistState, React.ReactNode][] = [
     ["idle", children ?? "Join the waitlist"],
@@ -226,22 +273,16 @@ export function WaitlistJoin({ className, children, ...props }: React.ComponentP
     ["error", "Try again"],
   ];
   return (
-    <div className="flex flex-col gap-2" data-slot="waitlist-join">
-      <Button aria-disabled={state === "joining" || undefined} className={cn("grid place-items-center", className)} data-state={state} onClick={join} {...props}>
-        {labels.map(([forState, label]) => {
-          const active = forState === state;
-          return (
-            <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} key={forState}>
-              {label}
-            </span>
-          );
-        })}
-      </Button>
-      {/* The line is always there at its full height, so an error never pushes the card down. */}
-      <p className="min-h-5 text-destructive-foreground text-sm leading-5" role="alert">
-        {state === "error" ? (error ?? errorLabel) : null}
-      </p>
-    </div>
+    <Button aria-disabled={state === "joining" || undefined} className={cn("grid w-full place-items-center", className)} data-slot="waitlist-join" data-state={state} onClick={join} {...props}>
+      {labels.map(([forState, label]) => {
+        const active = forState === state;
+        return (
+          <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} key={forState}>
+            {label}
+          </span>
+        );
+      })}
+    </Button>
   );
 }
 
@@ -267,7 +308,7 @@ export function WaitlistCancel({
   if (state !== "joined") return null;
   return (
     <AlertDialog onOpenChange={setOpen} open={open}>
-      <AlertDialogTrigger data-slot="waitlist-cancel" render={<Button variant="outline" />}>
+      <AlertDialogTrigger data-slot="waitlist-cancel" render={<Button className="w-full" variant="outline" />}>
         {children ?? "Leave the list"}
       </AlertDialogTrigger>
       <AlertDialogPopup>
@@ -292,23 +333,43 @@ export function WaitlistCancel({
   );
 }
 
-/** Everything under the header in one panel with one gap, so the card's rhythm doesn't depend on which parts are showing. */
-export function WaitlistBody({ className, ...props }: React.ComponentProps<typeof CardPanel>): React.ReactElement {
-  // pt-0 by hand: coss zeroes it with a :has(> header) selector that the live region, first in the card, keeps from matching.
-  return <CardPanel className={cn("flex flex-col gap-4 pt-0", className)} data-slot="waitlist-body" {...props} />;
-}
-
-/** Join and Leave; whichever applies renders. */
-export function WaitlistActions({ cancelOpen = false, className, ...props }: React.ComponentProps<"div"> & { cancelOpen?: boolean }): React.ReactElement {
+/** Join or Leave; whichever applies renders, at full width. */
+export function WaitlistActions({ cancelOpen = false }: { cancelOpen?: boolean }): React.ReactElement {
   return (
-    <div className={cn("flex flex-wrap items-start gap-2", className)} data-slot="waitlist-actions" {...props}>
+    <>
       <WaitlistJoin />
       <WaitlistCancel defaultOpen={cancelOpen} />
-    </div>
+    </>
   );
 }
 
-/** One line of context: the viewer's time zone, a date. Above the actions, so the reserved error line ends the card. */
+/** One line of context, as the meta prop or as children. */
 export function WaitlistMeta({ className, ...props }: React.ComponentProps<"p">): React.ReactElement {
   return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" {...props} />;
+}
+
+/**
+ * The footer line: the meta (a time zone, a date), or, when a join fails, the reason in its place.
+ * Both sit in one grid cell, so an error changes the words and never the card's height.
+ */
+export function WaitlistFooter({ className, children, ...props }: React.ComponentProps<typeof CardFooter>): React.ReactElement {
+  const { meta, state, error, errorLabel } = useWaitlist("WaitlistFooter");
+  const failed = state === "error";
+  const line = children ?? meta;
+  return (
+    <CardFooter className={cn("grid border-t px-6 py-3", className)} data-slot="waitlist-footer" {...props}>
+      <div aria-hidden={failed || undefined} className={cn("flex items-start gap-1.5 text-muted-foreground text-xs [grid-area:1/1]", failed && "invisible")}>
+        {line ? <Clock3Icon aria-hidden="true" className="size-3 h-lh shrink-0" /> : null}
+        {typeof line === "string" ? <WaitlistMeta>{line}</WaitlistMeta> : line}
+      </div>
+      <p className={cn("flex items-start gap-1.5 text-destructive-foreground text-xs [grid-area:1/1]", !failed && "invisible")} role="alert">
+        {failed ? (
+          <>
+            <CircleAlertIcon aria-hidden="true" className="size-3 h-lh shrink-0" />
+            {error ?? errorLabel}
+          </>
+        ) : null}
+      </p>
+    </CardFooter>
+  );
 }

@@ -25,7 +25,7 @@ function Demo(props: Partial<React.ComponentProps<typeof Waitlist>>): React.Reac
   return (
     <ToastProvider>
       <main>
-        <Waitlist item="Senior Product Design Engineer at Cal.com" onJoin={() => Promise.resolve(FRONT)} status="Every slot taken" {...props} />
+        <Waitlist item="Senior Product Design Engineer at Cal.com" meta="Your time: GMT−4 · New York" onJoin={() => Promise.resolve(FRONT)} slots={["9:00 AM", "11:00 AM", "1:00 PM"]} status="Full" {...props} />
       </main>
     </ToastProvider>
   );
@@ -36,7 +36,7 @@ describe("Waitlist", () => {
     const user = userEvent.setup();
     const join = deferred();
     render(<Demo onJoin={join.onJoin} />);
-    const card = screen.getByText("Every slot taken").closest("[data-slot=waitlist]")!;
+    const card = screen.getByText("Full").closest("[data-slot=waitlist]")!;
     expect(card).toHaveAttribute("data-state", "idle");
     expect(screen.getByRole("status")).toHaveTextContent("");
 
@@ -72,16 +72,19 @@ describe("Waitlist", () => {
     expect(visible()).toEqual(["Checking for cancellations…"]);
   });
 
-  it("shows the rejection on the reserved line and offers the same button as the retry", async () => {
+  it("shows the rejection in place of the footer line, and offers the same button as the retry", async () => {
     const user = userEvent.setup();
     const onJoin = vi.fn<() => Promise<WaitlistPlace>>().mockRejectedValueOnce(new Error("The list did not answer. Nothing was lost.")).mockResolvedValueOnce(FRONT);
     render(<Demo onJoin={onJoin} />);
     const line = screen.getByRole("alert");
     expect(line).toHaveTextContent("");
-    expect(line).toHaveClass("min-h-5");
+    // Same grid cell as the time-zone line, so the swap never changes the card's height.
+    expect(line).toHaveClass("[grid-area:1/1]");
+    expect(screen.getByText("Your time: GMT−4 · New York")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Join the waitlist" }));
     expect(await screen.findByRole("button", { name: "Try again" })).toBeInTheDocument();
     expect(line).toHaveTextContent("The list did not answer. Nothing was lost.");
+    expect(screen.getByText("Your time: GMT−4 · New York").closest("[aria-hidden=true]")).not.toBeNull();
     expect(screen.getByRole("status")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Try again" }));
     expect(await screen.findByRole("group", { name: /Position 1/ })).toBeInTheDocument();
@@ -112,12 +115,25 @@ describe("Waitlist", () => {
     expect(screen.getByRole("group", { name: /Position 1/ })).toBeInTheDocument();
   });
 
+  it("shows the taken slots as a named list, each read as taken, and swaps them for the place once joined", async () => {
+    const user = userEvent.setup();
+    render(<Demo />);
+    const list = screen.getByRole("list", { name: "Full: every slot taken" });
+    expect(within(list).getAllByRole("listitem")).toHaveLength(3);
+    expect(within(list).getAllByRole("listitem")[0]).toHaveTextContent("9:00 AM taken");
+    expect(screen.getByText("Full")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: "Join the waitlist" }));
+    expect(await screen.findByRole("group", { name: /Position 1/ })).toBeInTheDocument();
+    expect(screen.queryByRole("list", { name: /every slot taken/ })).toBeNull();
+    expect(screen.getByText("On the list")).toBeInTheDocument();
+  });
+
   it("does not steal focus when it mounts already joined", () => {
     render(<Demo place={FRONT} state="joined" />);
     expect(document.activeElement).toBe(document.body);
   });
 
-  it("mirrors the position arrow in a right-to-left layout", () => {
+  it("mirrors in right-to-left with no physical-side classes anywhere in the card", () => {
     render(
       <DirectionProvider direction="rtl">
         <div dir="rtl">
@@ -125,8 +141,10 @@ describe("Waitlist", () => {
         </div>
       </DirectionProvider>,
     );
-    const arrow = screen.getByRole("group", { name: /Position 1/ }).querySelector("svg");
-    expect(arrow).toHaveClass("rtl:rotate-180");
+    const card = screen.getByText("On the list").closest("[data-slot=waitlist]")!;
+    const classes = [card, ...card.querySelectorAll("*")].flatMap((el) => [...el.classList]);
+    // Logical properties only (ms-, ps-, start-, text-start): a left/right class would not flip.
+    expect(classes.filter((c) => /^(-?m[lr]|p[lr]|left|right|text-(left|right)|rounded-[lr])(-|$)/.test(c))).toEqual([]);
   });
 
   it("has no axe violations idle, joined, or with the question open", async () => {

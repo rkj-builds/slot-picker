@@ -39,10 +39,10 @@ const SHOWN: { value: Shown; label: string }[] = [
   { value: "cancel-confirm", label: "Leave?" },
 ];
 const STATIC: { state: WaitlistState; title: string; line: string }[] = [
-  { state: "idle", title: "Idle", line: "Full, with one thing to do." },
+  { state: "idle", title: "Idle", line: "Full, and you can see it: every slot struck through." },
   { state: "joining", title: "Joining", line: "Busy. The button keeps its width; the card is aria-busy." },
-  { state: "joined", title: "Joined", line: "The place in line, and the way out." },
-  { state: "error", title: "Error", line: "The reason, on a line that was always there. The same button retries." },
+  { state: "joined", title: "Joined", line: "The place in line, in the space the slots held, and the way out." },
+  { state: "error", title: "Error", line: "The reason takes the footer line’s place, so the card keeps its height. The same button retries." },
 ];
 
 const DOC = parseComponent(waitlistSource, "Waitlist");
@@ -86,7 +86,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
           </div>
           <p className="max-w-2xl text-muted-foreground">{DOC.summary}</p>
           <p className="max-w-2xl text-muted-foreground text-sm">
-            coss ui has no Waitlist. This is one, built from coss parts the way the library builds its own: Card, Button, Alert Dialog, Toast. Every colour is a token; every
+            coss ui has no Waitlist. This is one, built from coss parts the way the library builds its own: Card, Badge, Button, Alert Dialog, Toast. Every colour is a token; every
             word on it can be changed from a prop.
           </p>
         </div>
@@ -221,8 +221,9 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
             While joining, the card is <code className="text-xs">aria-busy</code> and the button is <code className="text-xs">aria-disabled</code>, not disabled: focus stays where it was.
           </li>
           <li>
-            The error line has <code className="text-xs">role="alert"</code> and is always rendered at its full height, so an error never pushes the actions down.
+            A failed join is announced (<code className="text-xs">role="alert"</code>) in the footer, in the same cell as the time-zone line it replaces, so the card never changes height.
           </li>
+          <li>The taken slots are a list named for what it shows; each is struck through and read as “taken”, so the strike-through isn’t the only signal.</li>
           <li>Leaving goes through an alert dialog. Escape closes it; focus returns to the button that opened it. Base UI does both.</li>
         </ul>
         <Table className="max-w-2xl">
@@ -264,7 +265,7 @@ export function WaitlistDocsPage({ route }: { route: Route }): React.ReactElemen
           <dt className="font-medium">What moves</dt>
           <dd className="text-muted-foreground">The place in line, once, as it appears: opacity and a 4px rise, 180 ms, ease-out.</dd>
           <dt className="font-medium">What doesn't</dt>
-          <dd className="text-muted-foreground">The button, the card and the number. The button changes its label in place, at the same width.</dd>
+          <dd className="text-muted-foreground">The button, the card and its height. The button changes its label in place, at the same size; an error swaps the footer line in place.</dd>
           <dt className="font-medium">Why</dt>
           <dd className="text-muted-foreground">One thing on the card is new. The eye should land on it and nothing else should compete.</dd>
           <dt className="font-medium">Reduced motion</dt>
