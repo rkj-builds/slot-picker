@@ -189,9 +189,10 @@ export function WaitlistTitle({ children, className, ...props }: React.Component
   const { item } = useWaitlist("WaitlistTitle");
   return (
     // coss's CardTitle is leading-none, set for one line; an item name can wrap, so it gets the guide's 125% and balanced lines.
-    // dir="auto" on every string a prop supplies: an English item inside a right-to-left page keeps its own punctuation order.
-    <CardTitle className={cn("text-balance leading-tight", className)} data-slot="waitlist-title" dir="auto" {...props}>
-      {children ?? item}
+    // Every string a prop supplies sits in <bdi>: it keeps its own punctuation order (English inside a right-to-left page),
+    // while the block around it keeps the card's direction, so it still aligns to the card's start.
+    <CardTitle className={cn("text-balance leading-tight", className)} data-slot="waitlist-title" {...props}>
+      {children ?? <bdi>{item}</bdi>}
     </CardTitle>
   );
 }
@@ -251,9 +252,11 @@ export function WaitlistPosition({ className, ...props }: React.ComponentProps<"
     >
       <span className="font-semibold text-3xl tabular-nums leading-none">{number}</span>
       <span className="flex flex-col text-sm leading-snug">
-        <span dir="auto">in line</span>
-        <span className="text-muted-foreground" dir="auto">
-          {rest}
+        <span>
+          <bdi>in line</bdi>
+        </span>
+        <span className="text-muted-foreground">
+          <bdi>{rest}</bdi>
         </span>
       </span>
     </div>
@@ -265,22 +268,22 @@ export function WaitlistJoin({ className, children, ...props }: React.ComponentP
   const { state, joiningLabel, join } = useWaitlist("WaitlistJoin");
   if (state === "joined") return null;
   const labels: [WaitlistState, React.ReactNode][] = [
-    ["idle", children ?? "Join the waitlist"],
+    ["idle", <bdi key="idle">{children ?? "Join the waitlist"}</bdi>],
     [
       "joining",
       <>
         <Spinner aria-hidden="true" className="size-4" />
-        {joiningLabel}
+        <bdi>{joiningLabel}</bdi>
       </>,
     ],
-    ["error", "Try again"],
+    ["error", <bdi key="error">Try again</bdi>],
   ];
   return (
     <Button aria-disabled={state === "joining" || undefined} className={cn("grid w-full place-items-center", className)} data-slot="waitlist-join" data-state={state} onClick={join} {...props}>
       {labels.map(([forState, label]) => {
         const active = forState === state;
         return (
-          <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} dir="auto" key={forState}>
+          <span aria-hidden={!active || undefined} className={cn("inline-flex items-center gap-2 [grid-area:1/1]", !active && "invisible")} key={forState}>
             {label}
           </span>
         );
@@ -348,7 +351,7 @@ export function WaitlistActions({ cancelOpen = false }: { cancelOpen?: boolean }
 
 /** One line of context, as the meta prop or as children. */
 export function WaitlistMeta({ className, ...props }: React.ComponentProps<"p">): React.ReactElement {
-  return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" dir="auto" {...props} />;
+  return <p className={cn("text-muted-foreground text-xs", className)} data-slot="waitlist-meta" {...props} />;
 }
 
 /**
@@ -363,13 +366,19 @@ export function WaitlistFooter({ className, children, ...props }: React.Componen
     <CardFooter className={cn("grid border-t px-6 py-3", className)} data-slot="waitlist-footer" {...props}>
       <div aria-hidden={failed || undefined} className={cn("flex items-start gap-1.5 text-muted-foreground text-xs [grid-area:1/1]", failed && "invisible")}>
         {line ? <Clock3Icon aria-hidden="true" className="size-3 h-lh shrink-0" /> : null}
-        {typeof line === "string" ? <WaitlistMeta>{line}</WaitlistMeta> : line}
+        {typeof line === "string" ? (
+          <WaitlistMeta>
+            <bdi>{line}</bdi>
+          </WaitlistMeta>
+        ) : (
+          line
+        )}
       </div>
       <p className={cn("flex items-start gap-1.5 text-destructive-foreground text-xs [grid-area:1/1]", !failed && "invisible")} role="alert">
         {failed ? (
           <>
             <CircleAlertIcon aria-hidden="true" className="size-3 h-lh shrink-0" />
-            <span dir="auto">{error ?? errorLabel}</span>
+            <bdi>{error ?? errorLabel}</bdi>
           </>
         ) : null}
       </p>

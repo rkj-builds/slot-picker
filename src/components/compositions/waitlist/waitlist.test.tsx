@@ -63,7 +63,8 @@ describe("Waitlist", () => {
     const join = deferred();
     render(<Demo onJoin={join.onJoin} />);
     const button = screen.getByRole("button", { name: "Join the waitlist" });
-    const cells = within(button).getAllByText(/Join the waitlist|Checking for cancellations|Try again/);
+    // The three stacked cells: the button's direct children, each holding one label.
+    const cells = [...button.querySelectorAll<HTMLElement>(":scope > span")];
     expect(cells).toHaveLength(3);
     const visible = (): string[] => cells.filter((el) => !el.classList.contains("invisible")).map((el) => el.textContent ?? "");
     expect(visible()).toEqual(["Join the waitlist"]);
@@ -145,9 +146,9 @@ describe("Waitlist", () => {
     const classes = [card, ...card.querySelectorAll("*")].flatMap((el) => [...el.classList]);
     // Logical properties only (ms-, ps-, start-, text-start): a left/right class would not flip.
     expect(classes.filter((c) => /^(-?m[lr]|p[lr]|left|right|text-(left|right)|rounded-[lr])(-|$)/.test(c))).toEqual([]);
-    // Every prop-supplied string sets its own direction, so English inside a right-to-left page keeps its punctuation.
-    expect(screen.getByText("Senior Product Design Engineer at Cal.com")).toHaveAttribute("dir", "auto");
-    expect(screen.getByText("Your time: GMT−4 · New York")).toHaveAttribute("dir", "auto");
+    // Every prop-supplied string is isolated in <bdi>, so English inside a right-to-left page keeps its punctuation.
+    expect(screen.getByText("Senior Product Design Engineer at Cal.com").tagName).toBe("BDI");
+    expect(screen.getByText("Your time: GMT−4 · New York").tagName).toBe("BDI");
   });
 
   it("has no axe violations idle, joined, or with the question open", async () => {
