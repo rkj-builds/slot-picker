@@ -102,6 +102,12 @@ export const DEMO_STATES: readonly DemoState[] = [
   { id: "wl-error", group: "Components", label: "Waitlist: join failed, retry", shows: "The error line on its reserved height; the same button retries.", hash: "#/components/waitlist?state=error" },
   { id: "wl-cancel", group: "Components", label: "Waitlist: Are you sure?", shows: "The question before leaving; Escape closes it.", hash: "#/components/waitlist?state=cancel-confirm" },
   { id: "wl-rtl-dark", group: "Components", label: "Waitlist: right-to-left, dark", shows: "The chevrons mirror (coss ui #913); tokens only.", hash: "#/components/waitlist?state=joined&dir=rtl&theme=dark" },
+  { id: "rs-list", group: "Components", label: "Resources: the list", shows: "A new page beside Availability: two courts, their hours, how many bookings each takes at once.", hash: "#/components/resources" },
+  { id: "rs-resource", group: "Components", label: "Resources: Court 1", shows: "A resource's own editor: basics, hours in Availability's shape, date overrides, the links that book it.", hash: "#/components/resources?screen=resource" },
+  { id: "rs-link", group: "Components", label: "Resources: Who is booked", shows: "The link's new page. Flip it to A person and the live preview's 7 pm goes busy.", hash: "#/components/resources?screen=link" },
+  { id: "rs-bookings", group: "Components", label: "Resources: Bookings by resource", shows: "The venue's evening court by court: the SlotGrid primitive in a third skin.", hash: "#/components/resources?screen=bookings" },
+  { id: "rs-book", group: "Components", label: "Resources: the booking page", shows: "7 pm is free because Court 2 is; book it and see where it lands.", hash: "#/components/resources?screen=book" },
+  { id: "rs-rtl-dark", group: "Components", label: "Resources: right-to-left, dark", shows: "The sidebar at the start, the gutter at the start, every arrow mirrored.", hash: "#/components/resources?screen=bookings&dir=rtl&theme=dark" },
 
   // Bookings and availability: the booking page, the list's views and filters, opening hours, closures, blocks.
   { id: "booking-detail", group: "Desk", label: "Booking with a balance", shows: "A booking's own page: ₹300 paid in cash, the rest due. Record payment opens with the balance filled in.", setup: "booking-balance", hash: "#/desk/bookings/{booking}" },

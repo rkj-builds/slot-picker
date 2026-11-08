@@ -22,6 +22,7 @@ const DeskPage = React.lazy(() => import("@/app/desk/desk-page").then((m) => ({ 
 const GalleryPage = React.lazy(() => import("@/app/gallery/gallery-page").then((m) => ({ default: m.GalleryPage })));
 const PrimitivesPage = React.lazy(() => import("@/app/primitives/primitives-page").then((m) => ({ default: m.PrimitivesPage })));
 const WaitlistDocsPage = React.lazy(() => import("@/app/components/waitlist-docs-page").then((m) => ({ default: m.WaitlistDocsPage })));
+const ResourcesDocsPage = React.lazy(() => import("@/app/components/resources-docs-page").then((m) => ({ default: m.ResourcesDocsPage })));
 
 export function App(): React.ReactElement {
   const [start] = React.useState(pinnedNowFromUrl);
@@ -59,7 +60,7 @@ export function Routes(): React.ReactElement {
       page = <DeskPage route={route} />;
       break;
     case "components":
-      page = route.segments[1] === "waitlist" ? <WaitlistDocsPage route={route} /> : <GalleryPage />;
+      page = route.segments[1] === "waitlist" ? <WaitlistDocsPage route={route} /> : route.segments[1] === "resources" ? <ResourcesDocsPage route={route} /> : <GalleryPage />;
       break;
     case "primitives":
       page = <PrimitivesPage />;
