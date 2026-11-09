@@ -21,10 +21,17 @@ export interface ResourcesContextValue {
   now: number;
   status: ResourcesStatus;
   onRetry: (() => void) | undefined;
-  venue: { name: string; line: string };
+  venue: Venue;
   saveResource: (resource: Resource) => Promise<void>;
   changeLink: (link: ResourceLink) => void;
   book: (booking: ResourceBooking) => Promise<void>;
+}
+
+/** Who the account is: its name, a line under it, and its own mark (an image URL). Without a mark, its initial stands in, as Cal.com does for an avatar. */
+export interface Venue {
+  name: string;
+  line: string;
+  mark?: string;
 }
 
 export const ResourcesContext = React.createContext<ResourcesContextValue | null>(null);

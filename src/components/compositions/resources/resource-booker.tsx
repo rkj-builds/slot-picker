@@ -6,6 +6,7 @@ import { DayStepper } from "@/components/booking/day-stepper";
 import { DurationPicker } from "@/components/booking/duration-picker";
 import { SlotGrid } from "@/components/booking/slot-grid";
 import { useResources } from "@/components/compositions/resources/context";
+import { VenueMark } from "@/components/compositions/resources/kit";
 import { dayLabel, spanLabel } from "@/components/compositions/resources/words";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -13,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
+import { periodOf } from "@/lib/availability";
 import { formatDuration } from "@/lib/duration";
 import type { PlainDate } from "@/lib/plain-date";
 import { assign, hostSlots, linkSlots, type Resource, type ResourceBooking } from "@/lib/resources";
@@ -47,6 +49,13 @@ export function ResourceBooker({ preview = false }: { preview?: boolean }): Reac
     () => (byResource ? linkSlots(resources, bookings, effective, date, { timeZone, now }) : hostSlots(resources, bookings, effective, date, { timeZone, now })),
     [byResource, resources, bookings, effective, date, timeZone, now],
   );
+  // The preview sits under the link's settings: it shows the part of the day where a booking already is, so the
+  // person/resource switch visibly changes something. The full page shows the whole day.
+  const focus = React.useMemo(() => {
+    const first = bookings.filter((b) => b.date === date).sort((a, b) => a.startMinute - b.startMinute)[0];
+    return first ? periodOf(first.startMinute) : null;
+  }, [bookings, date]);
+  const shown = React.useMemo(() => (preview && focus ? slots.filter((s) => periodOf(s.minuteOfDay) === focus) : slots), [preview, focus, slots]);
   const slot = slots.find((s) => s.id === selected && s.status === "available") ?? null;
   const landing = slot && byResource ? assign(resources, bookings, effective, date, slot.minuteOfDay, timeZone) : null;
   const span = slot ? { date, startMinute: slot.minuteOfDay, durationMinutes: duration } : null;
@@ -87,7 +96,7 @@ export function ResourceBooker({ preview = false }: { preview?: boolean }): Reac
   const about = (
     <div className={cn("flex flex-col gap-3", preview ? "gap-2" : "@2xl/pane:w-60 @2xl/pane:shrink-0")} data-slot="booker-about">
       <div className="flex items-center gap-2">
-        <span aria-hidden="true" className="size-6 rounded-full bg-foreground" />
+        <VenueMark className="rounded-full" venue={venue} />
         <span className="text-muted-foreground text-sm">{venue.name}</span>
       </div>
       <div className="flex flex-col gap-1">
@@ -119,7 +128,7 @@ export function ResourceBooker({ preview = false }: { preview?: boolean }): Reac
       {about}
       <div className="flex min-w-0 flex-1 flex-col gap-4">
         {preview ? <p className="font-medium text-sm">{dayLabel(date, locale)}</p> : <DayStepper locale={locale} now={now} onValueChange={setDate} timeZone={timeZone} value={date} />}
-        <SlotGrid aria-label="Start time" locale={locale} onValueChange={setSelected} slots={slots} timeZone={timeZone} value={selected} />
+        <SlotGrid aria-label="Start time" locale={locale} onValueChange={setSelected} slots={shown} timeZone={timeZone} value={selected} />
         {span && (
           <div className="flex flex-col gap-1 rounded-xl bg-muted px-4 py-3 text-sm" data-slot="booker-summary" role="status">
             <span className="font-medium tabular-nums">

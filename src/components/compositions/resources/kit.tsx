@@ -1,6 +1,17 @@
 import type * as React from "react";
 import { cn } from "@/lib/utils";
 
+/** The account's mark: its own image, or its initial on a quiet square, as Cal.com draws an avatar without a photo. */
+export function VenueMark({ venue, className }: { venue: { name: string; mark?: string }; className?: string }): React.ReactElement {
+  return venue.mark ? (
+    <img alt="" className={cn("size-6 shrink-0 rounded-md object-cover", className)} height={24} src={venue.mark} width={24} />
+  ) : (
+    <span aria-hidden="true" className={cn("flex size-6 shrink-0 items-center justify-center rounded-md bg-muted font-medium text-muted-foreground text-xs", className)}>
+      {venue.name.slice(0, 1)}
+    </span>
+  );
+}
+
 /** A screen's frame: padding and one rhythm between its sections. */
 export function Pane({ className, ...props }: React.ComponentProps<"div">): React.ReactElement {
   return <div className={cn("flex flex-1 flex-col gap-5 p-4 @md/pane:p-6", className)} data-slot="resources-pane" {...props} />;

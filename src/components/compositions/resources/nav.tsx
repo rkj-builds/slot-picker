@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import type * as React from "react";
 import { type ResourcesScreen, useResources } from "@/components/compositions/resources/context";
+import { VenueMark } from "@/components/compositions/resources/kit";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectItem, SelectPopup, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from "@/components/ui/sidebar";
@@ -57,7 +58,7 @@ export function ResourcesNav(): React.ReactElement {
     <Sidebar className="hidden h-auto w-52 shrink-0 border-e @3xl/root:flex" collapsible="none" data-slot="resources-nav">
       <SidebarHeader className="px-3 pt-3">
         <div className="flex items-center gap-2 px-1">
-          <span aria-hidden="true" className="size-6 rounded-md bg-foreground" />
+          <VenueMark venue={venue} />
           <span className="flex min-w-0 flex-col leading-tight">
             <span className="truncate font-semibold text-sm">{venue.name}</span>
             <span className="truncate text-muted-foreground text-xs">{venue.line}</span>
@@ -73,6 +74,7 @@ export function ResourcesNav(): React.ReactElement {
                   <SidebarMenuItem key={label}>
                     <SidebarMenuButton
                       aria-current={target && target === current ? "page" : undefined}
+                      className="disabled:opacity-100"
                       disabled={!target}
                       isActive={target === current}
                       onClick={target ? () => open(target) : undefined}
@@ -102,7 +104,7 @@ export function ResourcesNav(): React.ReactElement {
             </SidebarMenuButton>
           </SidebarMenuItem>
           <SidebarMenuItem>
-            <SidebarMenuButton disabled title="Cal.com's own page; not part of this proposal">
+            <SidebarMenuButton className="disabled:opacity-100" disabled title="Cal.com's own page; not part of this proposal">
               <SettingsIcon aria-hidden="true" />
               <span>Settings</span>
             </SidebarMenuButton>
@@ -120,7 +122,7 @@ export function ResourcesNavSelect(): React.ReactElement {
   return (
     <div className="flex items-center justify-between gap-3 border-b px-3 py-2 @3xl/root:hidden" data-slot="resources-nav-select">
       <span className="flex min-w-0 items-center gap-2">
-        <span aria-hidden="true" className="size-5 shrink-0 rounded-md bg-foreground" />
+        <VenueMark className="size-5" venue={venue} />
         <span className="truncate font-semibold text-sm">{venue.name}</span>
       </span>
       <Select<ResourcesScreen> items={LIVE} onValueChange={(v) => v !== null && open(v)} value={current}>

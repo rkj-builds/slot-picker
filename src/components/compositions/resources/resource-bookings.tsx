@@ -144,7 +144,9 @@ export function ResourceDayGrid({ resources, bookings, date }: { resources: read
           style={{ gridTemplateColumns: `4rem repeat(${resources.length}, minmax(0, 1fr))` }}
         >
           <div className="sticky top-0 z-10 col-span-full grid grid-cols-subgrid border-b bg-background">
-            <span className="px-3 py-2 text-muted-foreground text-xs">Time</span>
+            <span>
+              <span className="sr-only">Time</span>
+            </span>
             {resources.map((r) => (
               <span className="flex items-center gap-2 border-s px-3 py-2 font-medium text-sm" key={r.id}>
                 <bdi className="truncate">{r.name}</bdi>

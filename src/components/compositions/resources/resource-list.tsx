@@ -73,10 +73,11 @@ export function ResourceList(): React.ReactElement {
                     <Button className="h-auto px-0 py-0 font-medium text-base sm:h-auto sm:text-sm" onClick={() => open("resource", r.id)} variant="link">
                       <bdi>{r.name}</bdi>
                     </Button>
-                    <Badge variant="outline">{kind}</Badge>
                     {!r.active && <Badge variant="warning">Paused</Badge>}
                   </span>
-                  <span className="text-muted-foreground text-xs">{capacityLine(r.atOnce, r.people)}</span>
+                  <span className="text-muted-foreground text-xs">
+                    {kind} · {capacityLine(r.atOnce, r.people)}
+                  </span>
                 </div>
                 <dl className="col-span-2 flex flex-col gap-0.5 text-xs @xl/pane:col-span-1" data-slot="resource-hours">
                   {weekLines(r.hours, timeZone, locale).map((seg) => (

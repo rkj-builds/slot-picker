@@ -55,7 +55,7 @@ describe("#/components/resources", () => {
     expect(labels).toEqual(["Home", "Links", "Events", "Bookings", "Availability", "Resources", "Teams", "Apps", "Routing", "Workflows", "Insights"]);
     expect(within(nav).getByRole("button", { name: /^Resources/ })).toHaveAttribute("aria-current", "page");
     expect(within(nav).getByRole("button", { name: "Teams" })).toBeDisabled();
-    expect(within(preview()).getAllByText("1 booking at a time · up to 4 people")).toHaveLength(2);
+    expect(within(preview()).getAllByText("Court · 1 booking at a time · up to 4 people")).toHaveLength(2);
   });
 
   it("opens a court from the list, with its hours in Availability's shape", async () => {
@@ -81,7 +81,7 @@ describe("#/components/resources", () => {
     expect(within(who).getByRole("radio", { name: /^A resource/ })).toBeChecked();
     expect(within(preview()).getByRole("button", { name: /^Who is booked/ })).toHaveAttribute("aria-current", "page");
     // Base UI names the chips input after the Field's label and gives it the combobox role.
-    const chips = within(preview()).getByRole("combobox", { name: "Any free one of" }).closest("[data-slot=combobox-chips]") as HTMLElement;
+    const chips = within(preview()).getByRole("combobox", { name: "Any free one of" }).closest<HTMLElement>("[data-slot=combobox-chips]")!;
     expect(within(chips).getByText("Court 1")).toBeInTheDocument();
     expect(within(chips).getByText("Court 2")).toBeInTheDocument();
     expect(within(preview()).getByText("The host stays free")).toBeInTheDocument();
@@ -112,7 +112,7 @@ describe("#/components/resources", () => {
     await user.type(within(page).getByRole("textbox", { name: "Your name" }), "Meera Nair");
     await user.click(within(page).getByRole("button", { name: "Book" }));
     const done = await within(page).findByText("Booked");
-    const card = done.closest("[data-slot=booker-done]") as HTMLElement;
+    const card = done.closest<HTMLElement>("[data-slot=booker-done]")!;
     expect(within(card).getByText("Court 2 · Mon, 2 Nov · 7:00 – 8:00 pm")).toBeInTheDocument();
     expect(within(card).getByText("Meera")).toBeInTheDocument();
     // Now both courts are taken at 7 pm: the start reads as taken.

@@ -1,8 +1,9 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, LockIcon } from "lucide-react";
 import * as React from "react";
-import { ResourcesContext, type ResourcesContextValue, type ResourcesScreen, type ResourcesStatus } from "@/components/compositions/resources/context";
+import { ResourcesContext, type ResourcesContextValue, type ResourcesScreen, type ResourcesStatus, type Venue } from "@/components/compositions/resources/context";
+import projectMark from "@/components/compositions/resources/project-831-mark.png";
 import { LinkEditor } from "@/components/compositions/resources/link-editor";
 import { ResourcesNav, ResourcesNavSelect } from "@/components/compositions/resources/nav";
 import { ResourceBooker } from "@/components/compositions/resources/resource-booker";
@@ -15,9 +16,9 @@ import type { PlainDate } from "@/lib/plain-date";
 import type { Resource, ResourceBooking, ResourceLink } from "@/lib/resources";
 import { cn } from "@/lib/utils";
 
-export type { ResourcesScreen, ResourcesStatus } from "@/components/compositions/resources/context";
+export type { ResourcesScreen, ResourcesStatus, Venue } from "@/components/compositions/resources/context";
 
-const PROJECT_831 = { name: "Project 831", line: "Jamshedpur" };
+const PROJECT_831: Venue = { name: "Project 831", line: "Jamshedpur", mark: projectMark };
 
 export interface ResourcesProps {
   /** The things people book: courts, rooms, desks, racquets. Empty shows the first-run state. */
@@ -45,7 +46,7 @@ export interface ResourcesProps {
   status?: ResourcesStatus;
   onRetry?: () => void;
   /** The account the sidebar is signed in to: a name and one line under it. Project 831, Jamshedpur unless told otherwise. */
-  venue?: { name: string; line: string };
+  venue?: Venue;
   /** Show Cal.com's sidebar around the screens. Off, a screen stands alone, as in a story. */
   nav?: boolean;
   /** Called with a new or changed resource. Resolve to keep it; reject to say why not. */
@@ -143,7 +144,10 @@ export function Resources({
           {nav && admin && <ResourcesNavSelect />}
           {nav && !admin && (
             <div className="flex items-center justify-between gap-3 border-b px-3 py-2" data-slot="resources-public-bar">
-              <span className="truncate font-mono text-muted-foreground text-xs">cal.com/{venue.name.toLowerCase().replace(/\s+/g, "-")}/{link.slug}</span>
+              <span className="flex min-w-0 items-center gap-1.5 rounded-full bg-muted px-3 py-1 text-muted-foreground text-xs">
+                <LockIcon aria-hidden="true" className="size-3 shrink-0" />
+                <span className="truncate">cal.com/{venue.name.toLowerCase().replace(/\s+/g, "-")}/{link.slug}</span>
+              </span>
               <Button onClick={() => open("list")} size="xs" variant="ghost">
                 <ArrowLeftIcon aria-hidden="true" className="rtl:rotate-180" />
                 Back to the app

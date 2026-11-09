@@ -76,7 +76,6 @@ export function ResourcesDemo({
       screen={screen}
       status={status}
       timeZone={DEMO_ZONE}
-      venue={{ name: "Project 831", line: "Jamshedpur" }}
     />
   );
 }
