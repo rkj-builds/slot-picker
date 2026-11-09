@@ -1,0 +1,1 @@
+import{a as e,c as t}from"./utils-0MzkHkZl.js";import{r as n}from"./provider-DZI05rLE.js";var r=t(e(),1);function i(e,t){let i=n(e,t),[a,o]=r.useState(i.data);return i.data!==void 0&&i.data!==a&&o(i.data),{data:i.data??a,error:i.error,isError:i.isError,refreshing:i.isFetching,stale:i.data===void 0&&a!==void 0,refetch:()=>void i.refetch()}}export{i as t};
